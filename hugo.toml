@@ -9,7 +9,7 @@ author = "Themefisher"
 currency = "$"
 # contact form action
 contact_form_action = "#" # contact form works with https://formspree.io
-
+baseURL = "https://resplendent-centaur-abf462.netlify.app"
 
 # unsafe html
 [markup.goldmark.renderer]
