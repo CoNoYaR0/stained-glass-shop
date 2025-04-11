@@ -3,23 +3,16 @@ title: "Paiement"
 url: /checkout/
 ---
 
-<form method="POST" action="https://7ssab.stainedglass.tn/custom/flouci/payment.php" onsubmit="convertToMillimes()">
+<form id="paymee-form">
   <label for="email">Votre email :</label><br>
-  <input type="email" name="email" required placeholder="email@exemple.com"><br><br>
+  <input type="email" name="email" id="email" required><br><br>
 
-  <label for="amount_dinars">Montant (en dinars TND) :</label><br>
-  <input type="number" id="amount_dinars" step="0.001" required value="12"><br><br>
+  <label for="amount">Montant (TND) :</label><br>
+  <input type="number" name="amount" id="amount" step="0.001" required><br><br>
 
-  <!-- Ce champ sera rempli automatiquement en millimes -->
-  <input type="hidden" name="amount" id="amount_millimes">
-
-  <button type="submit">Payer avec Flouci</button>
+  <button type="submit">Payer avec Paymee</button>
 </form>
 
-<script>
-  function convertToMillimes() {
-    const amountDinars = parseFloat(document.getElementById("amount_dinars").value);
-    const amountMillimes = Math.round(amountDinars * 1000);
-    document.getElementById("amount_millimes").value = amountMillimes;
-  }
-</script>
+<div id="paymee-container" style="margin-top: 30px;"></div>
+
+<script src="/js/paymee.js"></script>
