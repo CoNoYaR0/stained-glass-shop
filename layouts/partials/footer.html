@@ -44,3 +44,20 @@
 
 <!-- Panier custom -->
 <script src="/js/cart.js"></script>
+
+<!-- Panel panier -->
+<div id="cart-panel" class="cart-panel">
+  <div class="cart-panel-header">
+    <h4>🛒 Mon panier</h4>
+    <button id="close-cart">&times;</button>
+  </div>
+  <div id="cart-panel-items" class="cart-panel-items"></div>
+  <div class="cart-panel-footer">
+    <p>Total : <span id="cart-panel-total">0.000 DT</span></p>
+    <a href="/fr/checkout/" class="btn btn-main w-100 mt-2">Procéder au paiement</a>
+  </div>
+</div>
+<div id="cart-overlay" class="cart-overlay"></div>
+
+<script src="/js/cart-panel.js"></script>
+
