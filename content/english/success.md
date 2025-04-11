@@ -1,6 +1,6 @@
 ---
 title: "Paiement réussi"
-url: /fr/panier/
+url: /success/
 layout: "default"
 ---
 
