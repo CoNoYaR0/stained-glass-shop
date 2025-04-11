@@ -33,3 +33,24 @@ function updateCartCount() {
   // Init du badge dès que la page est chargée
   document.addEventListener("DOMContentLoaded", updateCartCount);
   
+// Animation + Ajout au panier
+function handleAddToCart(button, item) {
+  const originalText = button.innerHTML;
+
+  // État visuel "chargement"
+  button.disabled = true;
+  button.innerHTML = `<span class="spinner"></span> Ajout...`;
+
+  // Simule une requête (tu peux ajuster le délai ou utiliser fetch ici)
+  setTimeout(() => {
+    addToCart(item); // ajoute l’article au panier
+
+    // Confirmation temporaire
+    button.innerHTML = `✅ Ajouté !`;
+
+    setTimeout(() => {
+      button.disabled = false;
+      button.innerHTML = originalText;
+    }, 1500);
+  }, 600);
+}

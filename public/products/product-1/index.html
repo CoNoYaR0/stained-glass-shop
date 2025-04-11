@@ -615,16 +615,35 @@
       </div>
       <div class="col-lg-6 col-md-7 offset-lg-1">
         <h1 class="mb-4">Apple Watch</h1>
-        <p><strong>Colors: </strong>Black, White, Gray</p>
-        <p><strong>Sizes: </strong>Small, Medium, Large</p>
-        <p class="price py-4">$25.00
-        <s class="price">$30.00</s>
+
+        
+          <p><strong>Colors:</strong> Black, White, Gray</p>
+        
+
+        
+          <p><strong>Sizes:</strong> Small, Medium, Large</p>
+        
+
+        <p class="price py-4">
+          
+            $25.00
+            <s class="price">$30.00</s>
+          
         </p>
-        
-        
-        <a class="btn btn-main mb-5" href="http://localhost:1313/vex/examplesite">Add to Cart</a>
-        
-        
+
+        <button
+  id="add-btn-product-1"
+  class="add-to-cart-btn mb-5"
+  onclick='handleAddToCart(this, {
+    id: "product-1",
+    name: "Apple Watch",
+    price: &#34;25.00&#34;,
+    qty: 1,
+    image: "http:\/\/localhost:1313\/vex\/examplesite\/images\/showcase\/showcase-1.png"
+  })'>
+  Ajouter au panier
+</button>
+
 
         <div class="content"><p>Apple Watch is a line of smartwatches produced by Apple Inc. It incorporates fitness tracking and health-oriented capabilities with integration with iOS and other Apple products and services.</p>
 </div>
