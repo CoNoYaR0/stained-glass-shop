@@ -34,10 +34,20 @@
   {{ end }}
   */}}  
 <!-- JS Plugins -->
-{{ range site.Params.plugins.js}}
-<script src="{{ .link | absURL }}"></script>
-<script src="/plugins/slick/slick.min.js"></script>
+{{ range site.Params.plugins.js }}
+  <script src="{{ .link | absURL }}"></script>
 {{ end }}
+
+<!-- Slick JS -->
+<script src="/plugins/slick/slick.min.js"></script>
+
+<!-- Main Script -->
+{{ $script := resources.Get "js/script.js" }}
+<script src="{{ $script.Permalink }}"></script>
+
+<!-- Panier custom -->
+<script src="/js/cart.js"></script>
+<script src="/js/cart-panel.js"></script>
 
 <!-- Main Script -->
 {{ $script := resources.Get "js/script.js" }}

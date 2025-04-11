@@ -13,11 +13,14 @@
 
   {{ "<!-- plugins -->" | safeHTML }}
   {{ range site.Params.plugins.css }}
-  <link rel="stylesheet" href="{{ .link | absURL }} ">
-  <link rel="stylesheet" href="/plugins/slick/slick.css">
-<link rel="stylesheet" href="/plugins/slick/slick-theme.css">
+    <link rel="stylesheet" href="{{ .link | absURL }}">
   {{ end }}
-
+  
+  <!-- Slick CSS (important à charger même si site.Params.plugins.css est vide) -->
+  <link rel="stylesheet" href="{{ "plugins/slick/slick.css" | absURL }}">
+  <link rel="stylesheet" href="{{ "plugins/slick/slick-theme.css" | absURL }}">
+  
+  
   {{ "<!-- Main Stylesheet -->" | safeHTML }}
   {{ $styles := resources.Get "scss/style.scss" | toCSS | minify }}
   <link rel="stylesheet" href="{{ $styles.Permalink }}" media="screen">
