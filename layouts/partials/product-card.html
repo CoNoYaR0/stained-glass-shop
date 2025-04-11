@@ -1,15 +1,15 @@
-<div class="product-item">
-    <img src="{{ index .Params.images 0 | absURL }}" alt="{{ .Title }}">
-    <button
-      class="add-btn"
-      onclick='addToCart({ 
-        id: "{{ .File.BaseFileName }}",
-        name: "{{ .Title }}",
-        price: {{ .Params.discount_price | default .Params.price }},
-        qty: 1,
-        image: "{{ index .Params.images 0 | absURL }}"
-      })'>
-      ✚
-    </button>
-  </div>
-  
+
+<div class="product-item touch-sensitive">
+  <img src="{{ index .Params.images 0 | absURL }}" alt="{{ .Title }}">
+  <button
+    class="add-btn"
+    onclick='addToCart({ 
+      id: "{{ .File.BaseFileName }}",
+      name: "{{ .Title }}",
+      price: {{ .Params.discount_price | default .Params.price }},
+      qty: 1,
+      image: "{{ index .Params.images 0 | absURL }}"
+    })'>
+    ✚
+  </button>
+</div>
