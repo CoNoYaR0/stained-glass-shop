@@ -36,6 +36,7 @@
 <!-- JS Plugins -->
 {{ range site.Params.plugins.js}}
 <script src="{{ .link | absURL }}"></script>
+<script src="/plugins/slick/slick.min.js"></script>
 {{ end }}
 
 <!-- Main Script -->
