@@ -18,13 +18,11 @@
   </div>
 </section>
 
-<button onclick='addToCart({
-  id: "{{ .File.BaseFileName }}",
-  name: "{{ .Title }}",
+<button onclick="addToCart({
+  id: '{{ .File.BaseFileName }}',
+  name: '{{ .Title }}',
   price: {{ if .Params.discount_price }}{{ .Params.discount_price }}{{ else }}{{ .Params.price }}{{ end }},
   qty: 1,
-  image: "{{ with .Params.Images }}{{ index . 0 | absURL }}{{ end }}"
-})'>
-  Ajouter au panier
-</button>
+  image: '{{ with .Params.Images }}{{ index . 0 | absURL }}{{ end }}'
+})" class="btn btn-main">Ajouter au panier</button>
 {{ end }}
