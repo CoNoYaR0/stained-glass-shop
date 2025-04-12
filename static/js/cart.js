@@ -19,7 +19,12 @@ function updateCartCount() {
   
     localStorage.setItem("cart", JSON.stringify(cart));
     updateCartCount();
-    alert("Produit ajouté au panier !");
+    const msg = document.createElement("div");
+msg.textContent = "✔ Produit ajouté au panier !";
+msg.className = "cart-success-toast";
+document.body.appendChild(msg);
+setTimeout(() => msg.remove(), 2000);
+
   }
   
   // Pour supprimer un article par son index (utile dans /panier/)

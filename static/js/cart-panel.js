@@ -26,7 +26,7 @@ function openCartPanel() {
           <img src="${item.image}" alt="${item.name}" style="width:50px; height:50px; object-fit:cover; border-radius:6px; margin-right:0.5rem;">
           <div>
             <strong>${item.name}</strong><br>
-            ${item.qty} × ${item.price.toFixed(3)} DT
+            ${item.qty} × ${parseFloat(item.price).toFixed(3)} DT
           </div>
         </div>
       `;
