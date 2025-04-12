@@ -7,7 +7,8 @@ $(window).on('load', function () {
   'use strict';
 
   
-  // product Slider
+  // product-image-slider
+if ($('.product-image-slider').length) {
   $('.product-image-slider').slick({
     autoplay: false,
     infinite: true,
@@ -18,8 +19,10 @@ $(window).on('load', function () {
       return '<img class="img-fluid" src="' + image + '" alt="product-image">';
     }
   });
+}
 
   // Product slider
+if ($('.product-slider').length) {
   $('.product-slider').slick({
     infinite: true,
     slidesToShow: 4,
@@ -27,26 +30,14 @@ $(window).on('load', function () {
     autoplay: true,
     dots: false,
     arrows: false,
-    responsive: [{
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 3
-        }
-      },
-      {
-        breakpoint: 600,
-        settings: {
-          slidesToShow: 2
-        }
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1
-        }
-      }
+    responsive: [
+      { breakpoint: 1024, settings: { slidesToShow: 3 }},
+      { breakpoint: 600,  settings: { slidesToShow: 2 }},
+      { breakpoint: 480,  settings: { slidesToShow: 1 }}
     ]
   });
+}
+
 
 })(jQuery);
 
