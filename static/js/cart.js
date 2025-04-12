@@ -93,6 +93,30 @@ function renderPanierPage() {
   totalEl.textContent = total.toFixed(3) + " DT";
 }
 
+// ✅ Ajouter un produit au panier
+function addToCart(product) {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+  const existing = cart.find(p => p.id === product.id);
+  if (existing) {
+    existing.qty += product.qty;
+  } else {
+    cart.push(product);
+  }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+  renderCartPanel?.();
+  renderPanierPage?.();
+
+  // Feedback visuel (optionnel)
+  if (typeof toast !== 'undefined') {
+    toast("Produit ajouté !");
+  } else {
+    console.log("Produit ajouté :", product.name);
+  }
+}
+
 // ✅ Init globale
 document.addEventListener("DOMContentLoaded", () => {
   updateCartCount();
