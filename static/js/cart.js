@@ -98,3 +98,21 @@ function renderCartItems() {
 
   totalEl.textContent = total.toFixed(2);
 }
+
+document.querySelectorAll(".add-to-cart").forEach(button => {
+  button.addEventListener("click", (e) => {
+    e.preventDefault(); // ⛔ empêche la redirection
+
+    const product = {
+      id: button.dataset.id,
+      name: button.dataset.name,
+      price: parseFloat(button.dataset.price),
+      image: button.dataset.image || "",
+      url: button.dataset.url || "",
+      colorOptions: button.dataset.colorOptions?.split("|") || [],
+      sizeOptions: button.dataset.sizeOptions?.split("|") || [],
+    };
+
+    addToCart(product);
+  });
+});

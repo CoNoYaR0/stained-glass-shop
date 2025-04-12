@@ -50,5 +50,18 @@
       </button> 
     </nav>
   </div>
+  <div id="custom-cart-panel" class="cart-panel hidden">
+    <div class="cart-panel-header">
+      <h4>Mon panier</h4>
+      <button id="close-cart" aria-label="Fermer">✕</button>
+    </div>
+    <div class="cart-panel-body" id="cart-items">
+      <p class="text-muted">Votre panier est vide.</p>
+    </div>
+    <div class="cart-panel-footer">
+      <strong>Total : <span id="cart-total">0.00</span> TND</strong>
+      <button id="checkout-button" class="btn btn-main w-100 mt-3">Valider la commande</button>
+    </div>
+  </div>  
 </header>
 <!-- /navigation -->
