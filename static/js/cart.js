@@ -131,7 +131,12 @@ document.addEventListener("DOMContentLoaded", function () {
           sizeOptions: button.dataset.sizeOptions?.split("|") || [],
         };
 
-        addToCart(product);
+        
+      // 💥 Bounce animation
+      button.classList.add("bounce");
+      setTimeout(() => button.classList.remove("bounce"), 400);
+
+      addToCart(product);
       });
     });
   }
