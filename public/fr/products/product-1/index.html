@@ -222,8 +222,12 @@
         
       </div>
       
-      <button class="cart snipcart-checkout"><i class="tf-ion-android-cart"></i><span class="badge badge-primary snipcart-items-count"></span></button>
-      
+  <button id="open-cart" class="cart snipcart-checkout">
+    <i class="tf-ion-android-cart"></i>
+    <span id="cart-count" class="badge badge-primary">0</span>
+  </button>
+
+ 
     </nav>
   </div>
 </header>
@@ -630,20 +634,20 @@
         <s class="price">$30.00</s>
         </p>
         
-        <button class="snipcart-add-item btn btn-main mb-5" 
-          data-item-id="apple-watch__25.00"
-          data-item-name="Apple Watch"
-          data-item-image=" http://localhost:1313/vex/examplesite/images/showcase/showcase-1.png"
-          data-item-price="25.00" data-item-url="http://localhost:1313/vex/examplesite/fr/products/product-1/" 
-          
-          data-item-custom1-name="Choose Color"
-          data-item-custom1-options="Black|White|Gray"
-          
-          
-          data-item-custom2-name="Choose Size"
-          data-item-custom2-options="Small|Medium|Large"
-          >Add to Cart
-        </button>
+        <button class="btn btn-main mb-5 add-to-cart"
+        data-id="apple-watch__25.00"
+        data-name="Apple Watch"
+        data-image=" http://localhost:1313/vex/examplesite/images/showcase/showcase-1.png"
+        data-price="25.00"
+        data-url="http://localhost:1313/vex/examplesite/fr/products/product-1/"
+        
+        data-color-options="Black|White|Gray"
+        
+        
+        data-size-options="Small|Medium|Large"
+        >
+  Add to Cart
+</button>
         
 
         <div class="content"><p>Apple Watch is a line of smartwatches produced by Apple Inc. It incorporates fitness tracking and health-oriented capabilities with integration with iOS and other Apple products and services.</p>
@@ -660,7 +664,7 @@
         <div class="block">
           <a href="/vex/examplesite/fr" class="mb-4 d-inline-block" style="width: 100px;">
              
-            
+              
 
 
 
@@ -753,25 +757,25 @@
   
 
 
-             
+            
           </a>
           <ul class="list-inline footer-menu">
             
-            <li class="list-inline-item">
-              <a href="http://localhost:1313/vex/examplesite/fr/blog/">Blog</a>
-            </li>
+              <li class="list-inline-item">
+                <a href="http://localhost:1313/vex/examplesite/fr/blog/">Blog</a>
+              </li>
             
-            <li class="list-inline-item">
-              <a href="http://localhost:1313/vex/examplesite/fr/contact/">Contact</a>
-            </li>
+              <li class="list-inline-item">
+                <a href="http://localhost:1313/vex/examplesite/fr/contact/">Contact</a>
+              </li>
             
-            <li class="list-inline-item">
-              <a href="http://localhost:1313/vex/examplesite/fr/terms-conditions/">Terms &amp; Conditions</a>
-            </li>
+              <li class="list-inline-item">
+                <a href="http://localhost:1313/vex/examplesite/fr/terms-conditions/">Terms &amp; Conditions</a>
+              </li>
             
-            <li class="list-inline-item">
-              <a href="http://localhost:1313/vex/examplesite/fr/privacy-policy/">Privacy Policy</a>
-            </li>
+              <li class="list-inline-item">
+                <a href="http://localhost:1313/vex/examplesite/fr/privacy-policy/">Privacy Policy</a>
+              </li>
             
           </ul>
           <p class="copyright-text"></p>
@@ -780,16 +784,6 @@
     </div>
   </div>
 </footer>
-
-
-
-
-
-
-<div hidden id="snipcart" data-api-key="ZDgxY2ZiM2EtMWRmMi00M2ZkLWI1MDAtNzA2MDc0Y2Q1MzJlNjM3MTAzNDIwOTQ1NDA4NjM4"></div>
-
-
-
 
 
 
@@ -804,6 +798,10 @@
 
 
 
-<script src="http://localhost:1313/vex/examplesite/js/script.js"></script></body>
+<script src="http://localhost:1313/vex/examplesite/js/script.js"></script>
+
+
+<script src="/js/cart.js"></script>
+</body>
 
 </html>
