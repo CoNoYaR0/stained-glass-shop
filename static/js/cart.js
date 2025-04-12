@@ -60,24 +60,35 @@ document.addEventListener("DOMContentLoaded", function () {
     totalEl.textContent = total.toFixed(2);
   }
 
-  // 🧲 Capter clics sur tous les boutons "add-to-cart"
-  document.querySelectorAll(".add-to-cart").forEach(button => {
-    button.addEventListener("click", (e) => {
-      e.preventDefault();
-
-      const product = {
-        id: button.dataset.id,
-        name: button.dataset.name,
-        price: parseFloat(button.dataset.price),
-        image: button.dataset.image || "",
-        url: button.dataset.url || "",
-        colorOptions: button.dataset.colorOptions?.split("|") || [],
-        sizeOptions: button.dataset.sizeOptions?.split("|") || [],
-      };
-
-      addToCart(product);
+  function attachAddToCartButtons() {
+    const buttons = document.querySelectorAll(".add-to-cart");
+  
+    if (buttons.length === 0) {
+      // 🔁 Réessaye après 300ms
+      setTimeout(attachAddToCartButtons, 300);
+      return;
+    }
+  
+    buttons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.preventDefault();
+  
+        const product = {
+          id: button.dataset.id,
+          name: button.dataset.name,
+          price: parseFloat(button.dataset.price),
+          image: button.dataset.image || "",
+          url: button.dataset.url || "",
+          colorOptions: button.dataset.colorOptions?.split("|") || [],
+          sizeOptions: button.dataset.sizeOptions?.split("|") || [],
+        };
+  
+        addToCart(product);
+      });
     });
-  });
+  }
+  
+  attachAddToCartButtons();  
 
   // 🔁 Met à jour compteur au démarrage
   updateCartCount();
