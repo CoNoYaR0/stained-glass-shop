@@ -46,23 +46,23 @@ document.addEventListener("DOMContentLoaded", function () {
       const itemEl = document.createElement("div");
       itemEl.className = "cart-item mb-3";
       itemEl.innerHTML = `
-        <div class="d-flex align-items-center justify-content-between mb-2">
-          <img src="\${item.image}" alt="\${item.name}" style="width: 60px; height: auto; object-fit: contain;" class="mr-2">
-          <div class="flex-grow-1 ml-2">
-            <strong>\${item.name}</strong>
-            <div class="d-flex align-items-center mt-1">
-              <button class="btn btn-sm btn-outline-secondary decrease-qty" data-id="\${item.id}">−</button>
-              <span class="mx-2">\${item.quantity}</span>
-              <button class="btn btn-sm btn-outline-secondary increase-qty" data-id="\${item.id}">+</button>
-            </div>
-          </div>
-          <div class="text-right">
-            <small>\${(item.price * item.quantity).toFixed(2)} TND</small><br>
-            <button class="btn btn-sm btn-danger mt-1 remove-item" data-id="\${item.id}">×</button>
-          </div>
-        </div>
-        <hr>
-      `;
+  <div class="d-flex align-items-center justify-content-between mb-2">
+    <img src="${item.image}" alt="${item.name}" style="width: 60px; height: auto; object-fit: contain;" class="mr-2">
+    <div class="flex-grow-1 ml-2">
+      <strong>${item.name}</strong>
+      <div class="d-flex align-items-center mt-1">
+        <button class="btn btn-sm btn-outline-secondary decrease-qty" data-id="${item.id}">−</button>
+        <span class="mx-2">${item.quantity}</span>
+        <button class="btn btn-sm btn-outline-secondary increase-qty" data-id="${item.id}">+</button>
+      </div>
+    </div>
+    <div class="text-right">
+      <small>${(item.price * item.quantity).toFixed(2)} TND</small><br>
+      <button class="btn btn-sm btn-danger mt-1 remove-item" data-id="${item.id}">×</button>
+    </div>
+  </div>
+  <hr>
+`;
       container.appendChild(itemEl);
       total += item.quantity * item.price;
     });
