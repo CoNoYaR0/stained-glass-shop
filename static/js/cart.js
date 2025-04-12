@@ -6,27 +6,6 @@ function updateCartCount() {
     if (badge) badge.textContent = count;
   }
   
-  // Ajouter un produit au panier
-  function addToCart(product) {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  
-    const existing = cart.find(p => p.id === product.id);
-    if (existing) {
-      existing.qty += product.qty;
-    } else {
-      cart.push(product);
-    }
-  
-    localStorage.setItem("cart", JSON.stringify(cart));
-    updateCartCount();
-    const msg = document.createElement("div");
-msg.textContent = "✔ Produit ajouté au panier !";
-msg.className = "cart-success-toast";
-document.body.appendChild(msg);
-setTimeout(() => msg.remove(), 2000);
-
-  }
-  
   // Pour supprimer un article par son index (utile dans /panier/)
   function removeFromCart(index) {
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -117,7 +96,7 @@ function addToCart(product) {
 }
 
 // Scroll lock si panel visible
-const panel = document.getElementById("cart-panel");
+const panel = document.getElementById("cartPanelElement");
 const overlay = document.getElementById("cart-overlay");
 
 if (panel && overlay) {
