@@ -22,7 +22,6 @@
   </div>
 </footer>
 
-
 <!-- Snipcart public key -->
 {{/* 
   {{ with site.Params.snipcart }}
@@ -52,9 +51,6 @@
 <!-- Main Script -->
 {{ $script := resources.Get "js/script.js" }}
 <script src="{{ $script.Permalink }}"></script>
-
-<!-- Panier custom -->
-<script src="/js/cart.js"></script>
 
 <!-- Panel panier -->
 <div id="cart-panel" class="cart-panel">

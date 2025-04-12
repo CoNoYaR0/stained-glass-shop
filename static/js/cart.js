@@ -96,7 +96,7 @@ function addToCart(product) {
 }
 
 // Scroll lock si panel visible
-const panel = document.getElementById("cartPanelElement");
+const panel = document.getElementById("cart-panel");
 const overlay = document.getElementById("cart-overlay");
 
 if (panel && overlay) {
@@ -108,3 +108,4 @@ if (panel && overlay) {
     document.body.style.overflow = '';
   });
 }
+
