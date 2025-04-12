@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   cartItems.innerHTML = "";
 
   cart.forEach((item, index) => {
-    total += item.price * item.qty;
+    total += parseFloat(item.price) * item.qty;
 
     const row = document.createElement("div");
     row.classList.add("cart-item");
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <img src="${item.image}" alt="${item.name}" style="width:60px; height:60px; object-fit:cover; margin-right:1rem;">
         <div>
           <strong>${item.name}</strong><br>
-          ${item.qty} x ${item.price.toFixed(3)} DT
+          ${item.qty} x ${parseFloat(item.price).toFixed(3)} DT
         </div>
       </div>
       <button onclick="removeFromCart(${index})" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px;">Supprimer</button>

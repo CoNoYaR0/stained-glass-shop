@@ -49,3 +49,27 @@ $(window).on('load', function () {
   });
 
 })(jQuery);
+
+document.addEventListener("DOMContentLoaded", () => {
+  const items = document.querySelectorAll('.product-item');
+
+  items.forEach(item => {
+    item.addEventListener("touchstart", function (e) {
+      // Supprime les "show-btn" des autres
+      items.forEach(el => {
+        if (el !== item) el.classList.remove("show-btn");
+      });
+
+      // Toggle pour cet item
+      item.classList.toggle("show-btn");
+
+      // Empêche le clic automatique
+      e.stopPropagation();
+    });
+  });
+
+  // Si on clique ailleurs que sur un produit
+  document.body.addEventListener("touchstart", function () {
+    items.forEach(el => el.classList.remove("show-btn"));
+  }, { passive: true });
+});
