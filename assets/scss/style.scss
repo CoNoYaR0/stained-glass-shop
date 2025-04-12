@@ -633,3 +633,25 @@ textarea.form-control {
     color: $primary-color;
   }
 }
+.cart-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100%;
+  background: #fff;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+
+  &.visible {
+    transform: translateX(0%);
+  }
+}
+
+.hidden {
+  display: none !important;
+}
