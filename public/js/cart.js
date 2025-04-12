@@ -1,76 +1,99 @@
-// Met à jour le badge panier dans le header
+// ✅ Gestion du badge panier
 function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const count = cart.reduce((acc, item) => acc + item.qty, 0);
-    const badge = document.getElementById("cart-count");
-    if (badge) badge.textContent = count;
-  }
-  
-  // Pour supprimer un article par son index (utile dans /panier/)
-  function removeFromCart(index) {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    cart.splice(index, 1);
-    localStorage.setItem("cart", JSON.stringify(cart));
-    updateCartCount();
-  }
-  
-  // Init du badge dès que la page est chargée
-  document.addEventListener("DOMContentLoaded", updateCartCount);
-  
-// Animation + Ajout au panier
-function handleAddToCart(button, item) {
-  const originalText = button.innerHTML;
-
-  // État visuel "chargement"
-  button.disabled = true;
-  button.innerHTML = `<span class="spinner"></span> Ajout...`;
-
-  // Simule une requête (tu peux ajuster le délai ou utiliser fetch ici)
-  setTimeout(() => {
-    addToCart(item); // ajoute l’article au panier
-
-    // Confirmation temporaire
-    button.innerHTML = `✅ Ajouté !`;
-
-    setTimeout(() => {
-      button.disabled = false;
-      button.innerHTML = originalText;
-    }, 1500);
-  }, 600);
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const count = cart.reduce((acc, item) => acc + item.qty, 0);
+  const badge = document.getElementById("cart-count");
+  if (badge) badge.textContent = count;
 }
 
+// ✅ Suppression d'un article (générique)
+function removeFromCart(index) {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  cart.splice(index, 1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartCount();
+  renderCartPanel?.(); // si fonction dispo
+  renderPanierPage?.(); // idem
+}
 
-// Activer l'affichage du bouton au tap mobile
-document.addEventListener("DOMContentLoaded", () => {
-  const items = document.querySelectorAll('.product-item');
+// ✅ Affichage panel panier
+function openCartPanel() {
+  document.getElementById("cart-panel").classList.add("open");
+  document.getElementById("cart-overlay").classList.add("open");
+  renderCartPanel();
+}
+function closeCartPanel() {
+  document.getElementById("cart-panel").classList.remove("open");
+  document.getElementById("cart-overlay").classList.remove("open");
+}
 
-  items.forEach(item => {
-    item.addEventListener("touchstart", function (e) {
-      items.forEach(el => {
-        if (el !== item) el.classList.remove("show-btn");
-      });
-      item.classList.toggle("show-btn");
-      e.stopPropagation();
-    });
+// ✅ Render contenu dans le panel
+function renderCartPanel() {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const container = document.getElementById("cart-panel-items");
+  const totalEl = document.getElementById("cart-panel-total");
+  container.innerHTML = "";
+  let total = 0;
+
+  cart.forEach((item, index) => {
+    const line = document.createElement("div");
+    line.className = "cart-item";
+    line.innerHTML = `
+      <div style="display:flex;align-items:center;">
+        <img src="${item.image}" style="width:50px;height:50px;margin-right:10px;">
+        <div>
+          <strong>${item.name}</strong><br>
+          ${item.qty} x ${parseFloat(item.price).toFixed(3)} DT
+        </div>
+      </div>
+      <button onclick="removeFromCart(${index})">Supprimer</button>
+    `;
+    container.appendChild(line);
+    total += parseFloat(item.price) * item.qty;
   });
 
-  document.body.addEventListener("touchstart", function () {
-    items.forEach(el => el.classList.remove("show-btn"));
-  }, { passive: true });
-});
-
-
-// ✅ Toast visuel + badge animée
-function showToast(message) {
-  const toast = document.createElement("div");
-  toast.textContent = message;
-  toast.style = "position:fixed;top:20px;right:20px;background:#f9a743;color:#fff;padding:10px 20px;border-radius:5px;z-index:9999;font-weight:bold;box-shadow:0 0 10px rgba(0,0,0,0.2);transition:opacity 0.3s ease;";
-  document.body.appendChild(toast);
-  setTimeout(() => toast.style.opacity = "0", 2000);
-  setTimeout(() => toast.remove(), 2500);
+  totalEl.textContent = total.toFixed(3) + " DT";
 }
 
-// 🎯 Ajout au panier avec animation
+// ✅ Render contenu sur /panier/ uniquement
+function renderPanierPage() {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const itemsContainer = document.getElementById("cart-items");
+  const totalEl = document.getElementById("cart-total");
+
+  if (!itemsContainer || !totalEl) return;
+
+  if (cart.length === 0) {
+    itemsContainer.innerHTML = "<p>Votre panier est vide.</p>";
+    totalEl.textContent = "0.000 DT";
+    return;
+  }
+
+  let total = 0;
+  itemsContainer.innerHTML = "";
+
+  cart.forEach((item, index) => {
+    total += parseFloat(item.price) * item.qty;
+
+    const row = document.createElement("div");
+    row.classList.add("cart-item");
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;">
+        <img src="${item.image}" style="width:60px;height:60px;object-fit:cover;margin-right:10px;">
+        <div>
+          <strong>${item.name}</strong><br>
+          ${item.qty} x ${parseFloat(item.price).toFixed(3)} DT
+        </div>
+      </div>
+      <button onclick="removeFromCart(${index})">Supprimer</button>
+    `;
+    itemsContainer.appendChild(row);
+  });
+
+  totalEl.textContent = total.toFixed(3) + " DT";
+}
+
+// ✅ Ajouter un produit au panier
 function addToCart(product) {
   const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
@@ -83,28 +106,31 @@ function addToCart(product) {
 
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartCount();
+  renderCartPanel?.();
+  renderPanierPage?.();
 
-  // Animation badge
-  const badge = document.getElementById("cart-count");
-  if (badge) {
-    badge.classList.remove("animate");
-    void badge.offsetWidth; // reset animation
-    badge.classList.add("animate");
+  // Feedback visuel (optionnel)
+  if (typeof toast !== 'undefined') {
+    toast("Produit ajouté !");
+  } else {
+    console.log("Produit ajouté :", product.name);
+  }
+}
+
+// ✅ Init globale
+document.addEventListener("DOMContentLoaded", () => {
+  updateCartCount();
+
+  const page = document.body.dataset.page;
+  if (page === "panier") {
+    renderPanierPage();
   }
 
-  showToast("✅ Produit ajouté au panier");
-}
+  const openBtn = document.querySelector(".cart-custom");
+  const closeBtn = document.getElementById("close-cart");
+  const overlay = document.getElementById("cart-overlay");
 
-// Scroll lock si panel visible
-const panel = document.getElementById("cartPanelElement");
-const overlay = document.getElementById("cart-overlay");
-
-if (panel && overlay) {
-  overlay.addEventListener("click", () => {
-    document.body.style.overflow = '';
-  });
-
-  document.getElementById("close-cart").addEventListener("click", () => {
-    document.body.style.overflow = '';
-  });
-}
+  if (openBtn) openBtn.addEventListener("click", openCartPanel);
+  if (closeBtn) closeBtn.addEventListener("click", closeCartPanel);
+  if (overlay) overlay.addEventListener("click", closeCartPanel);
+});
