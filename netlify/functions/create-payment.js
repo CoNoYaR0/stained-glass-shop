@@ -1,9 +1,10 @@
+// Netlify Function: create-payment.js
 export async function handler(event) {
-    const body = JSON.parse(event.body);
-  
-    // ✅ Domaine dynamique : Netlify > fallback netlify.app a changer avec https://stainedglass.tn
-    const DOMAIN = process.env.DOMAIN || "https://resplendent-centaur-abf462.netlify.app";
-  
+  const body = JSON.parse(event.body);
+
+  const DOMAIN = process.env.DOMAIN || "https://resplendent-centaur-abf462.netlify.app";
+
+  try {
     const response = await fetch("https://sandbox.paymee.tn/api/v2/payments/create", {
       method: "POST",
       headers: {
@@ -23,11 +24,19 @@ export async function handler(event) {
         webhook_url: DOMAIN + "/webhook"
       })
     });
-  
+
     const data = await response.json();
+
     return {
       statusCode: 200,
       body: JSON.stringify(data)
     };
+
+  } catch (error) {
+    console.error("Erreur Paymee:", error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Erreur lors de la création du paiement Paymee." })
+    };
   }
-  
+}
