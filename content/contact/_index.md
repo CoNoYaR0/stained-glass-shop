@@ -1,25 +1,24 @@
 ---
 title: "Contact"
-description : "this is a meta description"
+description: "Contactez-nous pour toute question sur nos créations en verre artisanal ou pour une commande personnalisée."
 
 office:
-  title : "Central Office"
-  mobile : "0124857985320"
-  email : "demo@email.com"
-  location : "Dhaka, Bangladedsh"
-  content : "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna"
+  title: "Atelier StainedGlass"
+  email: "contact@stainedglass.tn"
+  location: "Tunisie"
+  content: >
+    Nous sommes un atelier d’artisanat verrier spécialisé dans la création d’objets décoratifs en verre selon la technique du fusing. Pour toute demande, vous pouvez nous contacter par e-mail ou via le formulaire de contact sur notre site.
 
-# opennig hour
 opennig_hour:
-  title : "Opening Hours"
+  title: "Horaires d'ouverture"
   day_time:
-    - "Monday: 9:00 – 19:00"
-    - "Tuesday: 9:00 – 19:00"
-    - "Wednesday: 9:00 – 19:00"
-    - "Thursday: 9:00 – 19:00"
-    - "Friday: 9:00 – 19:00"
-    - "Saturday: 9:00 – 19:00"
-    - "sunday: 9:00 – 19:00"
-    
+    - "Lundi : 9h00 – 18h00"
+    - "Mardi : 9h00 – 18h00"
+    - "Mercredi : 9h00 – 18h00"
+    - "Jeudi : 9h00 – 18h00"
+    - "Vendredi : 9h00 – 18h00"
+    - "Samedi : 10h00 – 14h00"
+    - "Dimanche : Fermé"
+
 draft: false
 ---

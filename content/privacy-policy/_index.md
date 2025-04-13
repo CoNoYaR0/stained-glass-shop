@@ -1,33 +1,39 @@
 ---
-title: "Terms & Conditions"
-description : "this is a meta description"
+title: "Conditions Générales de Vente"
+description: "Conditions générales d'utilisation et de vente pour stainedglass.tn"
 draft: false
 ---
 
-Please read this terms and conditions stated below, which outline a lot of legal goodies, but the bottom line is it’s our aim to always take care of both of us, as a customer, or as a seller. We’ve included many of these terms to legally protect ourselves, but if you have an issue, always feel free to email us at contact@themefisher.com and we’ll do our best to resolve it in a fair and timely way .
+Veuillez lire attentivement les présentes conditions générales qui contiennent des informations juridiques importantes. En résumé, notre objectif est de garantir une expérience positive pour vous en tant que client, tout en protégeant nos créations et notre activité artisanale. Si vous avez un problème, n’hésitez pas à nous écrire à contact@stainedglass.tn — nous ferons de notre mieux pour vous répondre rapidement et équitablement.
 
-### Product Buy & delivery policy
+### Politique d'Achat et de Livraison
 
-1)All payments are processed securely through PayPal or Stripe. Themefisher does not directly process payments through the website. So any kind of Problem if you face Themefisher will Not Take any responsibility.
+1. Tous les paiements sont traités de manière sécurisée via les plateformes de paiement disponibles (ex. carte bancaire ou virement). Stainedglass.tn ne conserve aucune information de paiement et ne traite pas directement les paiements par carte sur son site.
+2. Les commandes sont expédiées dans un délai de 2 à 5 jours ouvrés après confirmation du paiement.
+3. Délais de livraison estimés :
+   - **Tunisie** : 3 à 7 jours ouvrés
+   - **International** : 7 à 20 jours ouvrés selon la destination
+4. Les frais de livraison sont calculés automatiquement selon la destination et le poids.
+5. Stainedglass.tn ne peut être tenu responsable des retards causés par les transporteurs ou les services douaniers.
 
-### Product Buy & delivery policy
+### Politique de Remboursement
 
-Please read this terms and conditions stated below, which outline a lot of legal goodies, but the bottom line is it’s our aim to always take care of both of us, as a customer, or as a seller. We’ve included many of these terms to legally protect ourselves, but if you have an issue, always feel free to email us at contact@themefisher.com and we’ll do our best to resolve it in a fair and timely way .
+1. Nos créations étant artisanales et uniques, nous n’acceptons pas les retours sauf en cas de produit endommagé ou erreur manifeste dans la commande.
+2. En cas de problème à la réception, vous disposez de **3 jours** pour nous contacter avec des preuves (photos) à l’appui.
+3. Si le retour est accepté, le remboursement sera effectué dans un délai de 3 à 5 jours ouvrés, hors frais d’expédition, via le moyen de paiement initial.
 
-### Refund Policy
+### Politique de Support
 
-1) Since Themefisher is offering non-tangible and irrevocable digital products, we do NOT issue refunds after a purchase is made. If there is a problem with one of the digital download products or if you experience any difficulty with the download, we will fix the problem.
-2) You have 24 hours to inspect your purchase and to determine if it does not meet with the expectations laid forth by The Themefisher. In the event that you wish to receive a refund, Themefisher will issue you a refund and ask you to specify how the product failed to live up to expectations.
-3) When you make a qualifying return, We’ll credit the full amount, less the handling charges. Refunds are generally processed within 3–5 business days after we receive your claim and find it eligible for a return. Refunds are applied to the original payment option.
+1. Pour toute question concernant votre commande ou un article reçu, vous pouvez nous contacter par email à contact@stainedglass.tn.
+2. Nous assurons un accompagnement sur :
+   - Le suivi de commande
+   - Des informations sur les produits ou personnalisation possible
+   - Le traitement de toute réclamation liée à la qualité ou à la livraison
 
-### Support Policy
-1) Since Themefisher is offering non-tangible and irrevocable digital products, we do NOT issue refunds after a purchase is made. If there is a problem with one of the digital download products or if you experience any difficulty with the download, we will fix the problem.
-2) You have 24 hours to inspect your purchase and to determine if it does not meet with the expectations laid forth by The Themefisher. In the event that you wish to receive a refund, Themefisher will issue you a refund and ask you to specify how the product failed to live up to expectations.
-3) When you make a qualifying return, We’ll credit the full amount, less the handling charges. Refunds are generally processed within 3–5 business days after we receive your claim and find it eligible for a return. Refunds are applied to the original payment option.
+### Pourquoi nous assurons ce support :
 
-### Why We Support:
+1. Nous voulons offrir une expérience transparente et agréable à nos clients.
+2. Nos pièces étant faites main, nous tenons à nous assurer que chaque article reçu répond à vos attentes.
+3. En cas d’imprévu, nous faisons de notre mieux pour trouver une solution amiable et rapide.
 
-1. Support covers getting up and help in theme setup
-2. Help using features and theme options
-3. Bug fixes – if you discovered a bug in the theme/Template we will fix it
-4. Functionality which does not work as advertised
+

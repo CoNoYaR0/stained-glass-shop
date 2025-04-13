@@ -1,33 +1,52 @@
 ---
-title: "Terms & Conditions"
-description : "this is a meta description"
+title: "Termes & Conditions"
+description : "Consultez les termes et conditions d'utilisation de stainedglass.tn, boutique d'artisanat verrier en Tunisie spécialisée dans les créations décoratives en verre avec la technique du fusing."
 draft: false
 ---
 
-Please read this terms and conditions stated below, which outline a lot of legal goodies, but the bottom line is it’s our aim to always take care of both of us, as a customer, or as a seller. We’ve included many of these terms to legally protect ourselves, but if you have an issue, always feel free to email us at contact@themefisher.com and we’ll do our best to resolve it in a fair and timely way .
+Termes et Conditions d'Utilisation
+Dernière mise à jour : [12 avril 2025]
 
-### Product Buy & delivery policy
+Bienvenue sur stainedglass.tn. Ce site est la propriété de l'artisan verrier Khalil Beji. En accédant à ce site et en effectuant un achat, vous acceptez les présentes conditions générales.
 
-1)All payments are processed securely through PayPal or Stripe. Themefisher does not directly process payments through the website. So any kind of Problem if you face Themefisher will Not Take any responsibility.
+### Produits artisanaux
+Tous les articles proposés sur stainedglass.tn sont fabriqués à la main avec la technique du fusing. Chaque pièce est unique et peut présenter de légères variations de forme, de couleur ou de dimensions. Ces différences sont inhérentes au caractère artisanal du produit et ne sauraient être considérées comme des défauts.
 
-### Product Buy & delivery policy
+### Commandes
+Les commandes peuvent être passées directement via le site web.
 
-Please read this terms and conditions stated below, which outline a lot of legal goodies, but the bottom line is it’s our aim to always take care of both of us, as a customer, or as a seller. We’ve included many of these terms to legally protect ourselves, but if you have an issue, always feel free to email us at contact@themefisher.com and we’ll do our best to resolve it in a fair and timely way .
+Une fois la commande validée, vous recevrez un email de confirmation avec les détails de votre achat.
 
-### Refund Policy
+Nous nous réservons le droit d'annuler toute commande en cas de rupture de stock ou d'informations incomplètes.
 
-1) Since Themefisher is offering non-tangible and irrevocable digital products, we do NOT issue refunds after a purchase is made. If there is a problem with one of the digital download products or if you experience any difficulty with the download, we will fix the problem.
-2) You have 24 hours to inspect your purchase and to determine if it does not meet with the expectations laid forth by The Themefisher. In the event that you wish to receive a refund, Themefisher will issue you a refund and ask you to specify how the product failed to live up to expectations.
-3) When you make a qualifying return, We’ll credit the full amount, less the handling charges. Refunds are generally processed within 3–5 business days after we receive your claim and find it eligible for a return. Refunds are applied to the original payment option.
+### Prix et paiement
+Les prix sont indiqués en dinar tunisien (TND), toutes taxes comprises.
 
-### Support Policy
-1) Since Themefisher is offering non-tangible and irrevocable digital products, we do NOT issue refunds after a purchase is made. If there is a problem with one of the digital download products or if you experience any difficulty with the download, we will fix the problem.
-2) You have 24 hours to inspect your purchase and to determine if it does not meet with the expectations laid forth by The Themefisher. In the event that you wish to receive a refund, Themefisher will issue you a refund and ask you to specify how the product failed to live up to expectations.
-3) When you make a qualifying return, We’ll credit the full amount, less the handling charges. Refunds are generally processed within 3–5 business days after we receive your claim and find it eligible for a return. Refunds are applied to the original payment option.
+Les paiements sont sécurisés et peuvent être effectués par carte bancaire, virement ou paiement à la livraison.
 
-### Why We Support:
+En cas de paiement international, des frais de conversion ou de transaction peuvent s'appliquer.
 
-1. Support covers getting up and help in theme setup
-2. Help using features and theme options
-3. Bug fixes – if you discovered a bug in the theme/Template we will fix it
-4. Functionality which does not work as advertised
+### Livraison
+Nous livrons en Tunisie et à l’international.
+
+Les délais de livraison varient selon la destination et le type de produit. En moyenne : 5 à 10 jours ouvrés en Tunisie, 10 à 20 jours pour l’international.
+
+Les frais de livraison sont indiqués lors du passage de commande.
+
+Les produits sont soigneusement emballés, mais en cas de dommage durant le transport, veuillez nous contacter sous 48h avec des photos à l'appui.
+
+### Retours et échanges
+En raison du caractère artisanal et personnalisé des articles, les retours ne sont acceptés que si le produit est endommagé à la réception.
+
+Vous devez nous contacter dans un délai de 3 jours après réception de l’article pour demander un retour ou échange.
+
+Aucun retour ne sera accepté sans autorisation préalable.
+
+### Propriété intellectuelle
+Tous les contenus présents sur stainedglass.tn (textes, photos, logo, créations artistiques) sont la propriété exclusive de l’artisan verrier et sont protégés par le droit d’auteur. Toute reproduction, diffusion ou utilisation non autorisée est strictement interdite.
+
+### Protection des données personnelles
+Les données personnelles collectées lors de votre commande sont utilisées uniquement pour le traitement et la livraison de vos achats. Elles ne sont jamais partagées avec des tiers.
+
+### Droit applicable
+Ces conditions sont régies par le droit tunisien. En cas de litige, une solution amiable sera privilégiée. À défaut, les tribunaux tunisiens seront compétents.

@@ -2,22 +2,22 @@
 ###################################### Navigation english ######################################
 
 [[main]]
-name = "Home"
-url = "fr/"
+name = "Accueil"
+url = "/"
 weight = 1
 
 [[main]]
-name = "Products"
+name = "Produits"
 url = "products/"
 weight = 2
 
 [[main]]
-name = "Blog"
+name = "Media"
 url = "blog/"
 weight = 3
 
 [[main]]
-name = "Review"
+name = "Avis"
 pre = "#"
 url = "testimonial"
 weight = 4
@@ -29,7 +29,7 @@ weight = 5
 
 # footer menu
 [[footer]]
-name = "Blog"
+name = "Media"
 url = "blog/"
 weight = 1
 
@@ -39,11 +39,11 @@ url = "contact/"
 weight = 2
 
 [[footer]]
-name = "Terms & Conditions"
+name = "Terme & Conditions"
 url = "terms-conditions/"
 weight = 3
 
 [[footer]]
-name = "Privacy Policy"
+name = "Conditions Générales"
 url = "privacy-policy/"
 weight = 4
