@@ -5,22 +5,6 @@ document.addEventListener("DOMContentLoaded", function () {
     localStorage.setItem(CART_KEY, JSON.stringify([]));
   }
 
-  // ✅ Redirection vers /checkout/ une fois que le bouton est chargé
-  function waitForCheckoutButton() {
-    const checkoutBtn = document.getElementById("checkout-btn");
-    if (!checkoutBtn) {
-      setTimeout(waitForCheckoutButton, 300); // Attente récursive
-      return;
-    }
-
-    checkoutBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      window.location.href = "/checkout/";
-    });
-  }
-
-  waitForCheckoutButton(); // Appel initial
-
   function addToCart(product) {
     const cart = JSON.parse(localStorage.getItem(CART_KEY));
     const existing = cart.find(item => item.id === product.id);
@@ -143,10 +127,12 @@ document.addEventListener("DOMContentLoaded", function () {
           sizeOptions: button.dataset.sizeOptions?.split("|") || [],
         };
 
-        button.classList.add("bounce");
-        setTimeout(() => button.classList.remove("bounce"), 400);
+        
+      // 💥 Bounce animation
+      button.classList.add("bounce");
+      setTimeout(() => button.classList.remove("bounce"), 400);
 
-        addToCart(product);
+      addToCart(product);
       });
     });
   }
@@ -169,5 +155,36 @@ document.addEventListener("DOMContentLoaded", function () {
       cartPanel.classList.remove("visible");
       cartPanel.classList.add("hidden");
     });
+  }
+});
+// ✅ Redirige vers la page de checkout
+const checkoutBtn = document.getElementById("checkout-btn");
+if (checkoutBtn) {
+  checkoutBtn.addEventListener("click", function (e) {
+    e.preventDefault();
+    window.location.href = "/checkout/";
+  
+  // ✅ Redirige vers la page de checkout
+  const checkoutBtn = document.getElementById("checkout-btn");
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.location.href = "/checkout/";
+    });
+  }
+
+});
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const checkoutBtn = document.getElementById("checkout-button");
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      console.log("➡️ Redirection vers /checkout/");
+      window.location.href = "/checkout/";
+    });
+  } else {
+    console.warn("🛑 #checkout-button non trouvé");
   }
 });

@@ -1,3 +1,4 @@
+
 const CART_KEY = "customCart";
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -175,16 +176,3 @@ if (checkoutBtn) {
 
 });
 }
-
-document.addEventListener("DOMContentLoaded", function () {
-  const checkoutBtn = document.getElementById("checkout-button");
-  if (checkoutBtn) {
-    checkoutBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      console.log("➡️ Redirection vers /checkout/");
-      window.location.href = "/checkout/";
-    });
-  } else {
-    console.warn("🛑 #checkout-button non trouvé");
-  }
-});
