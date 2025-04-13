@@ -26,12 +26,12 @@ document.addEventListener("DOMContentLoaded", () => {
     itemsHTML += `
       <tr>
         <td>
-          <img src="${item.image}" alt="${item.name}" style="width: 40px; height: auto; margin-right: 10px;">
-          ${item.name}
+          <img src="\${item.image}" alt="\${item.name}" style="width: 40px; height: auto; margin-right: 10px;">
+          \${item.name}
         </td>
-        <td>${item.quantity}</td>
-        <td>${item.price.toFixed(2)} TND</td>
-        <td>${itemTotal} TND</td>
+        <td>\${item.quantity}</td>
+        <td>\${item.price.toFixed(2)} TND</td>
+        <td>\${itemTotal} TND</td>
       </tr>
     `;
   });
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   itemsHTML += `
       </tbody>
     </table>
-    <p><strong>Total : ${total.toFixed(2)} TND</strong></p>
+    <p><strong>Total : \${total.toFixed(2)} TND</strong></p>
   `;
 
   const formHTML = `
@@ -53,17 +53,26 @@ document.addEventListener("DOMContentLoaded", () => {
         <textarea class="form-control mb-3" name="adresse" placeholder="Adresse complète" required></textarea>
       </div>
       <h4 class="mb-2">Méthode de paiement</h4>
-      <div class="form-check mb-2">
-        <input class="form-check-input" type="radio" name="paiement" value="paymee" id="paymee" checked>
-        <label class="form-check-label" for="paymee">Paymee (par défaut)</label>
+      <div class="form-check mb-2 d-flex align-items-center">
+        <input class="form-check-input me-2" type="radio" name="paiement" value="paymee" id="paymee" checked>
+        <label class="form-check-label d-flex align-items-center" for="paymee">
+          Paymee (par défaut)
+          <img src="/images/payments/paymee-logo.png" alt="Paymee" style="max-width: 120px; height: auto; margin-left: 10px;">
+        </label>
       </div>
-      <div class="form-check mb-2">
-        <input class="form-check-input" type="radio" name="paiement" value="flouci" id="flouci">
-        <label class="form-check-label" for="flouci">Flouci</label>
+      <div class="form-check mb-2 d-flex align-items-center">
+        <input class="form-check-input me-2" type="radio" name="paiement" value="flouci" id="flouci">
+        <label class="form-check-label d-flex align-items-center" for="flouci">
+          Flouci
+          <img src="/images/payments/flouci-logo.png" alt="Flouci" style="max-width: 120px; height: auto; margin-left: 10px;">
+        </label>
       </div>
-      <div class="form-check mb-4">
-        <input class="form-check-input" type="radio" name="paiement" value="livraison" id="livraison">
-        <label class="form-check-label" for="livraison">Paiement à la livraison</label>
+      <div class="form-check mb-4 d-flex align-items-center">
+        <input class="form-check-input me-2" type="radio" name="paiement" value="livraison" id="livraison">
+        <label class="form-check-label d-flex align-items-center" for="livraison">
+          Paiement à la livraison
+          <img src="/images/payments/delivery.png" alt="Livraison" style="max-width: 120px; height: auto; margin-left: 10px;">
+        </label>
       </div>
       <button class="btn btn-main w-100" type="submit">Valider la commande</button>
     </form>
