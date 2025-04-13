@@ -3,12 +3,12 @@ defaultContentLanguageInSubdir = false
 ########################### Default parameters ##########################
 [params]
 logo = "images/logo.png"
-logo_width = "100px"
+logo_width = "240px"
 # Meta data
 description = "This is meta description"
 author = "Themefisher"
 # currency
-currency = "$"
+currency = "TND"
 # contact form action
 contact_form_action = "#" # contact form works with https://formspree.io
 baseURL = "https://resplendent-centaur-abf462.netlify.app"

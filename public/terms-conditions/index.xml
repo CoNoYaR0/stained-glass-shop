@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
+<<<<<<< HEAD
     <title>Termes &amp; Conditions on Vex | hugo landing page template</title>
     <link>http://localhost:1313/terms-conditions/</link>
     <description>Recent content in Termes &amp; Conditions on Vex | hugo landing page template</description>
+=======
+    <title>Terms &amp; Conditions on Vex | hugo landing page template</title>
+    <link>http://localhost:1313/vex/examplesite/terms-conditions/</link>
+    <description>Recent content in Terms &amp; Conditions on Vex | hugo landing page template</description>
+>>>>>>> 89d4d88 ( config tom changement tnd et logo)
     <generator>Hugo</generator>
     <language>fr</language>
-    <atom:link href="http://localhost:1313/terms-conditions/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/vex/examplesite/terms-conditions/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>
