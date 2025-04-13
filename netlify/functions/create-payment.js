@@ -7,7 +7,7 @@ export async function handler(event) {
     const response = await fetch("https://sandbox.paymee.tn/api/v2/payments/create", {
       method: "POST",
       headers: {
-        "Authorization": "Token 43acae674b258afc9219af50d778c12781455a0f",
+        "Authorization": "Token " + process.env.PAYMEE_TOKEN,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
