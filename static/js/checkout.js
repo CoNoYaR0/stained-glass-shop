@@ -26,12 +26,12 @@ document.addEventListener("DOMContentLoaded", () => {
     itemsHTML += `
       <tr>
         <td>
-          <img src="\${item.image}" alt="\${item.name}" style="width: 40px; height: auto; margin-right: 10px;">
-          \${item.name}
+          <img src="${item.image}" alt="${item.name}" style="width: 40px; height: auto; margin-right: 10px;">
+          ${item.name}
         </td>
-        <td>\${item.quantity}</td>
-        <td>\${item.price.toFixed(2)} TND</td>
-        <td>\${itemTotal} TND</td>
+        <td>${item.quantity}</td>
+        <td>${item.price.toFixed(2)} TND</td>
+        <td>${itemTotal} TND</td>
       </tr>
     `;
   });
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   itemsHTML += `
       </tbody>
     </table>
-    <p><strong>Total : \${total.toFixed(2)} TND</strong></p>
+    <p><strong>Total : ${total.toFixed(2)} TND</strong></p>
   `;
 
   const formHTML = `
