@@ -1,3 +1,5 @@
+Write-Host "update git"
+git pull 
 # Afficher le statut Git
 Write-Host "État actuel du dépôt :"
 git status
