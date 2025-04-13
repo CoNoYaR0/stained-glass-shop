@@ -1,15 +1,15 @@
 [build]
   publish = "public"
   command = "hugo --minify --gc"
-  
+  functions = "netlify/functions"
+
 [build.environment]
   HUGO_VERSION = "0.145.0"
   HUGO_BASEURL = "/"
 
 [[headers]]
-  for = "/*" # This defines which paths this specific [[headers]] block will cover.
-
-[headers.values]
+  for = "/*"
+  [headers.values]
   X-Frame-Options = "DENY"
   X-XSS-Protection = "1; mode=block"
   Referrer-Policy = "same-origin"
