@@ -1,5 +1,5 @@
 ---
-title: "Assiette en Verre Fusing Artisanale"
+title: "Assiette en Verre Fusing Artisanale noire"
 date: 2025-04-12T14:00:00+06:00
 images: 
   - "images/showcase/showcase-1.png"
