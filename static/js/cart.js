@@ -1,10 +1,25 @@
-
 const CART_KEY = "customCart";
 
 document.addEventListener("DOMContentLoaded", function () {
   if (!localStorage.getItem(CART_KEY)) {
     localStorage.setItem(CART_KEY, JSON.stringify([]));
   }
+
+  // ✅ Redirection vers /checkout/ une fois que le bouton est chargé
+  function waitForCheckoutButton() {
+    const checkoutBtn = document.getElementById("checkout-btn");
+    if (!checkoutBtn) {
+      setTimeout(waitForCheckoutButton, 300); // Attente récursive
+      return;
+    }
+
+    checkoutBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.location.href = "/checkout/";
+    });
+  }
+
+  waitForCheckoutButton(); // Appel initial
 
   function addToCart(product) {
     const cart = JSON.parse(localStorage.getItem(CART_KEY));
@@ -128,12 +143,10 @@ document.addEventListener("DOMContentLoaded", function () {
           sizeOptions: button.dataset.sizeOptions?.split("|") || [],
         };
 
-        
-      // 💥 Bounce animation
-      button.classList.add("bounce");
-      setTimeout(() => button.classList.remove("bounce"), 400);
+        button.classList.add("bounce");
+        setTimeout(() => button.classList.remove("bounce"), 400);
 
-      addToCart(product);
+        addToCart(product);
       });
     });
   }

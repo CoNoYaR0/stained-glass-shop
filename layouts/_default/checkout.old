@@ -1,0 +1,30 @@
+<div class="payment-methods mt-5 mb-4 text-center">
+  <h4 class="mb-4">Méthode de paiement</h4>
+  <div class="d-flex justify-content-center flex-wrap gap-4">
+    
+    <label class="payment-option">
+      <input type="radio" name="payment-method" value="paymee" checked>
+      <div class="option-box">
+        <img src="/images/payments/paymee-logo.png" alt="Paymee">
+        <span>Paymee (par défaut)</span>
+      </div>
+    </label>
+
+    <label class="payment-option">
+      <input type="radio" name="payment-method" value="flouci">
+      <div class="option-box">
+        <img src="/images/payments/flouci-logo.png" alt="Flouci">
+        <span>Flouci</span>
+      </div>
+    </label>
+
+    <label class="payment-option">
+      <input type="radio" name="payment-method" value="cod">
+      <div class="option-box">
+        <img src="/images/payments/7875821.png" alt="Paiement à la livraison">
+        <span>À la livraison</span>
+      </div>
+    </label>
+
+  </div>
+</div>

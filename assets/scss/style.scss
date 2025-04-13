@@ -846,3 +846,190 @@ textarea.form-control {
     }
   }
 }
+.payment-methods {
+  margin: 2rem auto;
+  text-align: center;
+
+  h5 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .payment-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0.5rem 1rem;
+    padding: 1rem 1.5rem;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+
+    img {
+      height: 30px;
+    }
+
+    input {
+      margin-right: 10px;
+      accent-color: #ffa73c;
+    }
+
+    &:hover {
+      border-color: #ffa73c;
+      background-color: #fff5e0;
+    }
+  }
+}
+
+/* === Paiement Method Cards === */
+.payment-methods {
+  text-align: center;
+  margin-top: 3rem;
+
+  h4 {
+    font-weight: 600;
+    margin-bottom: 2rem;
+  }
+
+  .payment-option {
+    cursor: pointer;
+    margin: 1rem;
+
+    input[type="radio"] {
+      display: none;
+    }
+
+    .option-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      width: 150px;
+      height: 140px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+
+      img {
+        max-width: 60px;
+        height: auto;
+        margin-bottom: 0.5rem;
+      }
+
+      span {
+        font-size: 0.95rem;
+        color: #333;
+      }
+    }
+
+    input[type="radio"]:checked + .option-box {
+      border-color: #f9a13c;
+      box-shadow: 0 0 10px rgba(249, 161, 60, 0.4);
+      transform: scale(1.03);
+    }
+  }
+
+  .d-flex {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+  }
+}
+
+
+/* === Méthodes de paiement === */
+.payment-methods {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2rem;
+  margin-top: 2rem;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    text-align: center;
+    max-width: 150px;
+
+    img {
+      width: 80px;
+      height: auto;
+      object-fit: contain;
+      margin-bottom: 0.5rem;
+    }
+
+    input[type="radio"] {
+      margin-bottom: 0.5rem;
+    }
+
+    span {
+      font-size: 0.85rem;
+      color: #555;
+    }
+  }
+}
+
+/* === Paiement Method Cards === */
+.payment-methods {
+  text-align: center;
+  margin-top: 2rem;
+
+  h4 {
+    font-weight: 600;
+    margin-bottom: 2rem;
+  }
+
+  .payment-option {
+    input[type="radio"] {
+      display: none;
+    }
+
+    .option-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      width: 150px;
+      height: 160px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+      background-color: #fff;
+
+      img {
+        max-width: 60px;
+        height: auto;
+        margin-bottom: 0.5rem;
+      }
+
+      span {
+        font-size: 0.9rem;
+        color: #333;
+      }
+    }
+
+    input[type="radio"]:checked + .option-box {
+      border-color: #f9a13c;
+      box-shadow: 0 0 10px rgba(249, 161, 60, 0.4);
+      transform: scale(1.03);
+    }
+
+    &:hover .option-box {
+      border-color: #f9a13c;
+    }
+  }
+
+  .d-flex {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+  }
+}
