@@ -1,4 +1,3 @@
-
 export async function handler(event) {
   const DOLIBARR_URL = process.env.DOLIBARR_URL;
   const DOLIBARR_TOKEN = process.env.DOLIBARR_TOKEN;
@@ -6,7 +5,7 @@ export async function handler(event) {
   try {
     const res = await fetch(`${DOLIBARR_URL}/products`, {
       headers: {
-        "DOLAPIKEY": DOLIBARR_TOKEN,
+        "HTTP_DOLAPIKEY": DOLIBARR_TOKEN,
         "Accept": "application/json"
       }
     });
