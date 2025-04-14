@@ -1,27 +1,15 @@
-// Netlify Function: create-payment.js (LIVE)
-
 export async function handler(event) {
-  console.log("📥 Requête LIVE reçue :", event);
+  const body = JSON.parse(event.body);
 
-  let body;
-  try {
-    body = JSON.parse(event.body);
-    console.log("📤 Données client LIVE :", body);
-  } catch (err) {
-    console.error("❌ JSON invalide :", err);
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Requête invalide" })
-    };
-  }
-
-  const DOMAIN =
-    process.env.DOMAIN ||
-    event.headers.origin ||
-    "https://stainedglass.tn";
+  // Déterminer l’environnement (LIVE ou SANDBOX)
+  const IS_LIVE = process.env.PAYMEE_MODE === "live"; // à définir dans Netlify
+  const DOMAIN = process.env.DOMAIN || "https://resplendent-centaur-abf462.netlify.app";
+  const API_URL = IS_LIVE
+    ? "https://app.paymee.tn/api/v2/payments/create"
+    : "https://sandbox.paymee.tn/api/v2/payments/create";
 
   const payload = {
-    vendor: 27983, // ✅ Compte LIVE
+    vendor: process.env.PAYMEE_VENDOR,
     amount: body.amount,
     currency: "TND",
     note: "Commande checkout",
@@ -34,30 +22,31 @@ export async function handler(event) {
     webhook_url: `${DOMAIN}/webhook`
   };
 
-  console.log("📦 Données envoyées à Paymee LIVE :", payload);
+  console.log("📦 Envoi à Paymee:", payload);
 
   try {
-    const response = await fetch("https://app.paymee.tn/api/v2/payments/create", {
+    const response = await fetch(API_URL, {
       method: "POST",
       headers: {
-        "Authorization": "Token " + process.env.PAYMEE_TOKEN, // ✅ LIVE Token
+        Authorization: `Token ${process.env.PAYMEE_TOKEN}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
     });
 
     const data = await response.json();
-    console.log("💬 Réponse Paymee LIVE :", data);
+
+    console.log("✅ Réponse Paymee:", data);
 
     return {
       statusCode: 200,
       body: JSON.stringify(data)
     };
-  } catch (error) {
-    console.error("❌ Erreur Paymee LIVE :", error);
+  } catch (err) {
+    console.error("❌ Erreur Paymee:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Erreur Paymee LIVE." })
+      body: JSON.stringify({ error: "Erreur lors de la création du paiement Paymee." })
     };
   }
 }
