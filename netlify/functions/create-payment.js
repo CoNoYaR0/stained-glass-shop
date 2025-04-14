@@ -1,30 +1,29 @@
-// Netlify Function: create-payment.js (avec logs + currency patch)
+// Netlify Function: create-payment.js (LIVE)
 
 export async function handler(event) {
-  console.log("📥 Requête reçue :", event);
+  console.log("📥 Requête LIVE reçue :", event);
 
   let body;
-
   try {
     body = JSON.parse(event.body);
-    console.log("📤 Données client reçues :", body);
-  } catch (parseErr) {
-    console.error("❌ Erreur JSON :", parseErr);
+    console.log("📤 Données client LIVE :", body);
+  } catch (err) {
+    console.error("❌ JSON invalide :", err);
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Requête invalide (JSON malformé)." })
+      body: JSON.stringify({ error: "Requête invalide" })
     };
   }
 
   const DOMAIN =
     process.env.DOMAIN ||
     event.headers.origin ||
-    "https://resplendent-centaur-abf462.netlify.app";
+    "https://stainedglass.tn";
 
   const payload = {
-    vendor: process.env.PAYMEE_VENDOR,
+    vendor: 27983, // ✅ Compte LIVE
     amount: body.amount,
-    currency: "TND", // 🆕 Ajout critique
+    currency: "TND",
     note: "Commande checkout",
     first_name: body.prenom,
     last_name: body.nom,
@@ -35,31 +34,30 @@ export async function handler(event) {
     webhook_url: `${DOMAIN}/webhook`
   };
 
-  console.log("📦 Données envoyées à Paymee :", payload);
+  console.log("📦 Données envoyées à Paymee LIVE :", payload);
 
   try {
-    const response = await fetch("https://sandbox.paymee.tn/api/v1/payments/create", {
+    const response = await fetch("https://www.paymee.tn/api/v1/payments/create", {
       method: "POST",
       headers: {
-        "Authorization": "Token " + process.env.PAYMEE_TOKEN,
+        "Authorization": "Token 6c9e2ac316496d1f8653be55ae06151851966f1b", // ✅ LIVE Token
         "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
     });
 
     const data = await response.json();
-    console.log("💬 Réponse complète Paymee :", JSON.stringify(data, null, 2));
+    console.log("💬 Réponse Paymee LIVE :", data);
 
     return {
       statusCode: 200,
       body: JSON.stringify(data)
     };
-
   } catch (error) {
-    console.error("❌ Erreur réseau ou Paymee :", error);
+    console.error("❌ Erreur Paymee LIVE :", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Erreur technique avec Paymee." })
+      body: JSON.stringify({ error: "Erreur Paymee LIVE." })
     };
   }
 }
