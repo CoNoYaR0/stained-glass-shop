@@ -40,7 +40,7 @@ export async function handler(event) {
     const response = await fetch("https://www.paymee.tn/api/v1/payments/create", {
       method: "POST",
       headers: {
-        "Authorization": "Token 6c9e2ac316496d1f8653be55ae06151851966f1b", // ✅ LIVE Token
+        "Authorization": "Token " + process.env.PAYMEE_TOKEN, // ✅ LIVE Token
         "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
