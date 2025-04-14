@@ -80,10 +80,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
   checkoutApp.innerHTML = itemsHTML + formHTML;
 
-  document.getElementById("checkout-form").addEventListener("submit", (e) => {
+  document.getElementById("checkout-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    alert("Commande envoyée ! (Simulation)");
-    localStorage.removeItem(CART_KEY);
-    location.href = "/merci";
+  
+    const form = e.target;
+    const formData = new FormData(form);
+    const clientData = {
+      nom: formData.get("nom"),
+      prenom: formData.get("prenom"),
+      tel: formData.get("tel"),
+      email: formData.get("email"),
+      adresse: formData.get("adresse"),
+      paiement: formData.get("paiement"),
+    };
+  
+    const cart = JSON.parse(localStorage.getItem("customCart")) || [];
+    const amount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  
+    const body = {
+      ...clientData,
+      amount,
+    };
+  
+    try {
+      const res = await fetch("/.netlify/functions/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+  
+      const result = await res.json();
+  
+      if (result?.status && result?.data?.payment_url) {
+        localStorage.removeItem("customCart");
+        window.location.href = result.data.payment_url;
+      } else {
+        alert("Erreur : aucune URL de paiement reçue.");
+        console.error(result);
+      }
+    } catch (err) {
+      console.error("Erreur lors de la commande :", err);
+      alert("Une erreur est survenue.");
+    }
   });
-});
+  
