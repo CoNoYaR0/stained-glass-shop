@@ -1,53 +1,14 @@
-
 {{ define "main" }}
 <section class="section">
   <div class="container text-center">
     <h1>{{ .Title }}</h1>
 
+    <!-- Ici, le script checkout.js injectera tout dynamiquement -->
     <div id="checkout-app" class="mt-5">
-      <form id="checkout-form">
-
-        <!-- Placeholder du panier (injecté dynamiquement en JS) -->
-        <div class="checkout-summary mb-5">
-          <p>Chargement du panier...</p>
-        </div>
-
-        <!-- Méthodes de paiement stylées -->
-        <div class="payment-methods mt-5 mb-4 text-center">
-          <h4 class="mb-4">Méthode de paiement</h4>
-          <div class="d-flex justify-content-center">
-
-            <label class="payment-option">
-              <input type="radio" name="payment-method" value="paymee" checked>
-              <div class="option-box">
-                <img src="/images/payments/paymee-logo.png" alt="Paymee">
-                <span>Paymee (par défaut)</span>
-              </div>
-            </label>
-
-            <label class="payment-option">
-              <input type="radio" name="payment-method" value="flouci">
-              <div class="option-box">
-                <img src="/images/payments/flouci-logo.png" alt="Flouci">
-                <span>Flouci</span>
-              </div>
-            </label>
-
-            <label class="payment-option">
-              <input type="radio" name="payment-method" value="cod">
-              <div class="option-box">
-                <img src="/images/payments/7875821.png" alt="Paiement à la livraison">
-                <span>À la livraison</span>
-              </div>
-            </label>
-
-          </div>
-        </div>
-
-        <button type="submit" class="btn btn-main mt-4 w-100">Valider la commande</button>
-      </form>
+      <p class="text-muted">Chargement du panier...</p>
     </div>
   </div>
 </section>
 {{ end }}
+
 <script src="/js/checkout.js"></script>
