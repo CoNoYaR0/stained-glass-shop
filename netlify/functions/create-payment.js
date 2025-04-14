@@ -10,7 +10,7 @@ export async function handler(event) {
     "https://resplendent-centaur-abf462.netlify.app";
 
   try {
-    const response = await fetch("https://www.paymee.tn/api/v2/payments/create", {
+    const response = await fetch("https://sandbox.paymee.tn/api/v1/payments/create", {
       method: "POST",
       headers: {
         "Authorization": "Token " + process.env.PAYMEE_TOKEN,
