@@ -1,7 +1,7 @@
-// Netlify Function: create-payment.js (version avec logs étape par étape)
+// Netlify Function: create-payment.js (avec logs + currency patch)
 
 export async function handler(event) {
-  console.log("📥 Requête reçue : ", event);
+  console.log("📥 Requête reçue :", event);
 
   let body;
 
@@ -9,7 +9,7 @@ export async function handler(event) {
     body = JSON.parse(event.body);
     console.log("📤 Données client reçues :", body);
   } catch (parseErr) {
-    console.error("❌ Erreur de parsing JSON :", parseErr);
+    console.error("❌ Erreur JSON :", parseErr);
     return {
       statusCode: 400,
       body: JSON.stringify({ error: "Requête invalide (JSON malformé)." })
@@ -24,6 +24,7 @@ export async function handler(event) {
   const payload = {
     vendor: process.env.PAYMEE_VENDOR,
     amount: body.amount,
+    currency: "TND", // 🆕 Ajout critique
     note: "Commande checkout",
     first_name: body.prenom,
     last_name: body.nom,
@@ -47,7 +48,7 @@ export async function handler(event) {
     });
 
     const data = await response.json();
-    console.log("💬 Réponse complète de Paymee :", data);
+    console.log("💬 Réponse complète Paymee :", JSON.stringify(data, null, 2));
 
     return {
       statusCode: 200,
