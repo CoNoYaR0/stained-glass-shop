@@ -123,4 +123,4 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Une erreur est survenue.");
     }
   });
-  
+});
