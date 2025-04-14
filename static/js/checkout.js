@@ -84,6 +84,6 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     alert("Commande envoyée ! (Simulation)");
     localStorage.removeItem(CART_KEY);
-    location.href = "/";
+    location.href = "/merci";
   });
 });
