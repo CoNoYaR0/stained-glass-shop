@@ -194,6 +194,7 @@ a:active {
   text-decoration: none !important;
 }
 
+// 🔘 Bouton principal (valider la commande, etc.)
 .btn-main {
   color: #fff;
   border-radius: 30px;
@@ -211,6 +212,7 @@ a:active {
   }
 }
 
+// 🔘 Bouton principal (valider la commande, etc.)
 .btn-main-sm {
   padding: 12px 35px;
   text-transform: uppercase;
@@ -284,6 +286,7 @@ header.sticky-top {
     Feature-list start
 --*/
 .feature-list {
+// 🔘 Bouton principal (valider la commande, etc.)
   .btn-main {
     margin-top: 15px;
   }
@@ -580,6 +583,7 @@ textarea.form-control {
     padding-left: 10px;
   }
 
+// 📋 Tableau récapitulatif du panier
   table {
     text-align: left;
     width: 100%;
@@ -855,6 +859,7 @@ textarea.form-control {
     margin-bottom: 1rem;
   }
 
+// 💳 Bloc : options de paiement (radio custom stylisé)
   .payment-option {
     display: inline-flex;
     align-items: center;
@@ -893,6 +898,7 @@ textarea.form-control {
     margin-bottom: 2rem;
   }
 
+// 💳 Bloc : options de paiement (radio custom stylisé)
   .payment-option {
     cursor: pointer;
     margin: 1rem;
@@ -901,6 +907,7 @@ textarea.form-control {
       display: none;
     }
 
+// 📦 Composant visuel encadré pour chaque méthode de paiement
     .option-box {
       display: flex;
       flex-direction: column;
@@ -985,11 +992,13 @@ textarea.form-control {
     margin-bottom: 2rem;
   }
 
+// 💳 Bloc : options de paiement (radio custom stylisé)
   .payment-option {
     input[type="radio"] {
       display: none;
     }
 
+// 📦 Composant visuel encadré pour chaque méthode de paiement
     .option-box {
       display: flex;
       flex-direction: column;
@@ -1032,4 +1041,20 @@ textarea.form-control {
     justify-content: center;
     gap: 2rem;
   }
+}
+// 📦 Composant visuel encadré pour chaque méthode de paiement
+.option-box {
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 10px;
+  width: 200px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+// 📦 Composant visuel encadré pour chaque méthode de paiement
+.option-box:hover {
+  border-color: #ff9e3d;
+  background: #fff8f0;
 }
