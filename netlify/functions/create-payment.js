@@ -37,7 +37,7 @@ export async function handler(event) {
   console.log("📦 Données envoyées à Paymee LIVE :", payload);
 
   try {
-    const response = await fetch("https://api.paymee.tn/v2/payments/create", {
+    const response = await fetch("https://app.paymee.tn/api/v2/payments/create", {
       method: "POST",
       headers: {
         "Authorization": "Token " + process.env.PAYMEE_TOKEN, // ✅ LIVE Token
