@@ -1058,3 +1058,54 @@ textarea.form-control {
   border-color: #ff9e3d;
   background: #fff8f0;
 }
+
+/* ==========================================================================
+   📦 Paiement – Affichage conditionnel des illustrations
+   ========================================================================== */
+
+/* Conteneur de méthode de paiement */
+.payment-method-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+/* Styles communs aux illustrations */
+.payment-illustration {
+  max-width: 250px;
+  width: 100%;
+  height: auto;
+  display: none; /* caché par défaut */
+  margin: 1rem auto;
+  object-fit: contain;
+}
+
+/* Affichage conditionnel via attributs radio */
+input[type="radio"][name="payment-method"]:checked + .payment-option .payment-illustration {
+  display: block;
+}
+
+/* Spécifique à Paymee */
+.payment-option.paymee .payment-illustration--paymee {
+  display: none;
+}
+input[type="radio"][name="payment-method"]:checked + .payment-option.paymee .payment-illustration--paymee {
+  display: block;
+}
+
+/* Spécifique à Paiement à la livraison */
+.payment-option.delivery .payment-illustration--delivery {
+  display: none;
+}
+input[type="radio"][name="payment-method"]:checked + .payment-option.delivery .payment-illustration--delivery {
+  display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payment-illustration {
+    max-width: 90%;
+  }
+}
