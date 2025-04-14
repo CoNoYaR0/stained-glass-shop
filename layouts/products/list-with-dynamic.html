@@ -1,0 +1,49 @@
+
+{{ define "main" }}
+<main class="container py-5">
+  <h1 class="text-center mb-5">{{ .Title }}</h1>
+
+  <div class="row">
+    {{ range .Pages }}
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 product-card">
+        <img src="{{ .Params.image }}" class="card-img-top" alt="{{ .Title }}">
+        <div class="card-body">
+          <h5 class="card-title">{{ .Title }}</h5>
+          <p class="card-text">{{ .Params.description }}</p>
+          {{ if .Params.discount_price }}
+            <p class="price">
+              <del>{{ .Params.price }} TND</del>
+              <strong class="text-danger">{{ .Params.discount_price }} TND</strong>
+            </p>
+          {{ else }}
+            <p class="price"><strong>{{ .Params.price }} TND</strong></p>
+          {{ end }}
+          <button class="btn btn-main add-to-cart" 
+                  data-id="{{ .Params.id_dolibarr }}"
+                  data-name="{{ .Title }}"
+                  data-price="{{ .Params.price }}"
+                  data-image="{{ .Params.image }}">
+            Ajouter au panier
+          </button>
+        </div>
+      </div>
+    </div>
+    {{ end }}
+  </div>
+
+  <hr class="my-5">
+
+  <h2 class="text-center mb-4">Autres produits</h2>
+  <div id="category-filters" class="mb-4 text-center">
+    <button class="btn btn-outline-primary btn-sm filter-btn" data-cat="all">Tous</button>
+    <!-- Filtres dynamiques insérés ici -->
+  </div>
+
+  <div id="dynamic-products" class="row">
+    <!-- Produits via API insérés ici -->
+  </div>
+</main>
+
+<script src="/js/products-dynamic.js"></script>
+{{ end }}
