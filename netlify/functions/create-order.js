@@ -9,6 +9,7 @@ const headers = {
   'Content-Type': 'application/json'
 }
 
+// ✅ Entry Point
 exports.handler = async (event) => {
   try {
     const data = JSON.parse(event.body)
@@ -18,35 +19,8 @@ exports.handler = async (event) => {
       throw new Error("❌ Données manquantes : clientId, cart ou orderId")
     }
 
-    const lines = cart.map(p => ({
-      product_id: p.id,
-      qty: p.qty,
-      subprice: p.price_ht,
-      tva_tx: p.tva || 19
-    }))
-
-    console.log("📦 Création facture...")
-    const factureRes = await axios.post(`${API_BASE}/invoices`, {
-      socid: parseInt(clientId),
-      lines,
-      source: 'commande',
-      fk_source: orderId,
-      status: 0
-    }, { headers })
-
-    console.log("📨 Réponse brute de Dolibarr :")
-    console.log("Status:", factureRes.status)
-    console.log("Data:", JSON.stringify(factureRes.data, null, 2))
-
-    const invoiceId = typeof factureRes.data === 'object' ? factureRes.data.id : factureRes.data
-    if (!invoiceId) {
-      throw new Error("❌ Échec récupération ID facture après création")
-    }
-
-    console.log("🧾 Facture brouillon créée, ID :", invoiceId)
-
-    const validation = await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
-    console.log("✅ Facture validée :", validation.status, validation.data)
+    const lines = buildInvoiceLines(cart)
+    const invoiceId = await createAndValidateInvoice(clientId, orderId, lines)
 
     return {
       statusCode: 200,
@@ -54,10 +28,57 @@ exports.handler = async (event) => {
     }
 
   } catch (error) {
-    console.error("❌ Erreur générale:", error.message || error)
+    console.error("❌ Erreur handler:", error.message || error)
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message })
     }
   }
+}
+
+// 🧮 Construction des lignes de facture
+function buildInvoiceLines(cart) {
+  return cart.map(p => ({
+    product_id: p.id,
+    qty: p.qty,
+    subprice: p.price_ht,
+    tva_tx: p.tva || 19
+  }))
+}
+
+// 🧾 Création et validation de facture
+async function createAndValidateInvoice(clientId, orderId, lines) {
+  console.log("📤 Envoi à Dolibarr : /invoices", { clientId, orderId, lines })
+
+  let factureRes;
+  try {
+    factureRes = await axios.post(`${API_BASE}/invoices`, {
+      socid: parseInt(clientId),
+      lines,
+      source: 'commande',
+      fk_source: orderId,
+      status: 0
+    }, { headers })
+  } catch (err) {
+    console.error("❌ Erreur création facture:", err.response?.data || err.message)
+    throw err
+  }
+
+  console.log("📨 Réponse Dolibarr:", factureRes.status, factureRes.data)
+
+  const invoiceId = typeof factureRes.data === 'object' ? factureRes.data.id : factureRes.data
+  if (!invoiceId) {
+    throw new Error("❌ Impossible d'extraire l'ID de facture")
+  }
+
+  // Validation
+  try {
+    const validation = await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
+    console.log("✅ Facture validée :", validation.status)
+  } catch (err) {
+    console.error("❌ Erreur validation:", err.response?.data || err.message)
+    throw new Error("❌ La validation de la facture a échoué")
+  }
+
+  return invoiceId
 }
