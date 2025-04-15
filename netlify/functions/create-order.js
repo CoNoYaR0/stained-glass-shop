@@ -168,7 +168,7 @@ async function createOrder(clientId, cart) {
     tva_tx: p.tva || 19
   }))
   const res = await axios.post(`${API_BASE}/orders`, {
-    socid: clientId,
+    socid: parseInt(clientId),
     lines
   }, { headers })
   return res.data
