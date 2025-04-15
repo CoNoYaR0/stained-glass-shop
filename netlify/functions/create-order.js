@@ -9,7 +9,6 @@ const headers = {
   'Content-Type': 'application/json'
 }
 
-// 💡 Appel principal pour Netlify ou test
 exports.handler = async (event) => {
   try {
     const data = JSON.parse(event.body)
@@ -19,7 +18,6 @@ exports.handler = async (event) => {
       throw new Error("❌ Données manquantes : clientId, cart ou orderId")
     }
 
-    // Étape 1️⃣ Créer une facture en brouillon
     const lines = cart.map(p => ({
       product_id: p.id,
       qty: p.qty,
@@ -27,6 +25,7 @@ exports.handler = async (event) => {
       tva_tx: p.tva || 19
     }))
 
+    console.log("📦 Création facture...")
     const factureRes = await axios.post(`${API_BASE}/invoices`, {
       socid: parseInt(clientId),
       lines,
@@ -35,23 +34,20 @@ exports.handler = async (event) => {
       status: 0
     }, { headers })
 
+    console.log("📨 Réponse brute de Dolibarr :")
+    console.log("Status:", factureRes.status)
+    console.log("Data:", JSON.stringify(factureRes.data, null, 2))
+
     const invoiceId = factureRes.data.id
     if (!invoiceId) {
       throw new Error("❌ Échec récupération ID facture après création")
     }
 
-    console.log("🧾 Facture brouillon créée avec succès. ID:", invoiceId)
+    console.log("🧾 Facture brouillon créée, ID :", invoiceId)
 
-    // Étape 2️⃣ Validation de la facture
-    try {
-      const validation = await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
-      console.log("✅ Facture validée Dolibarr :", validation.status, validation.data)
-    } catch (err) {
-      console.error("❌ Erreur à la validation :", err.response?.data || err.message)
-      throw new Error("❌ La validation de la facture a échoué")
-    }
+    const validation = await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
+    console.log("✅ Facture validée :", validation.status, validation.data)
 
-    // Étape 3️⃣ On retourne juste l’ID
     return {
       statusCode: 200,
       body: JSON.stringify({ invoiceId })
