@@ -126,8 +126,6 @@ async function createOrder(clientId, cart) {
     lines
   }, { headers })
 
-}
-
 // 📦 Créer une commande client
 async function createOrder(clientId, cart) {
   const lines = cart.map(p => ({
