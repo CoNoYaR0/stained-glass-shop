@@ -15,7 +15,6 @@ const headers = {
 
 exports.handler = async (event) => {
   try {
-    // 🔐 Vérif clé secrète (appel autorisé uniquement via webhook)
     if (event.headers['x-secret-key'] !== SECRET) {
       return {
         statusCode: 401,
@@ -27,7 +26,6 @@ exports.handler = async (event) => {
     const { cart, customer, totalTTC } = data
     let totalCalc = 0
 
-    // 🔁 Vérif stock + Recalcul TTC
     for (const item of cart) {
       const qty = parseFloat(item.qty)
       const price_ht = parseFloat(item.price_ht)
@@ -45,7 +43,7 @@ exports.handler = async (event) => {
         }
       }
 
-      const tva = parseFloat(product.tva_tx || 20)
+      const tva = parseFloat(product.tva_tx || 19)
       totalCalc += qty * price_ht * (1 + tva / 100)
     }
 
@@ -61,17 +59,27 @@ exports.handler = async (event) => {
       }
     }
 
-    // 🔧 Création client, commande, facture
     const clientId = await findOrCreateClient(customer)
     const order = await createOrder(clientId, cart)
     const invoice = await createInvoice(clientId, cart, order.id)
     const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoice.id}`
     await generatePDF(invoice.id)
 
-    // 📬 Envoi email avec le PDF
     await sendInvoiceEmail(customer.email, invoice.ref, pdfUrl)
 
-    // 🧠 Log JSON dans /tmp
+    // ✅ Mise à jour du suivi commandes
+    const viewsPath = path.resolve("./data/views.json")
+    let vuesData = {}
+    if (fs.existsSync(viewsPath)) {
+      vuesData = JSON.parse(fs.readFileSync(viewsPath))
+    }
+    cart.forEach(p => {
+      const key = p.id
+      if (!vuesData[key]) vuesData[key] = { views: 0, commandes: 0 }
+      vuesData[key].commandes += 1
+    })
+    fs.writeFileSync(viewsPath, JSON.stringify(vuesData, null, 2))
+
     const log = {
       date: new Date().toISOString(),
       client: customer.email,
@@ -123,7 +131,7 @@ async function createOrder(clientId, cart) {
     product_id: p.id,
     qty: p.qty,
     subprice: p.price_ht,
-    tva_tx: p.tva || 20
+    tva_tx: p.tva || 19
   }))
   const res = await axios.post(`${API_BASE}/orders`, {
     socid: clientId,
@@ -138,7 +146,7 @@ async function createInvoice(clientId, cart, orderId) {
     product_id: p.id,
     qty: p.qty,
     subprice: p.price_ht,
-    tva_tx: p.tva || 20
+    tva_tx: p.tva || 19
   }))
   const res = await axios.post(`${API_BASE}/invoices`, {
     socid: clientId,
@@ -158,5 +166,4 @@ async function generatePDF(invoiceId) {
 // 📬 Envoi d'email (exemple à adapter selon le service utilisé)
 async function sendInvoiceEmail(email, ref, pdfUrl) {
   console.log(`✉️ Envoi de la facture ${ref} à ${email} avec le lien : ${pdfUrl}`)
-  // TODO : remplacer ce console.log par un appel à Resend, SendGrid, etc.
 }

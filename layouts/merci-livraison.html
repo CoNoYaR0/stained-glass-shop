@@ -1,0 +1,20 @@
+
+{{ define "main" }}
+<section class="section">
+  <div class="container text-center">
+    <h1>Merci pour votre commande !</h1>
+
+    {{ if .Params.facture_id }}
+      <a class="btn btn-outline-dark mt-4"
+         href="/.netlify/functions/get-invoice-pdf?id={{ .Params.facture_id }}&expires={{ now.UnixMilli | add 300000 }}"
+         download="facture.pdf">
+        📄 Télécharger la facture PDF
+      </a>
+      <div id="pdf-timer" class="text-center text-muted mt-3">
+        🔐 Lien valide encore : <span id="countdown">5:00</span>
+      </div>
+    {{ end }}
+  </div>
+</section>
+<script src="/js/pdf-timer.js"></script>
+{{ end }}

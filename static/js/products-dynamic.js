@@ -1,28 +1,28 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const productList = document.getElementById("product-list");
+  const productList = document.getElementById("product-list") || document.getElementById("dynamic-products");
   const filterContainer = document.getElementById("category-filters");
 
   try {
     const res = await fetch("/.netlify/functions/get-products");
     const products = await res.json();
 
-    // Extraire les catégories uniques
     const categories = new Set();
     products.forEach(p => {
       (p.categories || []).forEach(c => categories.add(c.label));
     });
 
-    // Générer les boutons de filtre
-    categories.forEach(label => {
-      const btn = document.createElement("button");
-      btn.className = "btn btn-outline-secondary btn-sm filter-btn me-2";
-      btn.dataset.cat = label;
-      btn.textContent = label;
-      filterContainer.appendChild(btn);
-    });
+    if (filterContainer) {
+      filterContainer.innerHTML = '<button class="btn btn-outline-primary btn-sm filter-btn me-2" data-cat="all">Tous</button>';
+      categories.forEach(label => {
+        const btn = document.createElement("button");
+        btn.className = "btn btn-outline-secondary btn-sm filter-btn me-2";
+        btn.dataset.cat = label;
+        btn.textContent = label;
+        filterContainer.appendChild(btn);
+      });
+    }
 
-    // Fonction d'affichage
     const renderProducts = (filterCat = "all") => {
       productList.innerHTML = "";
       products.forEach(product => {
@@ -38,28 +38,33 @@ document.addEventListener("DOMContentLoaded", async () => {
               <h5 class="card-title">${product.label}</h5>
               <p class="card-text">${product.description || ""}</p>
               <p class="price"><strong>${product.price} TND</strong></p>
-              <button class="btn btn-main add-to-cart" data-id="${product.id}" data-image="/images/products/${product.id}.jpg">Ajouter au panier</button>
+              <button class="btn btn-main add-to-cart"
+                      data-id="${product.id}"
+                      data-name="${product.label}"
+                      data-price="${product.price}"
+                      data-image="/images/products/${product.id}.jpg">
+                🛒 Ajouter au panier
+              </button>
             </div>
           </div>
         `;
         productList.appendChild(col);
       });
 
-      // Reconnecter les boutons au panier
       if (typeof attachAddToCartButtons === "function") {
-        attachAddToCartButtons(); // suppose que cart.js est déjà chargé
+        attachAddToCartButtons();
       }
     };
 
-    // Premier affichage
     renderProducts();
 
-    // Gestion des filtres
-    filterContainer.addEventListener("click", (e) => {
-      if (e.target.classList.contains("filter-btn")) {
-        renderProducts(e.target.dataset.cat);
-      }
-    });
+    if (filterContainer) {
+      filterContainer.addEventListener("click", (e) => {
+        if (e.target.classList.contains("filter-btn")) {
+          renderProducts(e.target.dataset.cat);
+        }
+      });
+    }
 
   } catch (err) {
     console.error("Erreur chargement produits:", err);

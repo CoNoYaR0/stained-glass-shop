@@ -56,4 +56,16 @@
   </div>
 </section>
 
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    fetch("/.netlify/functions/track-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: "{{ .File.BaseFileName }}" // ou `.Params.slug` si défini
+      })
+    });
+  });
+  </script>
+  
 {{ end }}
