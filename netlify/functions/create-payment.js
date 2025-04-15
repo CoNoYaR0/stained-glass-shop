@@ -30,7 +30,7 @@ exports.handler = async function (event) {
     totalTTC: amount
   };
 
-  const dirPath = path.resolve("./data/pending-orders");
+  const dirPath = path.join("/tmp", "pending-orders");
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
 
   const filePath = path.join(dirPath, `${token}.json`);

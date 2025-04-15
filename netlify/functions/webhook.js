@@ -29,7 +29,7 @@ exports.handler = async function (event) {
 
     // Utilisation d'une note comme token pour retrouver la commande en cache
     const token = payload.note;
-    const filePath = path.resolve(`./data/pending-orders/${token}.json`);
+    const filePath = path.join("/tmp/pending-orders", `${token}.json`);
 
     if (!fs.existsSync(filePath)) {
       console.error("❌ Commande en cache introuvable pour token:", token);
