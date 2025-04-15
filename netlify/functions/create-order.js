@@ -169,8 +169,9 @@ async function createOrder(clientId, cart) {
   }))
   const res = await axios.post(`${API_BASE}/orders`, {
     socid: parseInt(clientId),
+    date: new Date().toISOString().split('T')[0], // Ajout de la date du jour au format YYYY-MM-DD
     lines
-  }, { headers })
+  }, { headers })  
   return res.data
 }
 
