@@ -59,7 +59,11 @@ exports.handler = async (event) => {
 
     // 2️⃣ Créer et valider la facture après tout cela
     const clientId = await findOrCreateClient(customer)
-    const invoice = await createInvoice(clientId, cart)
+    const order = await createOrder(clientId, cart)
+
+    console.log("📦 Commande créée, ID :", order.id)
+
+    const invoice = await createInvoice(clientId, cart, order.id)
 
     const invoiceId = invoice?.id
     if (!invoiceId) {
@@ -68,8 +72,6 @@ exports.handler = async (event) => {
     console.log("🧾 Facture validée, ID :", invoiceId)
 
     // 3️⃣ Créer la commande après validation de la facture
-    const order = await createOrder(clientId, cart)
-
     await generatePDF(invoiceId)
 
     const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoiceId}`
