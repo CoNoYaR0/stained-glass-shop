@@ -15,6 +15,7 @@ const headers = {
 
 exports.handler = async (event) => {
   try {
+    // Step 1: Verify the secret key
     const secretKey = event.headers['x-secret-key']
     console.log('🔐 Clé reçue:', secretKey)
     console.log('🎯 Clé attendue (ORDER_SECRET):', SECRET)
@@ -26,11 +27,12 @@ exports.handler = async (event) => {
       }
     }
 
+    // Step 2: Parse the incoming data
     const data = JSON.parse(event.body)
     const { cart, customer, totalTTC } = data
     let totalCalc = 0
 
-    // 1️⃣ Vérification des articles reçus
+    // Step 3: Check the products in the cart
     for (const item of cart) {
       console.log('🛒 Article reçu :', item)
 
@@ -57,41 +59,57 @@ exports.handler = async (event) => {
       throw new Error(`❌ Total incohérent. Calculé : ${totalArrondi} €, reçu : ${totalEnvoye} €`)
     }
 
-    // 2️⃣ Créer et valider la facture après tout cela
+    // Step 4: Create or find the client
     const clientId = await findOrCreateClient(customer)
-    const order = await createOrder(clientId, cart)
 
+    // Step 5: Create the order
+    const order = await createOrder(clientId, cart)
     console.log("📦 Commande créée, ID :", order.id)
 
+    // Step 6: Create the invoice (in draft)
     const invoice = await createInvoice(clientId, cart, order.id)
-
     const invoiceId = invoice?.id
     if (!invoiceId) {
       throw new Error('❌ Impossible de générer la facture : ID introuvable')
     }
     console.log("🧾 Facture brouillon créée, ID :", invoiceId)
 
-    // 2️⃣ Log pour validation de la facture
+    // Step 7: Validate the invoice
     try {
       console.log(`🔄 Validation de la facture ID: ${invoiceId}...`)
       const validateRes = await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
 
-      // Log detailed response for validation process
-      console.log("✅ Validation de la facture réussie !", validateRes.status, validateRes.data)
+      // Log the full response to understand why the validation might fail
+      console.log("✅ Validation de la facture réussie :", validateRes.status, validateRes.data)
+
+      if (validateRes.status !== 200) {
+        console.error("❌ Validation échouée : ", validateRes.data)
+      }
 
     } catch (err) {
-      // Log the complete error response from the API
       console.error("❌ Erreur de validation de la facture :", err.response?.data || err.message)
       throw new Error("❌ La validation de la facture a échoué.")
     }
 
-    // 3️⃣ Générer le PDF de la facture
+    // Step 8: Retrieve the validated invoice (with ref)
+    const finalInvoice = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers })
+    const ref = finalInvoice.data?.ref
+    if (!ref) {
+      throw new Error("❌ Impossible de récupérer la référence de la facture après validation.")
+    }
+    console.log("📄 Facture validée, ref :", ref)
+
+    // Step 9: Generate the invoice PDF
     await generatePDF(invoiceId)
 
+    // Step 10: Send the invoice email with the PDF link
     const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoiceId}`
-    await sendInvoiceEmail(customer.email, invoice.ref, pdfUrl)
+    await sendInvoiceEmail(customer.email, ref, pdfUrl)
 
+    // Step 11: Update views statistics
     updateViewsStats(cart)
+
+    // Step 12: Log the order data for auditing
     logOrderData(customer.email, order, invoice, totalTTC)
 
     return {
@@ -99,7 +117,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         success: true,
         commande: { id: order.id, ref: order.ref },
-        facture: { id: invoice.id, ref: invoice.ref, pdfUrl }
+        facture: { id: invoice.id, ref: ref, pdfUrl }
       })
     }
   } catch (error) {
