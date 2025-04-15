@@ -131,11 +131,14 @@ async function findOrCreateClient(customer) {
   const { email, nom, adresse, ville, pays } = customer
 
   const res = await axios.get(
-    `${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`,
+    `${API_BASE}/thirdparties?sqlfilters=(t.email:=\'${email}\')`,
     { headers }
   )
 
-  if (res.data && res.data.length > 0) return res.data[0].id
+  if (res.data && res.data.length > 0) {
+    console.log("👤 Client trouvé, ID :", res.data[0].id);
+    return res.data[0].id;
+  }
 
   const createRes = await axios.post(
     `${API_BASE}/thirdparties`,
@@ -150,9 +153,9 @@ async function findOrCreateClient(customer) {
     { headers }
   )
 
-  return createRes.data
+  console.log("🆕 Client créé, ID :", createRes.data.id);
+  return createRes.data.id;
 }
-
 
 // 📦 Créer une commande client
 async function createOrder(clientId, cart) {
