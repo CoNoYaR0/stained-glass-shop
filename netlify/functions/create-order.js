@@ -194,18 +194,23 @@ async function createInvoice(clientId, cart, orderId) {
 }
 
 // 📄 Générer PDF
-const order = await createOrder(clientId, cart)
-const invoice = await createInvoice(clientId, cart, order.id)
+async function debugInvoiceCreation() {
+  const order = await createOrder(clientId, cart)
+  const invoice = await createInvoice(clientId, cart, order.id)
 
-// ✅ Ici c’est l’ID de la facture qu’on veut
-const invoiceId = invoice?.id
-console.log('🧾 Facture créée, ID :', invoiceId)
+  // ✅ Ici c’est l’ID de la facture qu’on veut
+  const invoiceId = invoice?.id
+  console.log('🧾 Facture créée, ID :', invoiceId)
 
-if (!invoiceId) {
-  throw new Error("❌ Impossible de générer la facture : ID introuvable")
+  if (!invoiceId) {
+    throw new Error("❌ Impossible de générer la facture : ID introuvable")
+  }
+
+  await generatePDF(invoiceId)
 }
 
-await generatePDF(invoiceId)
+debugInvoiceCreation()
+
 
 
 // 📬 Envoi d'email (exemple à adapter selon le service utilisé)
