@@ -1,9 +1,8 @@
-// Netlify Function: create-order.js
 const axios = require('axios')
 const fs = require('fs')
 const path = require('path')
 
-// Env vars
+// 🔐 Variables d’environnement
 const API_BASE = process.env.DOLIBARR_URL
 const TOKEN = process.env.DOLIBARR_TOKEN
 const SECRET = process.env.ORDER_SECRET
@@ -15,11 +14,11 @@ const headers = {
 
 exports.handler = async (event) => {
   try {
-    console.log("🔐 Clé reçue:", event.headers['x-secret-key']);
-    console.log("🎯 Clé attendue (ORDER_SECRET):", SECRET);
+    console.log("🔐 Clé reçue:", event.headers['x-secret-key'])
+    console.log("🎯 Clé attendue (ORDER_SECRET):", SECRET)
 
     if (event.headers['x-secret-key'] !== SECRET) {
-      console.log("⛔ Clé incorrecte, rejetée");
+      console.log("⛔ Clé incorrecte, rejetée")
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Accès non autorisé' })
@@ -31,22 +30,20 @@ exports.handler = async (event) => {
     let totalCalc = 0
 
     for (const item of cart) {
-      console.log("🛒 Article reçu :", item);
+      console.log("🛒 Article reçu :", item)
 
       if (!item.id || typeof item.id !== 'number') {
-        console.error("❌ Produit sans ID valide :", item);
+        console.error("❌ Produit sans ID valide :", item)
         return {
           statusCode: 400,
-          body: JSON.stringify({
-            error: `Produit sans identifiant valide détecté (${item.title || "Inconnu"})`
-          })
-        };
+          body: JSON.stringify({ error: `Produit sans identifiant valide détecté (${item.title || "Inconnu"})` })
+        }
       }
 
-      console.log("🔍 Vérification produit ID:", item.id);
+      console.log("🔍 Vérification produit ID:", item.id)
 
-      const qty = parseFloat(item.qty);
-      const price_ht = parseFloat(item.price_ht);
+      const qty = parseFloat(item.qty)
+      const price_ht = parseFloat(item.price_ht)
 
       const productRes = await axios.get(`${API_BASE}/products/${item.id}`, { headers })
       const product = productRes.data
@@ -55,9 +52,7 @@ exports.handler = async (event) => {
       if (stock < qty) {
         return {
           statusCode: 400,
-          body: JSON.stringify({
-            error: `Stock insuffisant pour "${product.label}". Dispo : ${stock}, demandé : ${qty}`
-          })
+          body: JSON.stringify({ error: `Stock insuffisant pour "${product.label}". Dispo : ${stock}, demandé : ${qty}` })
         }
       }
 
@@ -71,21 +66,24 @@ exports.handler = async (event) => {
     if (totalArrondi !== totalEnvoye) {
       return {
         statusCode: 400,
-        body: JSON.stringify({
-          error: `Total incohérent. Calculé : ${totalArrondi} €, reçu : ${totalEnvoye} €`
-        })
+        body: JSON.stringify({ error: `Total incohérent. Calculé : ${totalArrondi} €, reçu : ${totalEnvoye} €` })
       }
     }
 
     const clientId = await findOrCreateClient(customer)
     const order = await createOrder(clientId, cart)
     const invoice = await createInvoice(clientId, cart, order.id)
-    const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoice.id}`
+
+    if (!invoice?.id) {
+      throw new Error("❌ Impossible de générer la facture : ID introuvable")
+    }
+
     await generatePDF(invoice.id)
 
+    const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoice.id}`
     await sendInvoiceEmail(customer.email, invoice.ref, pdfUrl)
 
-    // ✅ Mise à jour du suivi commandes
+    // 📊 Mise à jour statistiques vues
     const viewsPath = path.resolve("./data/views.json")
     let vuesData = {}
     if (fs.existsSync(viewsPath)) {
@@ -98,6 +96,7 @@ exports.handler = async (event) => {
     })
     fs.writeFileSync(viewsPath, JSON.stringify(vuesData, null, 2))
 
+    // 🪵 Log de commande
     const log = {
       date: new Date().toISOString(),
       client: customer.email,
@@ -118,7 +117,7 @@ exports.handler = async (event) => {
     }
 
   } catch (error) {
-    console.error('Erreur create-order:', error)
+    console.error('❌ Erreur create-order:', error)
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Erreur lors de la création de commande' })
@@ -126,40 +125,30 @@ exports.handler = async (event) => {
   }
 }
 
-// 🔎 Trouver ou créer un client
+// 🔍 Client
 async function findOrCreateClient(customer) {
   const { email, nom, adresse, ville, pays } = customer
-
-  const res = await axios.get(
-    `${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`,
-    { headers }
-  )
-      
+  const res = await axios.get(`${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`, { headers })
 
   if (res.data && res.data.length > 0) {
-    console.log("👤 Client trouvé, ID :", res.data[0].id);
-    return res.data[0].id;
+    console.log("👤 Client trouvé, ID :", res.data[0].id)
+    return res.data[0].id
   }
 
-  const createRes = await axios.post(
-    `${API_BASE}/thirdparties`,
-    {
-      name: nom,
-      email,
-      address: adresse,
-      town: ville,
-      country: pays || 'FR',
-      client: 1
-    },
-    { headers }
-  )
+  const createRes = await axios.post(`${API_BASE}/thirdparties`, {
+    name: nom,
+    email,
+    address: adresse,
+    town: ville,
+    country: pays || 'FR',
+    client: 1
+  }, { headers })
 
-  console.log("🆕 Client créé, ID :", createRes.data.id);
-  console.log("📦 Réponse Dolibarr client create :", createRes.data)
-  return createRes.data.id;
+  console.log("🆕 Client créé, ID :", createRes.data.id)
+  return createRes.data.id
 }
 
-// 📦 Créer une commande client
+// 📦 Commande
 async function createOrder(clientId, cart) {
   const lines = cart.map(p => ({
     product_id: p.id,
@@ -169,13 +158,13 @@ async function createOrder(clientId, cart) {
   }))
   const res = await axios.post(`${API_BASE}/orders`, {
     socid: parseInt(clientId),
-    date: new Date().toISOString().split('T')[0], // Ajout de la date du jour au format YYYY-MM-DD
+    date: new Date().toISOString().split('T')[0],
     lines
-  }, { headers })  
+  }, { headers })
   return res.data
 }
 
-// 🧾 Créer une facture
+// 🧾 Facture
 async function createInvoice(clientId, cart, orderId) {
   const lines = cart.map(p => ({
     product_id: p.id,
@@ -193,23 +182,12 @@ async function createInvoice(clientId, cart, orderId) {
   return res.data
 }
 
-// 📄 Générer PDF à partir d'une commande déjà créée
-async function debugInvoiceCreation(clientId, cart, order) {
-  if (!order?.id) throw new Error("❌ ID de commande manquant pour création de facture")
-
-  const invoice = await createInvoice(clientId, cart, order.id)
-  const invoiceId = invoice?.id
-
-  console.log('🧾 Facture créée, ID :', invoiceId)
-  if (!invoiceId) throw new Error("❌ Impossible de générer la facture : ID introuvable")
-
-  await generatePDF(invoiceId)
+// 📄 PDF
+async function generatePDF(invoiceId) {
+  await axios.get(`${API_BASE}/invoices/${invoiceId}/generate-pdf`, { headers })
 }
 
-
-debugInvoiceCreation()
-
-// 📬 Envoi d'email (exemple à adapter selon le service utilisé)
+// 📧 Email (console)
 async function sendInvoiceEmail(email, ref, pdfUrl) {
   console.log(`✉️ Envoi de la facture ${ref} à ${email} avec le lien : ${pdfUrl}`)
 }
