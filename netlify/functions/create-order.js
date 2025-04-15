@@ -129,19 +129,30 @@ exports.handler = async (event) => {
 // 🔎 Trouver ou créer un client
 async function findOrCreateClient(customer) {
   const { email, nom, adresse, ville, pays } = customer
-  const res = await axios.get(`${API_BASE}/thirdparties?sqlfilters=t.email='${email}'`, { headers })
+
+  const res = await axios.get(
+    `${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`,
+    { headers }
+  )
+
   if (res.data && res.data.length > 0) return res.data[0].id
 
-  const createRes = await axios.post(`${API_BASE}/thirdparties`, {
-    name: nom,
-    email,
-    address: adresse,
-    town: ville,
-    country: pays || 'FR',
-    client: 1
-  }, { headers })
+  const createRes = await axios.post(
+    `${API_BASE}/thirdparties`,
+    {
+      name: nom,
+      email,
+      address: adresse,
+      town: ville,
+      country: pays || 'FR',
+      client: 1
+    },
+    { headers }
+  )
+
   return createRes.data
 }
+
 
 // 📦 Créer une commande client
 async function createOrder(clientId, cart) {
