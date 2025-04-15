@@ -16,6 +16,9 @@ const headers = {
 exports.handler = async (event) => {
   try {
     const secretKey = event.headers['x-secret-key']
+    console.log('🔐 Clé reçue:', secretKey)
+    console.log('🎯 Clé attendue (ORDER_SECRET):', SECRET)
+
     if (secretKey !== SECRET) {
       return {
         statusCode: 401,
@@ -27,13 +30,18 @@ exports.handler = async (event) => {
     const { cart, customer, totalTTC } = data
     let totalCalc = 0
 
+    // 1️⃣ Vérification des articles reçus
     for (const item of cart) {
+      console.log('🛒 Article reçu :', item)
+
       if (!item.id || typeof item.id !== 'number') {
         throw new Error(`❌ Produit sans identifiant valide (${item.title || 'Inconnu'})`)
       }
 
       const productRes = await axios.get(`${API_BASE}/products/${item.id}`, { headers })
       const product = productRes.data
+      console.log('🔍 Produit récupéré depuis Dolibarr:', product.label)
+
       const stock = parseFloat(product.stock_real)
       if (stock < item.qty) {
         throw new Error(`❌ Stock insuffisant pour ${product.label}. Dispo: ${stock}, demandé: ${item.qty}`)
@@ -49,14 +57,18 @@ exports.handler = async (event) => {
       throw new Error(`❌ Total incohérent. Calculé : ${totalArrondi} €, reçu : ${totalEnvoye} €`)
     }
 
+    // 2️⃣ Créer et valider la facture après tout cela
     const clientId = await findOrCreateClient(customer)
-    const order = await createOrder(clientId, cart)
-    const invoice = await createInvoice(clientId, cart, order.id)
+    const invoice = await createInvoice(clientId, cart)
 
     const invoiceId = invoice?.id
     if (!invoiceId) {
       throw new Error('❌ Impossible de générer la facture : ID introuvable')
     }
+    console.log("🧾 Facture validée, ID :", invoiceId)
+
+    // 3️⃣ Créer la commande après validation de la facture
+    const order = await createOrder(clientId, cart)
 
     await generatePDF(invoiceId)
 
@@ -75,6 +87,7 @@ exports.handler = async (event) => {
       })
     }
   } catch (error) {
+    console.error('❌ Erreur create-order:', error.message || error)
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message || 'Erreur lors de la création de commande' })
@@ -100,28 +113,30 @@ async function findOrCreateClient(customer) {
   return createRes.data.id
 }
 
+// 📦 Créer une commande client
 async function createOrder(clientId, cart) {
   const lines = cart.map(p => ({
     product_id: p.id,
     qty: p.qty,
     subprice: p.price_ht,
     tva_tx: p.tva || 19
-  }));
+  }))
 
   const res = await axios.post(`${API_BASE}/orders`, {
     socid: parseInt(clientId),
     date: new Date().toISOString().split('T')[0],
     lines
-  }, { headers });
+  }, { headers })
 
-  const raw = res.data;
-  if (typeof raw === 'number') return { id: raw, ref: `Commande ${raw}` };
+  const raw = res.data
+  if (typeof raw === 'number') return { id: raw, ref: `Commande ${raw}` }
 
-  const id = raw?.id || raw?.element?.id;
-  const ref = raw?.ref || raw?.element?.ref;
-  return { id, ref };
+  const id = raw?.id || raw?.element?.id
+  const ref = raw?.ref || raw?.element?.ref
+  return { id, ref }
 }
 
+// 🧾 Créer et valider une facture client proprement
 async function createInvoice(clientId, cart, orderId) {
   if (!orderId) throw new Error('❌ ID de commande manquant pour création de facture')
 
@@ -132,6 +147,7 @@ async function createInvoice(clientId, cart, orderId) {
     tva_tx: p.tva || 19
   }))
 
+  // 1️⃣ Créer la facture en brouillon
   const createRes = await axios.post(`${API_BASE}/invoices`, {
     socid: parseInt(clientId),
     lines,
@@ -147,9 +163,21 @@ async function createInvoice(clientId, cart, orderId) {
 
   console.log("🧾 Facture brouillon créée, ID :", invoiceId)
 
-  return { id: invoiceId, ref: createRes.data.ref }
+  // 2️⃣ Valider la facture (obligatoire pour avoir une ref officielle)
+  await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
+
+  // 3️⃣ Récupérer les infos finales de la facture validée
+  const finalInvoice = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers })
+  const ref = finalInvoice.data?.ref
+
+  if (!ref) {
+    throw new Error("❌ Impossible de récupérer la référence de la facture après validation.")
+  }
+
+  return { id: invoiceId, ref }
 }
 
+// 📄 Générer le PDF d'une facture
 async function generatePDF(invoiceId) {
   if (!invoiceId) {
     throw new Error('❌ ID facture manquant pour génération PDF')
@@ -160,10 +188,12 @@ async function generatePDF(invoiceId) {
   return res.data
 }
 
+// ✉️ Envoi d'email
 async function sendInvoiceEmail(email, ref, pdfUrl) {
   console.log(`✉️ Envoi de la facture ${ref} à ${email} avec le lien : ${pdfUrl}`)
 }
 
+// 📊 Mise à jour stats
 function updateViewsStats(cart) {
   const viewsPath = path.resolve('./data/views.json')
   let vuesData = {}
@@ -179,6 +209,7 @@ function updateViewsStats(cart) {
   fs.writeFileSync(viewsPath, JSON.stringify(vuesData, null, 2))
 }
 
+// 📝 Log JSON
 function logOrderData(email, order, invoice, total) {
   const log = {
     date: new Date().toISOString(),
