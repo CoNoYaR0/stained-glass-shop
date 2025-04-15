@@ -11,7 +11,7 @@ description: "Découvrez notre assiette en verre fusing artisanale, une pièce u
 
 # product Price
 price: "120.00"
-discount_price: "95.00"
+discount_price: "1.00"
 
 # product variation
 colors : ["transparent", "bleu", "multicolore"]
