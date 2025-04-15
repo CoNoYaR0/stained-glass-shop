@@ -27,8 +27,19 @@ exports.handler = async (event) => {
     let totalCalc = 0
 
     for (const item of cart) {
-      const qty = parseFloat(item.qty)
-      const price_ht = parseFloat(item.price_ht)
+      console.log("🛒 Article reçu :", item);
+
+      if (!item.id || typeof item.id !== 'number') {
+        console.error("❌ Produit sans ID valide :", item);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: `Produit sans identifiant valide détecté (${item.title || "Inconnu"})`
+          })
+        };
+      }
+
+      console.log("🔍 Vérification produit ID:", item.id);
 
       const productRes = await axios.get(`${API_BASE}/products/${item.id}`, { headers })
       const product = productRes.data
