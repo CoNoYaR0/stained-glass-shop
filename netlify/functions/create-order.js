@@ -130,22 +130,17 @@ exports.handler = async (event) => {
 async function findOrCreateClient(customer) {
   const { email, nom, adresse, ville, pays } = customer
 
-  try {
-    const res = await axios.get(
-      `${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`,
-      { headers }
-    )
+  const res = await axios.get(
+    `${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`,
+    { headers }
+  )
+      
 
-    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-      console.log("👤 Client trouvé, ID :", res.data[0].id)
-      return res.data[0].id
-    }
-
-  } catch (err) {
-    console.warn("❗ GET client échoué, code :", err.response?.status)
+  if (res.data && res.data.length > 0) {
+    console.log("👤 Client trouvé, ID :", res.data[0].id);
+    return res.data[0].id;
   }
 
-  console.log("🆕 Client non trouvé, création...")
   const createRes = await axios.post(
     `${API_BASE}/thirdparties`,
     {
@@ -159,8 +154,9 @@ async function findOrCreateClient(customer) {
     { headers }
   )
 
-  console.log("✅ Client créé, ID :", createRes.data.id)
-  return createRes.data.id
+  console.log("🆕 Client créé, ID :", createRes.data.id);
+  console.log("📦 Réponse Dolibarr client create :", createRes.data)
+  return createRes.data.id;
 }
 
 // 📦 Créer une commande client
