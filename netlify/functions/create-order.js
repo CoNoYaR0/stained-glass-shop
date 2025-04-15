@@ -38,7 +38,7 @@ exports.handler = async (event) => {
     console.log("Status:", factureRes.status)
     console.log("Data:", JSON.stringify(factureRes.data, null, 2))
 
-    const invoiceId = factureRes.data.id
+    const invoiceId = typeof factureRes.data === 'object' ? factureRes.data.id : factureRes.data
     if (!invoiceId) {
       throw new Error("❌ Échec récupération ID facture après création")
     }
