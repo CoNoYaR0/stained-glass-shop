@@ -126,25 +126,32 @@ async function createOrder(clientId, cart) {
     lines
   }, { headers })
 
-  console.log('📦 Commande créée, ID :', res.data.id)
-  return res.data
 }
 
-async function createInvoice(clientId, cart, orderId) {
+// 📦 Créer une commande client
+async function createOrder(clientId, cart) {
   const lines = cart.map(p => ({
     product_id: p.id,
     qty: p.qty,
     subprice: p.price_ht,
     tva_tx: p.tva || 19
-  }))
+  }));
 
-  const res = await axios.post(`${API_BASE}/invoices`, {
-    socid: clientId,
-    lines,
-    source: 'commande',
-    fk_source: orderId,
-    status: 1
-  }, { headers })
+  const res = await axios.post(`${API_BASE}/orders`, {
+    socid: parseInt(clientId),
+    date: new Date().toISOString().split('T')[0],
+    lines
+  }, { headers });
+
+  console.log("📦 Réponse Dolibarr - Création commande:", res.data);
+
+  const id = res.data?.id || res.data?.element?.id;
+  const ref = res.data?.ref || res.data?.element?.ref;
+
+  console.log("📦 Commande créée, ID :", id);
+  return { id, ref };
+}
+
 
   console.log('🧾 Facture créée, ID :', res.data.id)
   return res.data
