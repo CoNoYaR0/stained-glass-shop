@@ -15,7 +15,11 @@ const headers = {
 
 exports.handler = async (event) => {
   try {
+    console.log("🔐 Clé reçue:", event.headers['x-secret-key']);
+    console.log("🎯 Clé attendue (ORDER_SECRET):", SECRET);
+
     if (event.headers['x-secret-key'] !== SECRET) {
+      console.log("⛔ Clé incorrecte, rejetée");
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Accès non autorisé' })
@@ -40,6 +44,9 @@ exports.handler = async (event) => {
       }
 
       console.log("🔍 Vérification produit ID:", item.id);
+
+      const qty = parseFloat(item.qty);
+      const price_ht = parseFloat(item.price_ht);
 
       const productRes = await axios.get(`${API_BASE}/products/${item.id}`, { headers })
       const product = productRes.data
