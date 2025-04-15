@@ -1,8 +1,9 @@
+// Netlify Function: create-order.js
 const axios = require('axios')
 const fs = require('fs')
 const path = require('path')
 
-// 🔐 Variables d’environnement
+// Env vars
 const API_BASE = process.env.DOLIBARR_URL
 const TOKEN = process.env.DOLIBARR_TOKEN
 const SECRET = process.env.ORDER_SECRET
@@ -14,11 +15,12 @@ const headers = {
 
 exports.handler = async (event) => {
   try {
-    console.log("🔐 Clé reçue:", event.headers['x-secret-key'])
-    console.log("🎯 Clé attendue (ORDER_SECRET):", SECRET)
+    const secretKey = event.headers['x-secret-key']
+    console.log('🔐 Clé reçue:', secretKey)
+    console.log('🎯 Clé attendue (ORDER_SECRET):', SECRET)
 
-    if (event.headers['x-secret-key'] !== SECRET) {
-      console.log("⛔ Clé incorrecte, rejetée")
+    if (secretKey !== SECRET) {
+      console.warn('⛔ Clé incorrecte, rejetée')
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Accès non autorisé' })
@@ -30,82 +32,47 @@ exports.handler = async (event) => {
     let totalCalc = 0
 
     for (const item of cart) {
-      console.log("🛒 Article reçu :", item)
-
+      console.log('🛒 Article reçu :', item)
       if (!item.id || typeof item.id !== 'number') {
-        console.error("❌ Produit sans ID valide :", item)
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: `Produit sans identifiant valide détecté (${item.title || "Inconnu"})` })
-        }
+        throw new Error(`❌ Produit sans identifiant valide (${item.title || 'Inconnu'})`)
       }
-
-      console.log("🔍 Vérification produit ID:", item.id)
-
-      const qty = parseFloat(item.qty)
-      const price_ht = parseFloat(item.price_ht)
 
       const productRes = await axios.get(`${API_BASE}/products/${item.id}`, { headers })
       const product = productRes.data
+      console.log('🔍 Produit récupéré depuis Dolibarr:', product.label)
 
       const stock = parseFloat(product.stock_real)
-      if (stock < qty) {
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: `Stock insuffisant pour "${product.label}". Dispo : ${stock}, demandé : ${qty}` })
-        }
+      if (stock < item.qty) {
+        throw new Error(`❌ Stock insuffisant pour ${product.label}. Dispo: ${stock}, demandé: ${item.qty}`)
       }
 
       const tva = parseFloat(product.tva_tx || 19)
-      totalCalc += qty * price_ht * (1 + tva / 100)
+      totalCalc += item.qty * item.price_ht * (1 + tva / 100)
     }
 
     const totalArrondi = Math.round(totalCalc * 100) / 100
     const totalEnvoye = Math.round(parseFloat(totalTTC) * 100) / 100
 
     if (totalArrondi !== totalEnvoye) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: `Total incohérent. Calculé : ${totalArrondi} €, reçu : ${totalEnvoye} €` })
-      }
+      throw new Error(`❌ Total incohérent. Calculé : ${totalArrondi} €, reçu : ${totalEnvoye} €`)
     }
 
     const clientId = await findOrCreateClient(customer)
     const order = await createOrder(clientId, cart)
     const invoice = await createInvoice(clientId, cart, order.id)
 
-    if (!invoice?.id) {
-      throw new Error("❌ Impossible de générer la facture : ID introuvable")
+    const invoiceId = invoice?.id
+    if (!invoiceId) {
+      throw new Error('❌ Impossible de générer la facture : ID introuvable')
     }
 
-    await generatePDF(invoice.id)
+    await generatePDF(invoiceId)
 
-    const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoice.id}`
+    const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoiceId}`
     await sendInvoiceEmail(customer.email, invoice.ref, pdfUrl)
 
-    // 📊 Mise à jour statistiques vues
-    const viewsPath = path.resolve("./data/views.json")
-    let vuesData = {}
-    if (fs.existsSync(viewsPath)) {
-      vuesData = JSON.parse(fs.readFileSync(viewsPath))
-    }
-    cart.forEach(p => {
-      const key = p.id
-      if (!vuesData[key]) vuesData[key] = { views: 0, commandes: 0 }
-      vuesData[key].commandes += 1
-    })
-    fs.writeFileSync(viewsPath, JSON.stringify(vuesData, null, 2))
-
-    // 🪵 Log de commande
-    const log = {
-      date: new Date().toISOString(),
-      client: customer.email,
-      commande: { id: order.id, ref: order.ref },
-      facture: { id: invoice.id, ref: invoice.ref },
-      total: totalTTC
-    }
-    const logPath = path.join('/tmp', `log-${Date.now()}.json`)
-    fs.writeFileSync(logPath, JSON.stringify(log, null, 2))
+    updateViewsStats(cart)
+    logOrderData(customer.email, order, invoice, totalTTC)
 
     return {
       statusCode: 200,
@@ -115,23 +82,20 @@ exports.handler = async (event) => {
         facture: { id: invoice.id, ref: invoice.ref, pdfUrl }
       })
     }
-
   } catch (error) {
-    console.error('❌ Erreur create-order:', error)
+    console.error('❌ Erreur create-order:', error.message || error)
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Erreur lors de la création de commande' })
+      body: JSON.stringify({ error: error.message || 'Erreur lors de la création de commande' })
     }
   }
 }
 
-// 🔍 Client
 async function findOrCreateClient(customer) {
   const { email, nom, adresse, ville, pays } = customer
   const res = await axios.get(`${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`, { headers })
-
   if (res.data && res.data.length > 0) {
-    console.log("👤 Client trouvé, ID :", res.data[0].id)
+    console.log('👤 Client trouvé, ID :', res.data[0].id)
     return res.data[0].id
   }
 
@@ -144,11 +108,10 @@ async function findOrCreateClient(customer) {
     client: 1
   }, { headers })
 
-  console.log("🆕 Client créé, ID :", createRes.data.id)
+  console.log('🆕 Client créé, ID :', createRes.data.id)
   return createRes.data.id
 }
 
-// 📦 Commande
 async function createOrder(clientId, cart) {
   const lines = cart.map(p => ({
     product_id: p.id,
@@ -156,15 +119,17 @@ async function createOrder(clientId, cart) {
     subprice: p.price_ht,
     tva_tx: p.tva || 19
   }))
+
   const res = await axios.post(`${API_BASE}/orders`, {
     socid: parseInt(clientId),
     date: new Date().toISOString().split('T')[0],
     lines
   }, { headers })
+
+  console.log('📦 Commande créée, ID :', res.data.id)
   return res.data
 }
 
-// 🧾 Facture
 async function createInvoice(clientId, cart, orderId) {
   const lines = cart.map(p => ({
     product_id: p.id,
@@ -172,6 +137,7 @@ async function createInvoice(clientId, cart, orderId) {
     subprice: p.price_ht,
     tva_tx: p.tva || 19
   }))
+
   const res = await axios.post(`${API_BASE}/invoices`, {
     socid: clientId,
     lines,
@@ -179,15 +145,42 @@ async function createInvoice(clientId, cart, orderId) {
     fk_source: orderId,
     status: 1
   }, { headers })
+
+  console.log('🧾 Facture créée, ID :', res.data.id)
   return res.data
 }
 
-// 📄 PDF
 async function generatePDF(invoiceId) {
   await axios.get(`${API_BASE}/invoices/${invoiceId}/generate-pdf`, { headers })
+  console.log('📄 PDF généré pour facture ID :', invoiceId)
 }
 
-// 📧 Email (console)
 async function sendInvoiceEmail(email, ref, pdfUrl) {
   console.log(`✉️ Envoi de la facture ${ref} à ${email} avec le lien : ${pdfUrl}`)
+  // Ajoute ici un appel SMTP ou API Sendgrid / Mailgun si nécessaire
+}
+
+function updateViewsStats(cart) {
+  const viewsPath = path.resolve('./data/views.json')
+  let vuesData = {}
+  if (fs.existsSync(viewsPath)) {
+    vuesData = JSON.parse(fs.readFileSync(viewsPath))
+  }
+  cart.forEach(p => {
+    if (!vuesData[p.id]) vuesData[p.id] = { views: 0, commandes: 0 }
+    vuesData[p.id].commandes += 1
+  })
+  fs.writeFileSync(viewsPath, JSON.stringify(vuesData, null, 2))
+}
+
+function logOrderData(email, order, invoice, total) {
+  const log = {
+    date: new Date().toISOString(),
+    client: email,
+    commande: { id: order.id, ref: order.ref },
+    facture: { id: invoice.id, ref: invoice.ref },
+    total
+  }
+  const logPath = path.join('/tmp', `log-${Date.now()}.json`)
+  fs.writeFileSync(logPath, JSON.stringify(log, null, 2))
 }
