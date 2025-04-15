@@ -167,9 +167,16 @@ async function createInvoice(clientId, cart, orderId) {
     status: 1
   }, { headers })
 
-  console.log('🧾 Facture créée, ID :', res.data.id)
-  return res.data
+  const raw = res.data;
+  console.log("🧾 Réponse Dolibarr - Création facture:", raw);
+
+  const id = raw?.id || raw?.element?.id;
+  const ref = raw?.ref || raw?.element?.ref;
+
+  console.log("🧾 Facture créée, ID :", id);
+  return { id, ref };
 }
+
 
 // 📄 Générer le PDF d'une facture
 async function generatePDF(invoiceId) {
