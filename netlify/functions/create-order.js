@@ -69,9 +69,18 @@ exports.handler = async (event) => {
     if (!invoiceId) {
       throw new Error('❌ Impossible de générer la facture : ID introuvable')
     }
-    console.log("🧾 Facture validée, ID :", invoiceId)
+    console.log("🧾 Facture brouillon créée, ID :", invoiceId)
 
-    // 3️⃣ Créer la commande après validation de la facture
+    // 2️⃣ Log pour validation de la facture
+    try {
+      await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
+      console.log("✅ Facture validée, ID :", invoiceId, "Référence :", invoice.ref)
+    } catch (err) {
+      console.error("❌ Échec de validation de la facture :", err.message || err)
+      throw new Error("❌ La validation de la facture a échoué.")
+    }
+
+    // 3️⃣ Générer le PDF de la facture
     await generatePDF(invoiceId)
 
     const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoiceId}`
@@ -163,20 +172,7 @@ async function createInvoice(clientId, cart, orderId) {
     throw new Error('❌ Impossible de récupérer l’ID de la facture créée')
   }
 
-  console.log("🧾 Facture brouillon créée, ID :", invoiceId)
-
-  // 2️⃣ Valider la facture (obligatoire pour avoir une ref officielle)
-  await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
-
-  // 3️⃣ Récupérer les infos finales de la facture validée
-  const finalInvoice = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers })
-  const ref = finalInvoice.data?.ref
-
-  if (!ref) {
-    throw new Error("❌ Impossible de récupérer la référence de la facture après validation.")
-  }
-
-  return { id: invoiceId, ref }
+  return { id: invoiceId, ref: createRes.data.ref }
 }
 
 // 📄 Générer le PDF d'une facture
