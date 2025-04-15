@@ -194,9 +194,19 @@ async function createInvoice(clientId, cart, orderId) {
 }
 
 // 📄 Générer PDF
-async function generatePDF(invoiceId) {
-  await axios.get(`${API_BASE}/invoices/${invoiceId}/generate-pdf`, { headers })
+const order = await createOrder(clientId, cart)
+const invoice = await createInvoice(clientId, cart, order.id)
+
+// ✅ Ici c’est l’ID de la facture qu’on veut
+const invoiceId = invoice?.id
+console.log('🧾 Facture créée, ID :', invoiceId)
+
+if (!invoiceId) {
+  throw new Error("❌ Impossible de générer la facture : ID introuvable")
 }
+
+await generatePDF(invoiceId)
+
 
 // 📬 Envoi d'email (exemple à adapter selon le service utilisé)
 async function sendInvoiceEmail(email, ref, pdfUrl) {
