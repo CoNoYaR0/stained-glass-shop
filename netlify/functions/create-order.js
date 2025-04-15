@@ -146,7 +146,7 @@ async function createOrder(clientId, cart) {
   return { id, ref };
 }
 
-// 🧾 Créer une facture
+// 🧾 Créer et valider une facture client
 async function createInvoice(clientId, cart, orderId) {
   if (!orderId) {
     throw new Error('❌ ID de commande manquant pour création de facture')
@@ -159,22 +159,28 @@ async function createInvoice(clientId, cart, orderId) {
     tva_tx: p.tva || 19
   }))
 
-  const res = await axios.post(`${API_BASE}/invoices`, {
+  // 1️⃣ Créer la facture en brouillon
+  const createRes = await axios.post(`${API_BASE}/invoices`, {
     socid: parseInt(clientId),
     lines,
     source: 'commande',
     fk_source: orderId,
-    status: 1
+    status: 0 // important : facture brouillon
   }, { headers })
 
-  const raw = res.data;
-  console.log("🧾 Réponse Dolibarr - Création facture:", raw);
+  const invoiceId = createRes.data.id
+  if (!invoiceId) {
+    throw new Error('❌ Impossible de récupérer l’ID de la facture créée')
+  }
 
-  const id = raw?.id || raw?.element?.id;
-  const ref = raw?.ref || raw?.element?.ref;
+  console.log("🧾 Facture brouillon créée, ID :", invoiceId)
 
-  console.log("🧾 Facture créée, ID :", id);
-  return { id, ref };
+  // 2️⃣ Valider la facture pour la rendre utilisable
+  await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
+  console.log("✅ Facture validée dans Dolibarr")
+
+  // 3️⃣ Retourner la facture avec ID et ref
+  return { id: invoiceId, ref: createRes.data.ref }
 }
 
 
