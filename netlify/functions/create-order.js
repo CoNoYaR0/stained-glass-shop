@@ -131,9 +131,11 @@ async function findOrCreateClient(customer) {
   const { email, nom, adresse, ville, pays } = customer
 
   const res = await axios.get(
-    `${API_BASE}/thirdparties?sqlfilters=(t.email:=\'${email}\')`,
+    `${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`,
     { headers }
   )
+  
+    
 
   if (res.data && res.data.length > 0) {
     console.log("👤 Client trouvé, ID :", res.data[0].id);
