@@ -121,21 +121,29 @@ async function createOrder(clientId, cart) {
     qty: p.qty,
     subprice: p.price_ht,
     tva_tx: p.tva || 19
-  }))
+  }));
 
   const res = await axios.post(`${API_BASE}/orders`, {
     socid: parseInt(clientId),
     date: new Date().toISOString().split('T')[0],
     lines
-  }, { headers })
+  }, { headers });
 
-  console.log('📦 Réponse Dolibarr - Création commande:', res.data)
+  const raw = res.data;
+  console.log("📦 Réponse Dolibarr - Création commande:", raw);
 
-  const id = res.data?.id || res.data?.element?.id
-  const ref = res.data?.ref || res.data?.element?.ref
+  // cas 1 : retour brut type => 6
+  if (typeof raw === 'number') {
+    console.log("📦 Commande créée (brut), ID :", raw);
+    return { id: raw, ref: `Commande ${raw}` }; // ref fictive si pas retournée
+  }
 
-  console.log('📦 Commande créée, ID :', id)
-  return { id, ref }
+  // cas 2 : objet complet
+  const id = raw?.id || raw?.element?.id;
+  const ref = raw?.ref || raw?.element?.ref;
+  console.log("📦 Commande créée, ID :", id);
+
+  return { id, ref };
 }
 
 // 🧾 Créer une facture
