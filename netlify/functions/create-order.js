@@ -150,9 +150,31 @@ async function createOrder(clientId, cart) {
   return { id, ref };
 }
 
+// 🧾 Créer une facture client
+async function createInvoice(clientId, cart, orderId) {
+  if (!orderId) {
+    throw new Error('❌ ID de commande manquant pour création de facture')
+  }
 
-  console.log('🧾 Facture créée, ID :', res.data.id)
+  const lines = cart.map(p => ({
+    product_id: p.id,
+    qty: p.qty,
+    subprice: p.price_ht,
+    tva_tx: p.tva || 19
+  }))
+
+  const res = await axios.post(`${API_BASE}/invoices`, {
+    socid: parseInt(clientId),
+    lines,
+    source: 'commande',
+    fk_source: orderId,
+    status: 1
+  }, { headers })
+
+  console.log("🧾 Facture créée, ID :", res.data.id)
   return res.data
+}
+
 }
 
 async function generatePDF(invoiceId) {
