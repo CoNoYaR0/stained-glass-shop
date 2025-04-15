@@ -20,7 +20,6 @@ exports.handler = async (event) => {
     console.log('🎯 Clé attendue (ORDER_SECRET):', SECRET)
 
     if (secretKey !== SECRET) {
-      console.warn('⛔ Clé incorrecte, rejetée')
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Accès non autorisé' })
@@ -33,6 +32,7 @@ exports.handler = async (event) => {
 
     for (const item of cart) {
       console.log('🛒 Article reçu :', item)
+
       if (!item.id || typeof item.id !== 'number') {
         throw new Error(`❌ Produit sans identifiant valide (${item.title || 'Inconnu'})`)
       }
@@ -91,8 +91,10 @@ exports.handler = async (event) => {
   }
 }
 
+// 🔍 Trouver ou créer un client
 async function findOrCreateClient(customer) {
   const { email, nom, adresse, ville, pays } = customer
+
   const res = await axios.get(`${API_BASE}/thirdparties?sqlfilters=(t.email:=:'${email}')`, { headers })
   if (res.data && res.data.length > 0) {
     console.log('👤 Client trouvé, ID :', res.data[0].id)
@@ -112,6 +114,7 @@ async function findOrCreateClient(customer) {
   return createRes.data.id
 }
 
+// 📦 Créer une commande client
 async function createOrder(clientId, cart) {
   const lines = cart.map(p => ({
     product_id: p.id,
@@ -126,31 +129,16 @@ async function createOrder(clientId, cart) {
     lines
   }, { headers })
 
-// 📦 Créer une commande client
-async function createOrder(clientId, cart) {
-  const lines = cart.map(p => ({
-    product_id: p.id,
-    qty: p.qty,
-    subprice: p.price_ht,
-    tva_tx: p.tva || 19
-  }));
+  console.log('📦 Réponse Dolibarr - Création commande:', res.data)
 
-  const res = await axios.post(`${API_BASE}/orders`, {
-    socid: parseInt(clientId),
-    date: new Date().toISOString().split('T')[0],
-    lines
-  }, { headers });
+  const id = res.data?.id || res.data?.element?.id
+  const ref = res.data?.ref || res.data?.element?.ref
 
-  console.log("📦 Réponse Dolibarr - Création commande:", res.data);
-
-  const id = res.data?.id || res.data?.element?.id;
-  const ref = res.data?.ref || res.data?.element?.ref;
-
-  console.log("📦 Commande créée, ID :", id);
-  return { id, ref };
+  console.log('📦 Commande créée, ID :', id)
+  return { id, ref }
 }
 
-// 🧾 Créer une facture client
+// 🧾 Créer une facture
 async function createInvoice(clientId, cart, orderId) {
   if (!orderId) {
     throw new Error('❌ ID de commande manquant pour création de facture')
@@ -171,35 +159,47 @@ async function createInvoice(clientId, cart, orderId) {
     status: 1
   }, { headers })
 
-  console.log("🧾 Facture créée, ID :", res.data.id)
+  console.log('🧾 Facture créée, ID :', res.data.id)
   return res.data
 }
 
-}
-
+// 📄 Générer le PDF d'une facture
 async function generatePDF(invoiceId) {
-  await axios.get(`${API_BASE}/invoices/${invoiceId}/generate-pdf`, { headers })
-  console.log('📄 PDF généré pour facture ID :', invoiceId)
+  if (!invoiceId) {
+    throw new Error('❌ ID facture manquant pour génération PDF')
+  }
+
+  const url = `${API_BASE}/invoices/${invoiceId}/generate-pdf`
+  console.log('📄 Génération PDF:', url)
+
+  const res = await axios.get(url, { headers })
+  console.log('📄 PDF généré pour facture', invoiceId)
+
+  return res.data
 }
 
+// ✉️ Envoi d'email
 async function sendInvoiceEmail(email, ref, pdfUrl) {
   console.log(`✉️ Envoi de la facture ${ref} à ${email} avec le lien : ${pdfUrl}`)
-  // Ajoute ici un appel SMTP ou API Sendgrid / Mailgun si nécessaire
 }
 
+// 📊 Mise à jour stats
 function updateViewsStats(cart) {
   const viewsPath = path.resolve('./data/views.json')
   let vuesData = {}
   if (fs.existsSync(viewsPath)) {
     vuesData = JSON.parse(fs.readFileSync(viewsPath))
   }
+
   cart.forEach(p => {
     if (!vuesData[p.id]) vuesData[p.id] = { views: 0, commandes: 0 }
     vuesData[p.id].commandes += 1
   })
+
   fs.writeFileSync(viewsPath, JSON.stringify(vuesData, null, 2))
 }
 
+// 📝 Log JSON
 function logOrderData(email, order, invoice, total) {
   const log = {
     date: new Date().toISOString(),
@@ -208,6 +208,7 @@ function logOrderData(email, order, invoice, total) {
     facture: { id: invoice.id, ref: invoice.ref },
     total
   }
+
   const logPath = path.join('/tmp', `log-${Date.now()}.json`)
   fs.writeFileSync(logPath, JSON.stringify(log, null, 2))
 }
