@@ -73,10 +73,11 @@ exports.handler = async (event) => {
 
     // 2️⃣ Log pour validation de la facture
     try {
-      await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
-      console.log("✅ Facture validée, ID :", invoiceId, "Référence :", invoice.ref)
+      console.log(`🔄 Validation de la facture ID: ${invoiceId}...`)
+      const validateRes = await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
+      console.log("✅ Facture validée avec succès !", validateRes.data)
     } catch (err) {
-      console.error("❌ Échec de validation de la facture :", err.message || err)
+      console.error("❌ Échec de validation de la facture :", err.response?.data || err.message)
       throw new Error("❌ La validation de la facture a échoué.")
     }
 
