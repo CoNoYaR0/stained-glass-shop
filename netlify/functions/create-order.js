@@ -1,84 +1,116 @@
 
-const axios = require('axios')
-const nodemailer = require('nodemailer')
+const axios = require('axios');
+const nodemailer = require('nodemailer');
 
-const API_BASE = process.env.DOLIBARR_URL
-const TOKEN = process.env.DOLIBARR_TOKEN
+const API_BASE = process.env.DOLIBARR_URL;
+const TOKEN = process.env.DOLIBARR_TOKEN;
 const headers = {
   'DOLAPIKEY': TOKEN,
   'Content-Type': 'application/json'
-}
+};
 
-// ✅ Entry Point
 exports.handler = async (event) => {
   try {
-    const data = JSON.parse(event.body)
-    const { clientId, cart, orderId, customerEmail } = data
+    const data = JSON.parse(event.body);
+    const { customer, cart, totalTTC } = data;
 
-    if (!clientId || !Array.isArray(cart) || !orderId || !customerEmail) {
-      throw new Error("❌ Données manquantes : clientId, cart, orderId ou customerEmail")
+    if (!customer?.email || !cart?.length) {
+      throw new Error("❌ Données client/cart manquantes");
     }
 
-    const lines = buildInvoiceLines(cart)
-    const { invoiceId, invoiceRef } = await createAndValidateInvoice(clientId, orderId, lines)
+    const clientId = await findOrCreateClientDolibarr(customer);
+    const orderId = await createOrderDolibarr(clientId, cart);
+    const { invoiceId, invoiceRef } = await createAndValidateInvoice(clientId, orderId, cart);
 
-    const pdfUrl = `https://resplendent-centaur-abf462.netlify.app/.netlify/functions/get-invoice-pdf?id=${invoiceId}`
-    await sendInvoiceEmail(customerEmail, invoiceRef, pdfUrl)
+    const pdfUrl = `https://resplendent-centaur-abf462.netlify.app/.netlify/functions/get-invoice-pdf?id=${invoiceId}`;
+
+    await sendInvoiceEmail(customer.email, invoiceRef, pdfUrl);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        invoiceId,
-        ref: invoiceRef,
-        pdfUrl
+        facture: {
+          invoiceId,
+          ref: invoiceRef,
+          pdfUrl
+        }
       })
-    }
-
-  } catch (error) {
-    console.error("❌ Erreur handler:", error.message || error)
+    };
+  } catch (err) {
+    console.error("❌ Erreur create-order:", err.message || err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
-    }
+      body: JSON.stringify({ error: err.message })
+    };
   }
+};
+
+async function findOrCreateClientDolibarr(customer) {
+  const { email, nom, prenom, tel, adresse } = customer;
+
+  const search = await axios.get(`${API_BASE}/thirdparties?sqlfilters=(email:=:'${email}')`, { headers });
+  if (Array.isArray(search.data) && search.data.length > 0) {
+    return search.data[0].id;
+  }
+
+  const clientRes = await axios.post(`${API_BASE}/thirdparties`, {
+    name: `${prenom} ${nom}`,
+    email,
+    phone: tel,
+    address: adresse,
+    client: 1,
+    status: 1
+  }, { headers });
+
+  return clientRes.data;
 }
 
-// 🧮 Construction des lignes de facture
-function buildInvoiceLines(cart) {
-  return cart.map(p => ({
+async function createOrderDolibarr(clientId, cart) {
+  const lines = cart.map(p => ({
     product_id: p.id,
     qty: p.qty,
     subprice: p.price_ht,
     tva_tx: p.tva || 19
-  }))
+  }));
+
+  const res = await axios.post(`${API_BASE}/orders`, {
+    socid: clientId,
+    lines,
+    status: 0
+  }, { headers });
+
+  return res.data;
 }
 
-// 🧾 Création et validation de facture
-async function createAndValidateInvoice(clientId, orderId, lines) {
+async function createAndValidateInvoice(clientId, orderId, cart) {
+  const lines = cart.map(p => ({
+    product_id: p.id,
+    qty: p.qty,
+    subprice: p.price_ht,
+    tva_tx: p.tva || 19
+  }));
+
   const factureRes = await axios.post(`${API_BASE}/invoices`, {
-    socid: parseInt(clientId),
+    socid: clientId,
     lines,
     source: 'commande',
     fk_source: orderId,
     status: 0
-  }, { headers })
+  }, { headers });
 
-  const raw = factureRes.data
-  const invoiceId = typeof raw === 'object' ? raw.id : raw
-  if (!invoiceId) {
-    throw new Error("❌ Impossible d'extraire l'ID de facture")
-  }
+  const invoiceId = typeof factureRes.data === 'object' ? factureRes.data.id : factureRes.data;
 
-  await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
+  if (!invoiceId) throw new Error("❌ Impossible de récupérer l'ID de la facture");
 
-  const finalInvoice = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers })
-  const ref = finalInvoice.data?.ref || `FACT-${invoiceId}`
+  await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers });
 
-  return { invoiceId, invoiceRef: ref }
+  const finalInvoice = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers });
+  const ref = finalInvoice.data?.ref || `FACT-${invoiceId}`;
+
+  return { invoiceId, invoiceRef: ref };
 }
 
-// ✉️ Envoi d'e-mail via SMTP OVH
 async function sendInvoiceEmail(email, ref, pdfUrl) {
   const transporter = nodemailer.createTransport({
     host: 'smtp.mail.ovh.net',
@@ -87,8 +119,8 @@ async function sendInvoiceEmail(email, ref, pdfUrl) {
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
-    }    
-  })
+    }
+  });
 
   const htmlContent = `
     <div style="font-family: sans-serif; padding: 20px;">
@@ -100,14 +132,14 @@ async function sendInvoiceEmail(email, ref, pdfUrl) {
       </a>
       <p style="margin-top:20px;">— L'équipe StainedGlass</p>
     </div>
-  `
+  `;
 
   const info = await transporter.sendMail({
-    from: '"StainedGlass" <commande@stainedglass.tn>',
+    from: 'StainedGlass <commande@stainedglass.tn>',
     to: email,
     subject: `Votre facture ${ref}`,
     html: htmlContent
-  })
+  });
 
-  console.log("✉️ Email envoyé:", info.messageId)
+  console.log("✉️ Email envoyé:", info.messageId);
 }

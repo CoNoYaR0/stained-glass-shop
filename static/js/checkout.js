@@ -114,9 +114,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const result = await res.json();
         if (result.success) {
-          localStorage.removeItem(CART_KEY);
-          window.location.href = "/merci-livraison";
-        } else {
+  localStorage.setItem("facture_pdf_url", result.facture?.pdfUrl);
+  localStorage.setItem("facture_ref", result.facture?.ref);
+  localStorage.removeItem(CART_KEY);
+  window.location.href = "/merci-livraison";
+} else {
           alert("Erreur : " + (result.error || "Échec création commande."));
         }
       } catch (err) {
