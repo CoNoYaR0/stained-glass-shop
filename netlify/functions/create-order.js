@@ -1,3 +1,4 @@
+
 const axios = require("axios");
 
 const API_BASE = process.env.DOLIBARR_URL;
@@ -19,18 +20,56 @@ exports.handler = async (event) => {
       };
     }
 
+    const clientId = await getOrCreateClient(customer);
+    const { invoiceId, invoiceRef } = await createInvoiceDolibarr(clientId, cart);
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: "✅ Étape 1 validée, données reçues", customer, cart }),
+      body: JSON.stringify({
+        message: "✅ Facture créée et validée",
+        invoiceId,
+        invoiceRef,
+      }),
     };
   } catch (err) {
-    console.error("❌ Erreur générale:", err.message || err);
+    console.error("❌ Erreur générale:", err.response?.data || err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message }),
     };
   }
 };
+
+async function getOrCreateClient(customer) {
+  const { email, nom, prenom, tel, adresse } = customer;
+
+  try {
+    const res = await axios.get(
+      `${API_BASE}/thirdparties?sqlfilters=(email:=:'${email}')`,
+      { headers }
+    );
+
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      console.log("✅ Client trouvé:", res.data[0].id);
+      return res.data[0].id;
+    }
+
+    const createRes = await axios.post(`${API_BASE}/thirdparties`, {
+      name: `${prenom} ${nom}`,
+      email,
+      client: 1,
+      phone: tel,
+      address: adresse,
+    }, { headers });
+
+    console.log("✅ Client créé:", createRes.data.id);
+    return createRes.data.id;
+
+  } catch (err) {
+    console.error("❌ Erreur client:", err.response?.data || err.message);
+    throw new Error("Impossible de récupérer ou créer le client.");
+  }
+}
 
 async function createInvoiceDolibarr(clientId, cart) {
   try {
@@ -41,7 +80,6 @@ async function createInvoiceDolibarr(clientId, cart) {
       tva_tx: item.tva || 19,
     }));
 
-    // Créer la facture
     const res = await axios.post(`${API_BASE}/invoices`, {
       socid: clientId,
       lines,
@@ -52,12 +90,9 @@ async function createInvoiceDolibarr(clientId, cart) {
 
     if (!invoiceId) throw new Error("❌ Aucun ID de facture retourné");
 
-    // Valider la facture
     await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers });
 
-    // Récupérer les infos finales (dont ref)
     const final = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers });
-
     const ref = final.data?.ref || `FACT-${invoiceId}`;
 
     return { invoiceId, invoiceRef: ref };
