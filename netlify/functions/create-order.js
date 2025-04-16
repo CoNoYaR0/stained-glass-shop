@@ -31,3 +31,38 @@ exports.handler = async (event) => {
     };
   }
 };
+
+async function createInvoiceDolibarr(clientId, cart) {
+  try {
+    const lines = cart.map((item) => ({
+      product_id: item.id,
+      qty: item.qty,
+      subprice: item.price_ht,
+      tva_tx: item.tva || 19,
+    }));
+
+    // Créer la facture
+    const res = await axios.post(`${API_BASE}/invoices`, {
+      socid: clientId,
+      lines,
+      status: 0,
+    }, { headers });
+
+    const invoiceId = res.data.id || res.data;
+
+    if (!invoiceId) throw new Error("❌ Aucun ID de facture retourné");
+
+    // Valider la facture
+    await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers });
+
+    // Récupérer les infos finales (dont ref)
+    const final = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers });
+
+    const ref = final.data?.ref || `FACT-${invoiceId}`;
+
+    return { invoiceId, invoiceRef: ref };
+  } catch (err) {
+    console.error("❌ Erreur facture:", err.response?.data || err.message);
+    throw err;
+  }
+}
