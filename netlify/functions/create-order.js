@@ -1,120 +1,159 @@
+// Netlify Function: create-order.js
+const axios = require('axios')
+const fs = require('fs')
+const path = require('path')
 
-const axios = require("axios");
+// Env vars
+const API_BASE = process.env.DOLIBARR_URL
+const TOKEN = process.env.DOLIBARR_TOKEN
+const SECRET = process.env.ORDER_SECRET
+
+const headers = {
+  'DOLAPIKEY': TOKEN,
+  'Content-Type': 'application/json'
+}
 
 exports.handler = async (event) => {
   try {
-    const data = JSON.parse(event.body || "{}");
-    const { customer, cart, totalTTC } = data;
-
-    console.log("🟡 Étape 1: Données reçues", { customer, cart, totalTTC });
-
-    if (!customer || !cart?.length) {
+    if (event.headers['x-secret-key'] !== SECRET) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Données manquantes (client ou cart)" }),
-      };
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Accès non autorisé' })
+      }
     }
 
-    const clientId = await getOrCreateClient(customer);
-    console.log("🟢 Étape 2: ID client récupéré ou créé =>", clientId);
+    const data = JSON.parse(event.body)
+    const { cart, customer, totalTTC } = data
+    let totalCalc = 0
 
-    const { invoiceId, invoiceRef } = await createInvoiceDolibarr(clientId, cart);
-    console.log("🟢 Étape 3: Facture créée et validée =>", { invoiceId, invoiceRef });
+    for (const item of cart) {
+      const qty = parseFloat(item.qty)
+      const price_ht = parseFloat(item.price_ht)
+
+      const productRes = await axios.get(`${API_BASE}/products/${item.id}`, { headers })
+      const product = productRes.data
+
+      const stock = parseFloat(product.stock_real)
+      if (stock < qty) {
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: `Stock insuffisant pour "${product.label}". Dispo : ${stock}, demandé : ${qty}`
+          })
+        }
+      }
+
+      const tva = parseFloat(product.tva_tx || 19)
+      totalCalc += qty * price_ht * (1 + tva / 100)
+    }
+
+    const totalArrondi = Math.round(totalCalc * 100) / 100
+    const totalEnvoye = Math.round(parseFloat(totalTTC) * 100) / 100
+
+    if (totalArrondi !== totalEnvoye) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          error: `Total incohérent. Calculé : ${totalArrondi} €, reçu : ${totalEnvoye} €`
+        })
+      }
+    }
+
+    const clientId = await findOrCreateClient(customer)
+    const order = await createOrder(clientId, cart)
+    const invoice = await createInvoice(clientId, cart, order.id)
+    const pdfUrl = `/.netlify/functions/get-invoice-pdf?id=${invoice.id}`
+    await generatePDF(invoice.id)
+
+    await sendInvoiceEmail(customer.email, invoice.ref, pdfUrl)
+
+    // ✅ Mise à jour du suivi commandes
+    const viewsPath = path.resolve("./data/views.json")
+    let vuesData = {}
+    if (fs.existsSync(viewsPath)) {
+      vuesData = JSON.parse(fs.readFileSync(viewsPath))
+    }
+    cart.forEach(p => {
+      const key = p.id
+      if (!vuesData[key]) vuesData[key] = { views: 0, commandes: 0 }
+      vuesData[key].commandes += 1
+    })
+    fs.writeFileSync(viewsPath, JSON.stringify(vuesData, null, 2))
+
+    const log = {
+      date: new Date().toISOString(),
+      client: customer.email,
+      commande: { id: order.id, ref: order.ref },
+      facture: { id: invoice.id, ref: invoice.ref },
+      total: totalTTC
+    }
+    const logPath = path.join('/tmp', `log-${Date.now()}.json`)
+    fs.writeFileSync(logPath, JSON.stringify(log, null, 2))
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: "✅ Facture créée et validée via proxy",
-        invoiceId,
-        invoiceRef,
-      }),
-    };
-  } catch (err) {
-    console.error("❌ Erreur finale:", err.response?.data || err.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
-    };
-  }
-};
-
-async function getOrCreateClient(customer) {
-  const { email, nom, prenom, tel, adresse } = customer;
-  const encodedFilter = encodeURIComponent(`(email:=:'${email}')`);
-  try {
-    console.log("🔍 Recherche du client existant...");
-    const res = await axios.post("/.netlify/functions/proxy-create-order", {
-      method: "GET",
-      path: `/thirdparties?sqlfilters=${encodedFilter}`
-    });
-
-    const found = res.data;
-    if (Array.isArray(found) && found.length > 0) {
-      console.log("✅ Client trouvé:", found[0].id);
-      return found[0].id;
+        success: true,
+        commande: { id: order.id, ref: order.ref },
+        facture: { id: invoice.id, ref: invoice.ref, pdfUrl }
+      })
     }
 
-    console.log("➕ Client non trouvé, création en cours...");
-    const createRes = await axios.post("/.netlify/functions/proxy-create-order", {
-      method: "POST",
-      path: "/thirdparties",
-      body: {
-        name: `${prenom} ${nom}`,
-        email,
-        client: 1,
-        phone: tel,
-        address: adresse
-      }
-    });
-
-    console.log("✅ Client créé avec ID:", createRes.data.id);
-    return createRes.data.id;
-
-  } catch (err) {
-    console.error("❌ Erreur client:", err.response?.data || err.message);
-    throw new Error("Impossible de récupérer ou créer le client.");
+  } catch (error) {
+    console.error('Erreur create-order:', error)
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Erreur lors de la création de commande' })
+    }
   }
 }
 
-async function createInvoiceDolibarr(clientId, cart) {
-  try {
-    const lines = cart.map((item) => ({
-      product_id: item.id,
-      qty: item.qty,
-      subprice: item.price_ht,
-      tva_tx: item.tva || 19,
-    }));
+// 🔎 Trouver ou créer un client
+async function findOrCreateClient(customer) {
+  const { email, nom, adresse, ville, pays } = customer
+  const res = await axios.get(`${API_BASE}/thirdparties?sqlfilters=t.email='${email}'`, { headers })
+  if (res.data && res.data.length > 0) return res.data[0].id
 
-    console.log("🧾 Création facture pour client:", clientId);
-    const create = await axios.post("/.netlify/functions/proxy-create-order", {
-      method: "POST",
-      path: "/invoices",
-      body: {
-        socid: clientId,
-        lines,
-        status: 0
-      }
-    });
+  const createRes = await axios.post(`${API_BASE}/thirdparties`, {
+    name: nom,
+    email,
+    address: adresse,
+    town: ville,
+    country: pays || 'FR',
+    client: 1
+  }, { headers })
+  return createRes.data
+}
 
-    const invoiceId = create.data.id || create.data;
-    console.log("📄 ID facture:", invoiceId);
+// 📦 Créer une commande client
+async function createOrder(clientId, cart) {
+  const lines = cart.map(p => ({
+    product_id: p.id,
+    qty: p.qty,
+    subprice: p.price_ht,
+    tva_tx: p.tva || 19
+  }))
+  const res = await axios.post(`${API_BASE}/orders`, {
+    socid: clientId,
+    lines
+  }, { headers })
+  return res.data
+}
 
-    console.log("🔐 Validation de la facture...");
-    await axios.post("/.netlify/functions/proxy-create-order", {
-      method: "POST",
-      path: `/invoices/${invoiceId}/validate`,
-      body: {}
-    });
-
-    const final = await axios.post("/.netlify/functions/proxy-create-order", {
-      method: "GET",
-      path: `/invoices/${invoiceId}`
-    });
-
-    const ref = final.data?.ref || `FACT-${invoiceId}`;
-    return { invoiceId, invoiceRef: ref };
-  } catch (err) {
-    console.error("❌ Erreur création facture:", err.response?.data || err.message);
-    throw err;
-  }
+// 🧾 Créer une facture
+async function createInvoice(clientId, cart, orderId) {
+  const lines = cart.map(p => ({
+    product_id: p.id,
+    qty: p.qty,
+    subprice: p.price_ht,
+    tva_tx: p.tva || 19
+  }))
+  const res = await axios.post(`${API_BASE}/invoices`, {
+    socid: clientId,
+    lines,
+    source: 'commande',
+    fk_source: orderId,
+    status: 1
+  }, { headers })
+  return res.data
 }
