@@ -1,95 +1,140 @@
-// netlify/functions/create-order.js
+const fetch = require("node-fetch");
 
-const axios = require("axios");
-
-const PROXY_URL = process.env.PROXY_URL;
-
-exports.handler = async (event) => {
+exports.handler = async function (event, context) {
   try {
-    const data = JSON.parse(event.body || "{}");
+    const data = JSON.parse(event.body);
+    console.log("🟡 Étape 1 : Données reçues", data);
+
     const { customer, cart } = data;
 
-    if (!customer || !cart?.length) {
+    if (!customer?.email || !cart || cart.length === 0) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Données manquantes (client ou cart)" })
+        body: JSON.stringify({ error: "Données client ou cart manquantes" }),
       };
     }
 
-    // 🔍 Étape 1 : Vérifier si client existe
-    const encodedFilter = encodeURIComponent(`(email:=:'${customer.email}')`);
-    const searchRes = await axios.post(PROXY_URL, {
-      method: "GET",
-      path: `/thirdparties?sqlfilters=${encodedFilter}`
+    const proxyUrl = "/.netlify/functions/proxy-create-order";
+
+    // Recherche du client
+    console.log("🔍 Étape 2 : Recherche du client par email...");
+    const searchClientRes = await fetch(proxyUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: "thirdparties",
+        query: `?sqlfilters=(email:=:'${customer.email}')`,
+        method: "GET",
+      }),
     });
 
-    let clientId;
-    if (Array.isArray(searchRes.data) && searchRes.data.length > 0) {
-      clientId = searchRes.data[0].id;
+    const searchClientData = await searchClientRes.json();
+    console.log("🔎 Résultat recherche client:", searchClientData);
+
+    let socid;
+
+    if (Array.isArray(searchClientData) && searchClientData.length > 0) {
+      socid = searchClientData[0].id;
+      console.log("✅ Client trouvé avec ID:", socid);
     } else {
-      // ➕ Étape 2 : Créer le client
-      const createRes = await axios.post(PROXY_URL, {
+      console.log("➕ Client non trouvé, création...");
+
+      const createClientRes = await fetch(proxyUrl, {
         method: "POST",
-        path: "/thirdparties",
-        body: {
-          name: `${customer.nom} ${customer.prenom}`,
-          email: customer.email,
-          phone: customer.tel,
-          address: customer.adresse,
-          client: 1
-        }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: "thirdparties",
+          method: "POST",
+          body: {
+            name: `${customer.nom} ${customer.prenom}`,
+            email: customer.email,
+            client: 1,
+            address: customer.adresse || "",
+            zip: "00000",
+            town: "N/A",
+            country_id: "1",
+          },
+        }),
       });
-      clientId = createRes.data.id || createRes.data;
+
+      const createClientData = await createClientRes.json();
+      if (!createClientRes.ok || !createClientData.id) {
+        console.error("❌ Erreur création client:", createClientData);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: "Échec création client" }),
+        };
+      }
+
+      socid = createClientData.id;
+      console.log("✅ Client créé avec ID:", socid);
     }
 
-    // 🧾 Étape 3 : Créer la facture
-    const lines = cart.map((item) => ({
-      product_id: item.id,
-      qty: item.qty,
-      subprice: item.price_ht,
-      tva_tx: item.tva || 19
-    }));
+    // Création de la facture
+    console.log("🧾 Étape 3 : Création facture...");
 
-    const invoiceRes = await axios.post(PROXY_URL, {
+    const invoiceRes = await fetch(proxyUrl, {
       method: "POST",
-      path: "/invoices",
-      body: {
-        socid: clientId,
-        lines,
-        status: 0
-      }
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: "invoices",
+        method: "POST",
+        body: {
+          socid,
+          lines: cart.map((item) => ({
+            product_id: item.id,
+            qty: item.qty,
+            subprice: item.price_ht,
+            tva_tx: item.tva,
+          })),
+        },
+      }),
     });
 
-    const invoiceId = invoiceRes.data.id || invoiceRes.data;
+    const invoiceData = await invoiceRes.json();
+    if (!invoiceRes.ok || !invoiceData.id) {
+      console.error("❌ Erreur création facture:", invoiceData);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Échec création facture" }),
+      };
+    }
 
-    // ✅ Étape 4 : Valider la facture
-    await axios.post(PROXY_URL, {
+    const invoiceId = invoiceData.id;
+    console.log("✅ Facture créée avec ID:", invoiceId);
+
+    // Validation facture
+    console.log("✅ Étape 4 : Validation facture...");
+
+    const validateRes = await fetch(proxyUrl, {
       method: "POST",
-      path: `/invoices/${invoiceId}/validate`,
-      body: {}
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: `invoices/${invoiceId}/validate`,
+        method: "POST",
+      }),
     });
 
-    // 📄 Étape 5 : Récupérer les infos de la facture
-    const finalInvoice = await axios.post(PROXY_URL, {
-      method: "GET",
-      path: `/invoices/${invoiceId}`
-    });
+    if (!validateRes.ok) {
+      const err = await validateRes.text();
+      console.error("❌ Erreur validation facture:", err);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Erreur validation facture" }),
+      };
+    }
 
-    const invoiceRef = finalInvoice.data.ref || `FACT-${invoiceId}`;
+    console.log("✅ Facture validée");
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        message: "Facture créée et validée",
-        invoiceId,
-        invoiceRef
-      })
+      body: JSON.stringify({ success: true, invoice_id: invoiceId }),
     };
   } catch (err) {
-    console.error("❌ Erreur create-order:", err.response?.data || err.message);
+    console.error("❌ Erreur générale:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      body: JSON.stringify({ error: "Erreur interne" }),
     };
   }
 };
