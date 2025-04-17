@@ -2,6 +2,8 @@
 const axios = require('axios');
 
 exports.handler = async function (event, context) {
+  const PROXY_URL = process.env.PROXY_URL;
+
   const customer = {
     email: "testclient@example.com",
     nom: "Doe",
@@ -11,26 +13,30 @@ exports.handler = async function (event, context) {
   };
 
   try {
-    // Étape 1 - Recherche client via proxy
+    console.log("🔍 Étape 1 : recherche du client par email...");
+
     const encodedFilter = encodeURIComponent(`(email:=:'${customer.email}')`);
-    const searchRes = await axios.post("/.netlify/functions/proxy-create-order", {
+    const searchRes = await axios.post(PROXY_URL, {
       method: "GET",
       path: `/thirdparties?sqlfilters=${encodedFilter}`
     });
 
-    if (Array.isArray(searchRes.data) && searchRes.data.length > 0) {
-      const existingClient = searchRes.data[0];
+    const found = searchRes.data;
+
+    if (Array.isArray(found) && found.length > 0) {
+      console.log("✅ Client existant trouvé :", found[0].id);
       return {
         statusCode: 200,
         body: JSON.stringify({
           message: "Client déjà existant",
-          client_id: existingClient.id
+          client_id: found[0].id
         })
       };
     }
 
-    // Étape 2 - Création client via proxy
-    const createRes = await axios.post("/.netlify/functions/proxy-create-order", {
+    console.log("➕ Aucun client trouvé, création...");
+
+    const createRes = await axios.post(PROXY_URL, {
       method: "POST",
       path: "/thirdparties",
       body: {
@@ -42,11 +48,15 @@ exports.handler = async function (event, context) {
       }
     });
 
+    const created = createRes.data;
+
+    console.log("✅ Client créé avec succès :", created.id || created);
+
     return {
       statusCode: 201,
       body: JSON.stringify({
         message: "Client créé",
-        client_id: createRes.data.id || createRes.data
+        client_id: created.id || created
       })
     };
   } catch (error) {
