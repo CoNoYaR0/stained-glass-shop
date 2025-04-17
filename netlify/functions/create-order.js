@@ -1,69 +1,95 @@
+// netlify/functions/create-order.js
 
-const axios = require('axios');
+const axios = require("axios");
 
-exports.handler = async function (event, context) {
-  const PROXY_URL = process.env.PROXY_URL;
+const PROXY_URL = process.env.PROXY_URL;
 
-  const customer = {
-    email: "testclient@example.com",
-    nom: "Doe",
-    prenom: "John",
-    tel: "99887766",
-    adresse: "123 rue du verre"
-  };
-
+exports.handler = async (event) => {
   try {
-    console.log("🔍 Étape 1 : recherche du client par email...");
+    const data = JSON.parse(event.body || "{}");
+    const { customer, cart } = data;
 
+    if (!customer || !cart?.length) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Données manquantes (client ou cart)" })
+      };
+    }
+
+    // 🔍 Étape 1 : Vérifier si client existe
     const encodedFilter = encodeURIComponent(`(email:=:'${customer.email}')`);
     const searchRes = await axios.post(PROXY_URL, {
       method: "GET",
       path: `/thirdparties?sqlfilters=${encodedFilter}`
     });
 
-    const found = searchRes.data;
-
-    if (Array.isArray(found) && found.length > 0) {
-      console.log("✅ Client existant trouvé :", found[0].id);
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: "Client déjà existant",
-          client_id: found[0].id
-        })
-      };
+    let clientId;
+    if (Array.isArray(searchRes.data) && searchRes.data.length > 0) {
+      clientId = searchRes.data[0].id;
+    } else {
+      // ➕ Étape 2 : Créer le client
+      const createRes = await axios.post(PROXY_URL, {
+        method: "POST",
+        path: "/thirdparties",
+        body: {
+          name: `${customer.nom} ${customer.prenom}`,
+          email: customer.email,
+          phone: customer.tel,
+          address: customer.adresse,
+          client: 1
+        }
+      });
+      clientId = createRes.data.id || createRes.data;
     }
 
-    console.log("➕ Aucun client trouvé, création...");
+    // 🧾 Étape 3 : Créer la facture
+    const lines = cart.map((item) => ({
+      product_id: item.id,
+      qty: item.qty,
+      subprice: item.price_ht,
+      tva_tx: item.tva || 19
+    }));
 
-    const createRes = await axios.post(PROXY_URL, {
+    const invoiceRes = await axios.post(PROXY_URL, {
       method: "POST",
-      path: "/thirdparties",
+      path: "/invoices",
       body: {
-        name: `${customer.nom} ${customer.prenom}`,
-        email: customer.email,
-        phone: customer.tel,
-        address: customer.adresse,
-        client: 1
+        socid: clientId,
+        lines,
+        status: 0
       }
     });
 
-    const created = createRes.data;
+    const invoiceId = invoiceRes.data.id || invoiceRes.data;
 
-    console.log("✅ Client créé avec succès :", created.id || created);
+    // ✅ Étape 4 : Valider la facture
+    await axios.post(PROXY_URL, {
+      method: "POST",
+      path: `/invoices/${invoiceId}/validate`,
+      body: {}
+    });
+
+    // 📄 Étape 5 : Récupérer les infos de la facture
+    const finalInvoice = await axios.post(PROXY_URL, {
+      method: "GET",
+      path: `/invoices/${invoiceId}`
+    });
+
+    const invoiceRef = finalInvoice.data.ref || `FACT-${invoiceId}`;
 
     return {
-      statusCode: 201,
+      statusCode: 200,
       body: JSON.stringify({
-        message: "Client créé",
-        client_id: created.id || created
+        message: "Facture créée et validée",
+        invoiceId,
+        invoiceRef
       })
     };
-  } catch (error) {
-    console.error("❌ Erreur proxy client:", error.response?.data || error.message);
+  } catch (err) {
+    console.error("❌ Erreur create-order:", err.response?.data || err.message);
     return {
-      statusCode: error.response?.status || 500,
-      body: JSON.stringify({ error: error.response?.data || error.message })
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
     };
   }
 };
