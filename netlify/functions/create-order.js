@@ -1,140 +1,113 @@
-const fetch = require("node-fetch");
 
-exports.handler = async function (event, context) {
+const axios = require('axios')
+const nodemailer = require('nodemailer')
+
+const API_BASE = process.env.DOLIBARR_URL
+const TOKEN = process.env.DOLIBARR_TOKEN
+const headers = {
+  'DOLAPIKEY': TOKEN,
+  'Content-Type': 'application/json'
+}
+
+// ✅ Entry Point
+exports.handler = async (event) => {
   try {
-    const data = JSON.parse(event.body);
-    console.log("🟡 Étape 1 : Données reçues", data);
+    const data = JSON.parse(event.body)
+    const { clientId, cart, orderId, customerEmail } = data
 
-    const { customer, cart } = data;
-
-    if (!customer?.email || !cart || cart.length === 0) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Données client ou cart manquantes" }),
-      };
+    if (!clientId || !Array.isArray(cart) || !orderId || !customerEmail) {
+      throw new Error("❌ Données manquantes : clientId, cart, orderId ou customerEmail")
     }
 
-    const proxyUrl = "/.netlify/functions/proxy-create-order";
+    const lines = buildInvoiceLines(cart)
+    const { invoiceId, invoiceRef } = await createAndValidateInvoice(clientId, orderId, lines)
 
-    // Recherche du client
-    console.log("🔍 Étape 2 : Recherche du client par email...");
-    const searchClientRes = await fetch(proxyUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: "thirdparties",
-        query: `?sqlfilters=(email:=:'${customer.email}')`,
-        method: "GET",
-      }),
-    });
-
-    const searchClientData = await searchClientRes.json();
-    console.log("🔎 Résultat recherche client:", searchClientData);
-
-    let socid;
-
-    if (Array.isArray(searchClientData) && searchClientData.length > 0) {
-      socid = searchClientData[0].id;
-      console.log("✅ Client trouvé avec ID:", socid);
-    } else {
-      console.log("➕ Client non trouvé, création...");
-
-      const createClientRes = await fetch(proxyUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          path: "thirdparties",
-          method: "POST",
-          body: {
-            name: `${customer.nom} ${customer.prenom}`,
-            email: customer.email,
-            client: 1,
-            address: customer.adresse || "",
-            zip: "00000",
-            town: "N/A",
-            country_id: "1",
-          },
-        }),
-      });
-
-      const createClientData = await createClientRes.json();
-      if (!createClientRes.ok || !createClientData.id) {
-        console.error("❌ Erreur création client:", createClientData);
-        return {
-          statusCode: 500,
-          body: JSON.stringify({ error: "Échec création client" }),
-        };
-      }
-
-      socid = createClientData.id;
-      console.log("✅ Client créé avec ID:", socid);
-    }
-
-    // Création de la facture
-    console.log("🧾 Étape 3 : Création facture...");
-
-    const invoiceRes = await fetch(proxyUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: "invoices",
-        method: "POST",
-        body: {
-          socid,
-          lines: cart.map((item) => ({
-            product_id: item.id,
-            qty: item.qty,
-            subprice: item.price_ht,
-            tva_tx: item.tva,
-          })),
-        },
-      }),
-    });
-
-    const invoiceData = await invoiceRes.json();
-    if (!invoiceRes.ok || !invoiceData.id) {
-      console.error("❌ Erreur création facture:", invoiceData);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Échec création facture" }),
-      };
-    }
-
-    const invoiceId = invoiceData.id;
-    console.log("✅ Facture créée avec ID:", invoiceId);
-
-    // Validation facture
-    console.log("✅ Étape 4 : Validation facture...");
-
-    const validateRes = await fetch(proxyUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: `invoices/${invoiceId}/validate`,
-        method: "POST",
-      }),
-    });
-
-    if (!validateRes.ok) {
-      const err = await validateRes.text();
-      console.error("❌ Erreur validation facture:", err);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Erreur validation facture" }),
-      };
-    }
-
-    console.log("✅ Facture validée");
+    const pdfUrl = `https://resplendent-centaur-abf462.netlify.app/.netlify/functions/get-invoice-pdf?id=${invoiceId}`
+    await sendInvoiceEmail(customerEmail, invoiceRef, pdfUrl)
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, invoice_id: invoiceId }),
-    };
-  } catch (err) {
-    console.error("❌ Erreur générale:", err);
+      body: JSON.stringify({
+        success: true,
+        invoiceId,
+        ref: invoiceRef,
+        pdfUrl
+      })
+    }
+
+  } catch (error) {
+    console.error("❌ Erreur handler:", error.message || error)
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Erreur interne" }),
-    };
+      body: JSON.stringify({ error: error.message })
+    }
   }
-};
+}
+
+// 🧮 Construction des lignes de facture
+function buildInvoiceLines(cart) {
+  return cart.map(p => ({
+    product_id: p.id,
+    qty: p.qty,
+    subprice: p.price_ht,
+    tva_tx: p.tva || 19
+  }))
+}
+
+// 🧾 Création et validation de facture
+async function createAndValidateInvoice(clientId, orderId, lines) {
+  const factureRes = await axios.post(`${API_BASE}/invoices`, {
+    socid: parseInt(clientId),
+    lines,
+    source: 'commande',
+    fk_source: orderId,
+    status: 0
+  }, { headers })
+
+  const raw = factureRes.data
+  const invoiceId = typeof raw === 'object' ? raw.id : raw
+  if (!invoiceId) {
+    throw new Error("❌ Impossible d'extraire l'ID de facture")
+  }
+
+  await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
+
+  const finalInvoice = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers })
+  const ref = finalInvoice.data?.ref || `FACT-${invoiceId}`
+
+  return { invoiceId, invoiceRef: ref }
+}
+
+// ✉️ Envoi d'e-mail via SMTP OVH
+async function sendInvoiceEmail(email, ref, pdfUrl) {
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.mail.ovh.net',
+    port: 465,
+    secure: true,
+    auth: {
+      user: 'commande@stainedglass.tn',
+      pass: 'jjNuC5Qg2ifNbPt'
+    }
+  })
+
+  const htmlContent = `
+    <div style="font-family: sans-serif; padding: 20px;">
+      <h2>🧾 Votre facture ${ref}</h2>
+      <p>Bonjour,</p>
+      <p>Merci pour votre commande. Vous pouvez télécharger votre facture en cliquant sur le bouton ci-dessous :</p>
+      <a href="${pdfUrl}" style="display:inline-block;padding:10px 20px;background-color:#4CAF50;color:white;text-decoration:none;border-radius:5px;" target="_blank">
+        📄 Télécharger votre facture
+      </a>
+      <p style="margin-top:20px;">— L'équipe StainedGlass</p>
+    </div>
+  `
+
+  const info = await transporter.sendMail({
+    from: '"StainedGlass" <commande@stainedglass.tn>',
+    to: email,
+    subject: `Votre facture ${ref}`,
+    html: htmlContent
+  })
+
+  console.log("✉️ Email envoyé:", info.messageId)
+}
