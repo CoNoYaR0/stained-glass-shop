@@ -1,7 +1,7 @@
 
 const axios = require("axios");
 
-const API_BASE = process.env.DOLIBARR_URL;
+const API_BASE = process.env.DOLIBARR_URL + "/index.php";
 const TOKEN = process.env.DOLIBARR_TOKEN;
 const headers = {
   DOLAPIKEY: TOKEN,
