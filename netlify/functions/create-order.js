@@ -1,63 +1,59 @@
 
-const axios = require('axios')
+const axios = require('axios');
 
-const API_BASE = process.env.DOLIBARR_URL
-const TOKEN = process.env.DOLIBARR_TOKEN
+exports.handler = async function (event, context) {
+  const customer = {
+    email: "testclient@example.com",
+    nom: "Doe",
+    prenom: "John",
+    tel: "99887766",
+    adresse: "123 rue du verre"
+  };
 
-const headers = {
-  'DOLAPIKEY': TOKEN,
-  'Content-Type': 'application/json'
-}
-
-exports.handler = async (event) => {
   try {
-    const data = JSON.parse(event.body)
-    const { clientId, cart, orderId } = data
+    // Étape 1 - Recherche client via proxy
+    const encodedFilter = encodeURIComponent(`(email:=:'${customer.email}')`);
+    const searchRes = await axios.post("/.netlify/functions/proxy-create-order", {
+      method: "GET",
+      path: `/thirdparties?sqlfilters=${encodedFilter}`
+    });
 
-    if (!clientId || !Array.isArray(cart) || !orderId) {
-      throw new Error("❌ Données manquantes : clientId, cart ou orderId")
+    if (Array.isArray(searchRes.data) && searchRes.data.length > 0) {
+      const existingClient = searchRes.data[0];
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Client déjà existant",
+          client_id: existingClient.id
+        })
+      };
     }
 
-    const lines = cart.map(p => ({
-      product_id: p.id,
-      qty: p.qty,
-      subprice: p.price_ht,
-      tva_tx: p.tva || 19
-    }))
-
-    console.log("📦 Création facture...")
-    const factureRes = await axios.post(`${API_BASE}/invoices`, {
-      socid: parseInt(clientId),
-      lines,
-      source: 'commande',
-      fk_source: orderId,
-      status: 0
-    }, { headers })
-
-    console.log("📨 Réponse brute de Dolibarr :")
-    console.log("Status:", factureRes.status)
-    console.log("Data:", JSON.stringify(factureRes.data, null, 2))
-
-    const invoiceId = factureRes.data.id
-    if (!invoiceId) {
-      throw new Error("❌ Échec récupération ID facture après création")
-    }
-
-    console.log("🧾 Facture brouillon créée, ID :", invoiceId)
-
-    const validation = await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers })
-    console.log("✅ Facture validée :", validation.status, validation.data)
+    // Étape 2 - Création client via proxy
+    const createRes = await axios.post("/.netlify/functions/proxy-create-order", {
+      method: "POST",
+      path: "/thirdparties",
+      body: {
+        name: `${customer.nom} ${customer.prenom}`,
+        email: customer.email,
+        phone: customer.tel,
+        address: customer.adresse,
+        client: 1
+      }
+    });
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({ invoiceId })
-    }
-
+      statusCode: 201,
+      body: JSON.stringify({
+        message: "Client créé",
+        client_id: createRes.data.id || createRes.data
+      })
+    };
   } catch (error) {
-    console.error("❌ Erreur générale:", error.message || error)
+    console.error("❌ Erreur proxy client:", error.response?.data || error.message);
     return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message })
-    }
+      statusCode: error.response?.status || 500,
+      body: JSON.stringify({ error: error.response?.data || error.message })
+    };
   }
-}
+};
