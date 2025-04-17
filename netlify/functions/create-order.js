@@ -77,37 +77,3 @@ async function createAndValidateInvoice(clientId, orderId, lines) {
 
   return { invoiceId, invoiceRef: ref }
 }
-
-// ✉️ Envoi d'e-mail via SMTP OVH
-async function sendInvoiceEmail(email, ref, pdfUrl) {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.mail.ovh.net',
-    port: 465,
-    secure: true,
-    auth: {
-      user: 'commande@stainedglass.tn',
-      pass: 'jjNuC5Qg2ifNbPt'
-    }
-  })
-
-  const htmlContent = `
-    <div style="font-family: sans-serif; padding: 20px;">
-      <h2>🧾 Votre facture ${ref}</h2>
-      <p>Bonjour,</p>
-      <p>Merci pour votre commande. Vous pouvez télécharger votre facture en cliquant sur le bouton ci-dessous :</p>
-      <a href="${pdfUrl}" style="display:inline-block;padding:10px 20px;background-color:#4CAF50;color:white;text-decoration:none;border-radius:5px;" target="_blank">
-        📄 Télécharger votre facture
-      </a>
-      <p style="margin-top:20px;">— L'équipe StainedGlass</p>
-    </div>
-  `
-
-  const info = await transporter.sendMail({
-    from: '"StainedGlass" <commande@stainedglass.tn>',
-    to: email,
-    subject: `Votre facture ${ref}`,
-    html: htmlContent
-  })
-
-  console.log("✉️ Email envoyé:", info.messageId)
-}
