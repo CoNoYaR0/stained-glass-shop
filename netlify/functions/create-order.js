@@ -6,6 +6,8 @@ exports.handler = async (event) => {
     const data = JSON.parse(event.body || "{}");
     const { customer, cart, totalTTC } = data;
 
+    console.log("🟡 Étape 1: Données reçues", { customer, cart, totalTTC });
+
     if (!customer || !cart?.length) {
       return {
         statusCode: 400,
@@ -14,7 +16,10 @@ exports.handler = async (event) => {
     }
 
     const clientId = await getOrCreateClient(customer);
+    console.log("🟢 Étape 2: ID client récupéré ou créé =>", clientId);
+
     const { invoiceId, invoiceRef } = await createInvoiceDolibarr(clientId, cart);
+    console.log("🟢 Étape 3: Facture créée et validée =>", { invoiceId, invoiceRef });
 
     return {
       statusCode: 200,
@@ -25,7 +30,7 @@ exports.handler = async (event) => {
       }),
     };
   } catch (err) {
-    console.error("❌ Erreur générale:", err.response?.data || err.message);
+    console.error("❌ Erreur finale:", err.response?.data || err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: err.message }),
@@ -35,11 +40,12 @@ exports.handler = async (event) => {
 
 async function getOrCreateClient(customer) {
   const { email, nom, prenom, tel, adresse } = customer;
-
+  const encodedFilter = encodeURIComponent(`(email:=:'${email}')`);
   try {
+    console.log("🔍 Recherche du client existant...");
     const res = await axios.post("/.netlify/functions/proxy-create-order", {
       method: "GET",
-      path: `/thirdparties?sqlfilters=(email:=:'${email}')`
+      path: `/thirdparties?sqlfilters=${encodedFilter}`
     });
 
     const found = res.data;
@@ -48,6 +54,7 @@ async function getOrCreateClient(customer) {
       return found[0].id;
     }
 
+    console.log("➕ Client non trouvé, création en cours...");
     const createRes = await axios.post("/.netlify/functions/proxy-create-order", {
       method: "POST",
       path: "/thirdparties",
@@ -60,7 +67,7 @@ async function getOrCreateClient(customer) {
       }
     });
 
-    console.log("✅ Client créé:", createRes.data.id);
+    console.log("✅ Client créé avec ID:", createRes.data.id);
     return createRes.data.id;
 
   } catch (err) {
@@ -78,6 +85,7 @@ async function createInvoiceDolibarr(clientId, cart) {
       tva_tx: item.tva || 19,
     }));
 
+    console.log("🧾 Création facture pour client:", clientId);
     const create = await axios.post("/.netlify/functions/proxy-create-order", {
       method: "POST",
       path: "/invoices",
@@ -89,8 +97,9 @@ async function createInvoiceDolibarr(clientId, cart) {
     });
 
     const invoiceId = create.data.id || create.data;
-    if (!invoiceId) throw new Error("❌ Aucun ID de facture retourné");
+    console.log("📄 ID facture:", invoiceId);
 
+    console.log("🔐 Validation de la facture...");
     await axios.post("/.netlify/functions/proxy-create-order", {
       method: "POST",
       path: `/invoices/${invoiceId}/validate`,
@@ -105,7 +114,7 @@ async function createInvoiceDolibarr(clientId, cart) {
     const ref = final.data?.ref || `FACT-${invoiceId}`;
     return { invoiceId, invoiceRef: ref };
   } catch (err) {
-    console.error("❌ Erreur facture:", err.response?.data || err.message);
+    console.error("❌ Erreur création facture:", err.response?.data || err.message);
     throw err;
   }
 }
