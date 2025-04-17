@@ -13,7 +13,26 @@ const headers = {
 exports.handler = async (event) => {
   try {
     const data = JSON.parse(event.body)
-    const { clientId, cart, orderId, customerEmail } = data
+    const { customer, cart, orderId } = data
+    if (!customer || !cart || !orderId) {
+      throw new Error("❌ Données manquantes : customer, cart ou orderId")
+    }
+
+    const customerEmail = customer.email
+    if (!customerEmail) {
+      throw new Error("❌ Email client manquant")
+    }
+
+    console.info("🔍 Étape 1 : recherche ou création du client via proxy...")
+
+    const proxyUrl = "https://resplendent-centaur-abf462.netlify.app/.netlify/functions/proxy-create-order"
+    const clientRes = await axios.post(proxyUrl, { customer })
+
+    if (!clientRes.data || !clientRes.data.id) {
+      throw new Error("❌ Impossible d'obtenir un ID client depuis le proxy")
+    }
+
+    const clientId = clientRes.data.id
 
     if (!clientId || !Array.isArray(cart) || !orderId || !customerEmail) {
       throw new Error("❌ Données manquantes : clientId, cart, orderId ou customerEmail")
