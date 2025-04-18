@@ -6,15 +6,14 @@ exports.handler = async function (event) {
     return { statusCode: 405, body: "Méthode non autorisée" };
   }
 
-  // Clé côté serveur
   const secret = process.env.ORDER_SECRET_KEY;
+  console.log("[PROXY] Relais vers create-order avec clé interne sécurisée...");
 
   try {
     const response = await fetch(`${process.env.URL}/.netlify/functions/create-order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // Clé transmise uniquement à l'interne
         "x-secret-key": secret
       },
       body: event.body
@@ -26,7 +25,7 @@ exports.handler = async function (event) {
       body: data
     };
   } catch (err) {
-    console.error("Erreur proxy:", err);
+    console.error("[PROXY ERROR] Erreur proxy vers create-order:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Erreur proxy vers create-order" })
