@@ -1,164 +1,145 @@
-// netlify/functions/create-order.js
-const fetch = require("node-fetch");
-const nodemailer = require("nodemailer");
-const fs = require("fs");
-const path = require("path");
 
-exports.handler = async function (event) {
-  console.log("[START] create-order function triggered");
+const axios = require('axios');
+const nodemailer = require('nodemailer');
 
-  if (event.httpMethod !== "POST") {
-    console.warn("[WARN] Méthode non autorisée :", event.httpMethod);
-    return { statusCode: 405, body: "Méthode non autorisée" };
-  }
+const API_BASE = process.env.DOLIBARR_URL;
+const TOKEN = process.env.DOLIBARR_TOKEN;
+const headers = {
+  'DOLAPIKEY': TOKEN,
+  'Content-Type': 'application/json'
+};
 
-  const secretHeader = event.headers["x-secret-key"];
-  if (secretHeader !== process.env.ORDER_SECRET_KEY) {
-    console.warn("[SECURITY] Clé secrète invalide :", secretHeader);
-    return { statusCode: 401, body: "Clé secrète invalide" };
-  }
-
-  let client, cart;
+exports.handler = async (event) => {
   try {
-    ({ client, cart } = JSON.parse(event.body));
-    console.log("[INPUT] Client:", client);
-    console.log("[INPUT] Cart:", cart);
-  } catch (parseError) {
-    console.error("[ERROR] JSON parsing failed:", parseError);
-    return { statusCode: 400, body: "Format JSON invalide." };
-  }
+    const data = JSON.parse(event.body);
+    const { customer, cart, totalTTC } = data;
 
-  if (!client?.email || !Array.isArray(cart)) {
-    console.error("[ERROR] Données manquantes client/panier");
-    return { statusCode: 400, body: "Données client ou panier invalides." };
-  }
-
-  const dolibarrUrl = process.env.DOLIBARR_API;
-  if (!dolibarrUrl || !dolibarrUrl.startsWith("http")) {
-    console.error("[FATAL] Variable DOLIBARR_API invalide ou manquante :", dolibarrUrl);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Configuration API Dolibarr invalide." })
-    };
-  }
-  console.log("[DEBUG] DOLIBARR_API =", dolibarrUrl);
-
-  try {
-    const dolibarrKey = process.env.DOLIBARR_KEY;
-    const headers = { "DOLAPIKEY": dolibarrKey, "Content-Type": "application/json" };
-
-    // Étape 1 - Vérification ou création client
-    console.log("[STEP 1] Vérification du client existant...");
-    const checkRes = await fetch(`${dolibarrUrl}/thirdparties?sqlfilters=(email:=:${client.email})`, { headers });
-    const existingClients = await checkRes.json();
-    console.log("[DOLIBARR] Clients trouvés:", existingClients);
-    let clientId = existingClients?.[0]?.id;
-
-    if (!clientId) {
-      console.log("[STEP 1.1] Création du client");
-      const newClient = await fetch(`${dolibarrUrl}/thirdparties`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          name: client.name,
-          email: client.email,
-          zip: client.zip,
-          town: client.city,
-          address: client.address,
-          country_id: 1
-        })
-      });
-      const created = await newClient.json();
-      console.log("[DOLIBARR] Client créé:", created);
-      clientId = created.id;
+    if (!customer?.email || !cart?.length) {
+      throw new Error("❌ Données client/cart manquantes");
     }
 
-    // Étape 2 - Création de la facture
-    console.log("[STEP 2] Création de la facture...");
-    const factureRes = await fetch(`${dolibarrUrl}/invoices`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ socid: clientId, type: 0, note_private: "Via site" })
-    });
-    const facture = await factureRes.json();
-    console.log("[DOLIBARR] Facture créée:", facture);
-    const factureId = facture.id;
+    const clientId = await findOrCreateClientDolibarr(customer);
+    const orderId = await createOrderDolibarr(clientId, cart);
+    const { invoiceId, invoiceRef } = await createAndValidateInvoice(clientId, orderId, cart);
 
-    // Étape 3 - Ajout des lignes
-    console.log("[STEP 3] Ajout des lignes de facture...");
-    for (let item of cart) {
-      console.log("[LINE] Ajout produit:", item);
-      await fetch(`${dolibarrUrl}/invoices/${factureId}/lines`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          fk_product: item.id,
-          qty: item.qty,
-          subprice: item.price,
-          tva_tx: item.vat || 0,
-          desc: item.name
-        })
-      });
-    }
+    const pdfUrl = `https://resplendent-centaur-abf462.netlify.app/.netlify/functions/get-invoice-pdf?id=${invoiceId}`;
 
-    // Étape 4 - Validation
-    console.log("[STEP 4] Validation de la facture...");
-    await fetch(`${dolibarrUrl}/invoices/${factureId}/validate`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ notrigger: 0 })
-    });
+    await sendInvoiceEmail(customer.email, invoiceRef, pdfUrl);
 
-    // Étape 5 - Tracking
-    console.log("[STEP 5] Tracking commandes vues.json...");
-    const viewsPath = path.resolve("./data/views.json");
-    let stats = {};
-    if (fs.existsSync(viewsPath)) {
-      stats = JSON.parse(fs.readFileSync(viewsPath));
-    }
-    cart.forEach(item => {
-      if (!stats[item.slug]) stats[item.slug] = { views: 0, commandes: 0 };
-      stats[item.slug].commandes += 1;
-    });
-    fs.writeFileSync(viewsPath, JSON.stringify(stats, null, 2));
-
-    // Étape 6 - Envoi email
-    console.log("[STEP 6] Envoi de l'e-mail de facture...");
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
-
-    await transporter.sendMail({
-      from: `Commande StainedGlass <${process.env.SMTP_USER}>`,
-      to: client.email,
-      subject: "Votre facture - Stained Glass",
-      text: `Bonjour ${client.name},\n\nMerci pour votre commande. Voici votre facture.`,
-      html: `<p>Bonjour <b>${client.name}</b>,</p><p>Merci pour votre commande. Voici votre facture.</p>`,
-      attachments: [
-        {
-          filename: `facture-${factureId}.pdf`,
-          path: `${dolibarrUrl}/documents/invoices/${facture.ref}/pdf`,
-          headers: { DOLAPIKEY: dolibarrKey }
-        }
-      ]
-    });
-
-    console.log("[SUCCESS] Facture envoyée et commande finalisée.");
     return {
       statusCode: 200,
-      body: JSON.stringify({ factureId, message: "Commande validée et envoyée." })
+      body: JSON.stringify({
+        success: true,
+        facture: {
+          invoiceId,
+          ref: invoiceRef,
+          pdfUrl
+        }
+      })
     };
   } catch (err) {
-    console.error("[ERROR] Erreur create-order:", err);
+    console.error("❌ Erreur create-order:", err.message || err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Erreur serveur lors de la création de commande." })
+      body: JSON.stringify({ error: err.message })
     };
   }
 };
+
+async function findOrCreateClientDolibarr(customer) {
+  const { email, nom, prenom, tel, adresse } = customer;
+
+  const search = await axios.get(`${API_BASE}/thirdparties?sqlfilters=(email:=:'${email}')`, { headers });
+  if (Array.isArray(search.data) && search.data.length > 0) {
+    return search.data[0].id;
+  }
+
+  const clientRes = await axios.post(`${API_BASE}/thirdparties`, {
+    name: `${prenom} ${nom}`,
+    email,
+    phone: tel,
+    address: adresse,
+    client: 1,
+    status: 1
+  }, { headers });
+
+  return clientRes.data;
+}
+
+async function createOrderDolibarr(clientId, cart) {
+  const lines = cart.map(p => ({
+    product_id: p.id,
+    qty: p.qty,
+    subprice: p.price_ht,
+    tva_tx: p.tva || 19
+  }));
+
+  const res = await axios.post(`${API_BASE}/orders`, {
+    socid: clientId,
+    lines,
+    status: 0
+  }, { headers });
+
+  return res.data;
+}
+
+async function createAndValidateInvoice(clientId, orderId, cart) {
+  const lines = cart.map(p => ({
+    product_id: p.id,
+    qty: p.qty,
+    subprice: p.price_ht,
+    tva_tx: p.tva || 19
+  }));
+
+  const factureRes = await axios.post(`${API_BASE}/invoices`, {
+    socid: clientId,
+    lines,
+    source: 'commande',
+    fk_source: orderId,
+    status: 0
+  }, { headers });
+
+  const invoiceId = typeof factureRes.data === 'object' ? factureRes.data.id : factureRes.data;
+
+  if (!invoiceId) throw new Error("❌ Impossible de récupérer l'ID de la facture");
+
+  await axios.post(`${API_BASE}/invoices/${invoiceId}/validate`, {}, { headers });
+
+  const finalInvoice = await axios.get(`${API_BASE}/invoices/${invoiceId}`, { headers });
+  const ref = finalInvoice.data?.ref || `FACT-${invoiceId}`;
+
+  return { invoiceId, invoiceRef: ref };
+}
+
+async function sendInvoiceEmail(email, ref, pdfUrl) {
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.mail.ovh.net',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+
+  const htmlContent = `
+    <div style="font-family: sans-serif; padding: 20px;">
+      <h2>🧾 Votre facture ${ref}</h2>
+      <p>Bonjour,</p>
+      <p>Merci pour votre commande. Vous pouvez télécharger votre facture en cliquant sur le bouton ci-dessous :</p>
+      <a href="${pdfUrl}" style="display:inline-block;padding:10px 20px;background-color:#4CAF50;color:white;text-decoration:none;border-radius:5px;" target="_blank">
+        📄 Télécharger votre facture
+      </a>
+      <p style="margin-top:20px;">— L'équipe StainedGlass</p>
+    </div>
+  `;
+
+  const info = await transporter.sendMail({
+    from: 'StainedGlass <commande@stainedglass.tn>',
+    to: email,
+    subject: `Votre facture ${ref}`,
+    html: htmlContent
+  });
+
+  console.log("✉️ Email envoyé:", info.messageId);
+}
