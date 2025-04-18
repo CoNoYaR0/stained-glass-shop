@@ -6,6 +6,7 @@ exports.handler = async function (event) {
     return { statusCode: 405, body: "Méthode non autorisée" };
   }
 
+  // Clé côté serveur
   const secret = process.env.ORDER_SECRET_KEY;
 
   try {
@@ -13,6 +14,7 @@ exports.handler = async function (event) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        // Clé transmise uniquement à l'interne
         "x-secret-key": secret
       },
       body: event.body
