@@ -33,8 +33,17 @@ exports.handler = async function (event) {
     return { statusCode: 400, body: "Données client ou panier invalides." };
   }
 
+  const dolibarrUrl = process.env.DOLIBARR_API;
+  if (!dolibarrUrl || !dolibarrUrl.startsWith("http")) {
+    console.error("[FATAL] Variable DOLIBARR_API invalide ou manquante :", dolibarrUrl);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Configuration API Dolibarr invalide." })
+    };
+  }
+  console.log("[DEBUG] DOLIBARR_API =", dolibarrUrl);
+
   try {
-    const dolibarrUrl = process.env.DOLIBARR_API;
     const dolibarrKey = process.env.DOLIBARR_KEY;
     const headers = { "DOLAPIKEY": dolibarrKey, "Content-Type": "application/json" };
 
