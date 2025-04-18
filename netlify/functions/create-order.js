@@ -111,7 +111,7 @@ exports.handler = async function (event) {
 
     // Étape 5 - Tracking
     console.log("[STEP 5] Tracking commandes vues.json...");
-    const viewsPath = path.resolve("./data/views.json");
+    const viewsPath = path.resolve("/tmp/data/views.json");
     if (!fs.existsSync(path.dirname(viewsPath))) {
       fs.mkdirSync(path.dirname(viewsPath), { recursive: true });
     }
