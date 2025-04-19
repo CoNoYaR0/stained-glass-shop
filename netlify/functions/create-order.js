@@ -128,32 +128,24 @@ exports.handler = async function (event) {
     });
     console.log("📦 Body envoyé : {}");
 
-    const zlib = require("zlib");
-
     try {
       const validation = await axios.post(validationUrl, {}, {
         headers: {
           DOLAPIKEY: API_KEY,
-          "Content-Type": "application/json",
-          "Accept-Encoding": "gzip"
-        },
-        responseType: "arraybuffer"
+          "Content-Type": "application/json"
+        }
       });
 
-      const encoding = validation.headers['content-encoding'];
-      let rawBuffer;
-
-      if (encoding === 'gzip') {
-        rawBuffer = zlib.gunzipSync(validation.data);
-      } else {
-        rawBuffer = Buffer.from(validation.data);
-      }
-
-      const textResponse = rawBuffer.toString();
-      console.log("✅ Validation OK (réponse):", textResponse);
+      console.log("✅ Validation OK :", validation.data);
 
     } catch (validationError) {
       console.error("❌ Erreur validation facture :", validationError.message);
+      if (validationError.response) {
+        console.error("📄 Status :", validationError.response.status);
+        console.error("📄 Headers :", validationError.response.headers);
+        console.error("📄 Data brute :", validationError.response.data);
+      }
+
       return {
         statusCode: 500,
         body: JSON.stringify({
