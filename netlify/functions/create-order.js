@@ -21,18 +21,24 @@ async function buildInvoiceLines(cart, headers) {
 
       const line = {
         desc: product.label,
-        product_type: product.fk_product_type || 0,
+        label: product.label,
+        fk_product: product.id,
         qty: item.qty,
         subprice: product.price,
         tva_tx: product.tva_tx || 19,
-        fk_product: product.id,
+        product_type: product.fk_product_type || 0,
         remise_percent: 0,
-        rang: i + 1
+        localtax1_tx: 0,
+        localtax2_tx: 0,
+        fk_unit: product.fk_unit || 1,
+        array_options: {},
+        rang: i + 1,
+        situation_percent: 100
       };
 
       lines.push(line);
     } catch (err) {
-      console.error(`❌ Produit ID ${id} introuvable dans Dolibarr`);
+      console.error(`❌ Produit ID ${id} introuvable ou mal formé`);
       throw new Error(`Produit manquant ou inaccessible: ${id}`);
     }
   }
@@ -97,7 +103,7 @@ exports.handler = async function (event) {
       console.log("🆕 Client créé :", clientId);
     }
 
-    // 🔧 Génération des lignes produits réelles
+    // 🔧 Construction des lignes de facture complètes
     const invoiceLines = await buildInvoiceLines(cart, headers);
 
     const invoiceData = {
