@@ -8,6 +8,38 @@ const headers = {
   "Content-Type": "application/json"
 };
 
+async function buildInvoiceLines(cart, headers) {
+  const lines = [];
+
+  for (let i = 0; i < cart.length; i++) {
+    const item = cart[i];
+    const id = parseInt(item.id);
+
+    try {
+      const res = await axios.get(`${DOLIBARR_API}/products/${id}`, { headers });
+      const product = res.data;
+
+      const line = {
+        desc: product.label,
+        product_type: product.fk_product_type || 0,
+        qty: item.qty,
+        subprice: product.price,
+        tva_tx: product.tva_tx || 19,
+        fk_product: product.id,
+        remise_percent: 0,
+        rang: i + 1
+      };
+
+      lines.push(line);
+    } catch (err) {
+      console.error(`❌ Produit ID ${id} introuvable dans Dolibarr`);
+      throw new Error(`Produit manquant ou inaccessible: ${id}`);
+    }
+  }
+
+  return lines;
+}
+
 exports.handler = async function (event) {
   console.log("📥 Reçu commande pour création dans Dolibarr");
 
@@ -65,17 +97,8 @@ exports.handler = async function (event) {
       console.log("🆕 Client créé :", clientId);
     }
 
-    // ✅ Construction des lignes
-    const invoiceLines = cart.map((p, i) => ({
-      desc: `Produit ${p.id}`,
-      product_type: 0,
-      qty: p.qty,
-      subprice: p.price_ht,
-      tva_tx: p.tva || 19,
-      fk_product: parseInt(p.id),
-      remise_percent: 0,
-      rang: i + 1
-    }));
+    // 🔧 Génération des lignes produits réelles
+    const invoiceLines = await buildInvoiceLines(cart, headers);
 
     const invoiceData = {
       socid: clientId,
