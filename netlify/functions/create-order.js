@@ -134,7 +134,7 @@ exports.handler = async function (event) {
           DOLAPIKEY: API_KEY,
           "Content-Type": "application/json"
         },
-        responseType: 'arraybuffer'
+        
       });
 
       console.log("✅ Validation OK");
