@@ -98,10 +98,13 @@ exports.handler = async function (event) {
     const factureId = invoiceRes.data;
     if (!factureId || isNaN(factureId)) throw new Error("Facture ID invalide");
 
-    // 🔒 Validation avec catch explicite + LOG de retour
+    // 🔒 Validation avec log détaillé du retour
     try {
       const validation = await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
-      console.log("✅ Validation retour :", validation.data);
+      console.log("✅ Validation retour brut :", validation.data, validation.status);
+      if (!validation.data || validation.data.toString().toLowerCase().includes("error")) {
+        throw new Error("❌ Validation échouée (réponse Dolibarr)");
+      }
     } catch (validationError) {
       console.error("❌ Erreur validation :", validationError.response?.data || validationError.message);
       return {
@@ -113,7 +116,6 @@ exports.handler = async function (event) {
       };
     }
 
-    // 💳 Paiement selon méthode
     if (paiement === "cb") {
       await axios.post(`${DOLIBARR_API}/invoices/${factureId}/settlements`, {
         datepaye: new Date().toISOString().split("T")[0],
@@ -123,10 +125,8 @@ exports.handler = async function (event) {
       }, { headers });
     }
 
-    // ⏱ Petite attente de sécurité si besoin
     await new Promise((r) => setTimeout(r, 1000));
 
-    // 📄 Générer PDF
     await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, {
       headers,
       responseType: "arraybuffer"
@@ -134,7 +134,6 @@ exports.handler = async function (event) {
 
     const pdfUrl = `${DOLIBARR_API}/documents/facture/${factureId}/facture.pdf`;
 
-    // 📧 Envoi email
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/sendbyemail`, {
       sendto: clientEmail,
       subject: "📄 Votre facture StainedGlass",
