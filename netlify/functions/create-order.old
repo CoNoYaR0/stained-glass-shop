@@ -129,10 +129,15 @@ exports.handler = async function (event) {
     console.log("📦 Body envoyé : {}");
 
     try {
-      await axios.post(validationUrl, {}, { headers });
-      console.log("✅ Facture validée :", factureId);
+      await axios.post(validationUrl, {}, {
+        headers: {
+          DOLAPIKEY: API_KEY,
+          "Content-Type": "application/json"
+        }
+      });
+      console.log("✅ Facture validée côté Dolibarr");
 
-    } catch (err) {
+    } catch (validationError) {
       console.error("❌ Erreur validation facture :", validationError.message);
       return {
         statusCode: 500,
