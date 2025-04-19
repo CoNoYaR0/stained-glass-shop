@@ -155,40 +155,25 @@ exports.handler = async function (event) {
     });
     console.log("📦 Body envoyé : {}");
 
-    console.log("🛠️ Début validation de la facture ID:", factureId);
-const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
-
-console.log("📡 URL :", validationUrl);
-
-
-
-    const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
-    const status = getFacture.data.status;
-    console.log("📋 État final post-validation:", status);
-
-    if (status !== 1) {
-      throw new Error("❌ Facture toujours en brouillon après tentative de validation");
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        facture: {
-          id: factureId,
-          statut: status
-        }
-      })
-    };
-
-  } catch (err) {
-    console.error("💥 Erreur générale :", err.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: "Erreur Dolibarr",
-        message: err.message
-      })
-    };
-  }
+    
 };
+
+    // ✅ Validation via API custom Dolibarr
+    const validateCustomUrl = `https://7ssab.stainedglass.tn/custom/api_invoice_validate.php?id=${factureId}`;
+    try {
+      await axios.get(validateCustomUrl, {
+        headers: {
+          DOLAPIKEY: API_KEY
+        }
+      });
+      console.log("✅ Facture validée via endpoint custom");
+    } catch (err) {
+      console.error("❌ Erreur validation via endpoint custom :", err.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Erreur validation (custom endpoint)",
+          message: err.message
+        })
+      };
+    }
