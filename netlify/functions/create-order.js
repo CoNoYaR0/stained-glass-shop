@@ -116,11 +116,28 @@ exports.handler = async function (event) {
 
     const raw = Buffer.from(invoiceRes.data);
     let parsed;
+
     try {
-      parsed = JSON.parse(raw.toString());
-    } catch {
+      const isGzip = raw[0] === 0x1f && raw[1] === 0x8b;
       const zlib = require("zlib");
-      parsed = JSON.parse(zlib.gunzipSync(raw).toString());
+
+      if (isGzip) {
+        parsed = JSON.parse(zlib.gunzipSync(raw).toString());
+        console.log("🧾 Facture ID reçu (gzip):", parsed);
+      } else {
+        parsed = JSON.parse(raw.toString());
+        console.log("🧾 Facture ID reçu (texte):", parsed);
+      }
+
+    } catch (parseErr) {
+      console.error("❌ Erreur de parsing ID facture:", parseErr.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Erreur parsing ID facture",
+          message: parseErr.message
+        })
+      };
     }
 
     const factureId = parsed;
@@ -144,57 +161,6 @@ const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
 console.log("📡 URL :", validationUrl);
 
 try {
-  // 🔁 Tentative 1 : POST brut
-  console.log("🔁 Tentative 1 : POST brut");
-  try {
-    const r1 = await axios.post(validationUrl, {}, { headers });
-    console.log("✅ Succès méthode 1:", r1.data);
-  } catch (e1) {
-    console.warn("❌ Échec méthode 1 :", e1.message);
-
-    // 🔁 Tentative 2 : arraybuffer
-    console.log("🔁 Tentative 2 : POST avec arraybuffer");
-    try {
-      const r2 = await axios.post(validationUrl, {}, {
-        headers,
-        responseType: "arraybuffer"
-      });
-      const buffer = Buffer.from(r2.data);
-      try {
-        const parsed = JSON.parse(buffer.toString());
-        console.log("✅ Succès méthode 2 JSON:", parsed);
-      } catch {
-        const zlib = require("zlib");
-        const parsed = JSON.parse(zlib.gunzipSync(buffer).toString());
-        console.log("✅ Succès méthode 2 décompressée:", parsed);
-      }
-    } catch (e2) {
-      console.warn("❌ Échec méthode 2 :", e2.message);
-
-      // 🔁 Tentative 3 : Accept-Encoding identity
-      console.log("🔁 Tentative 3 : Accept-Encoding: identity");
-      try {
-        const r3 = await axios.post(validationUrl, {}, {
-          headers: {
-            ...headers,
-            "Accept-Encoding": "identity"
-          }
-        });
-        console.log("✅ Succès méthode 3:", r3.data);
-      } catch (e3) {
-        console.error("❌ Toutes les méthodes de validation ont échoué.");
-        return {
-          statusCode: 500,
-          body: JSON.stringify({
-            error: "Échec validation facture",
-            message: e3.message
-          })
-        };
-      }
-    }
-  }
-
-} catch (err) {
   console.error("❌ Exception inattendue :", err.message);
   return {
     statusCode: 500,
