@@ -157,10 +157,7 @@ exports.handler = async function (event) {
       })
     }}
 
-, {
-      DOLAPIKEY: API_KEY,
-      "Content-Type": "application/json"
-    });
+
     console.log("📦 Body envoyé : {}")};
 
     // ✅ Validation via API custom Dolibarr
@@ -181,3 +178,4 @@ exports.handler = async function (event) {
           message: err.message
         })
       }}
+};
