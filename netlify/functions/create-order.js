@@ -149,7 +149,20 @@ exports.handler = async function (event) {
     }
 
     
-    console.log("📤 Headers envoyés :", {
+    console.log("📤 Headers envoyés :");
+
+  } catch (err) {
+    console.error("💥 Erreur générale :", err.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Erreur Dolibarr",
+        message: err.message
+      })
+    };
+  }
+
+, {
       DOLAPIKEY: API_KEY,
       "Content-Type": "application/json"
     });
