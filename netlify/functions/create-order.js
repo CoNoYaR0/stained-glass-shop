@@ -141,20 +141,72 @@ exports.handler = async function (event) {
     });
     console.log("📦 Body envoyé : {}");
 
-    try {
-      await axios.post(validationUrl, {}, { headers });
-      console.log("✅ Facture validée :", factureId);
+    console.log("🛠️ Début validation de la facture ID:", factureId);
+const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
 
-    } catch (err) {
-      console.error("❌ Erreur validation facture :", validationError.message);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: "Erreur validation facture",
-          message: validationError.message
-        })
-      };
+console.log("📡 URL :", validationUrl);
+
+try {
+  // 🔁 Tentative 1 : POST brut
+  console.log("🔁 Tentative 1 : POST brut");
+  try {
+    const r1 = await axios.post(validationUrl, {}, { headers });
+    console.log("✅ Succès méthode 1:", r1.data);
+  } catch (e1) {
+    console.warn("❌ Échec méthode 1 :", e1.message);
+
+    // 🔁 Tentative 2 : arraybuffer
+    console.log("🔁 Tentative 2 : POST avec arraybuffer");
+    try {
+      const r2 = await axios.post(validationUrl, {}, {
+        headers,
+        responseType: "arraybuffer"
+      });
+      const buffer = Buffer.from(r2.data);
+      try {
+        const parsed = JSON.parse(buffer.toString());
+        console.log("✅ Succès méthode 2 JSON:", parsed);
+      } catch {
+        const zlib = require("zlib");
+        const parsed = JSON.parse(zlib.gunzipSync(buffer).toString());
+        console.log("✅ Succès méthode 2 décompressée:", parsed);
+      }
+    } catch (e2) {
+      console.warn("❌ Échec méthode 2 :", e2.message);
+
+      // 🔁 Tentative 3 : Accept-Encoding identity
+      console.log("🔁 Tentative 3 : Accept-Encoding: identity");
+      try {
+        const r3 = await axios.post(validationUrl, {}, {
+          headers: {
+            ...headers,
+            "Accept-Encoding": "identity"
+          }
+        });
+        console.log("✅ Succès méthode 3:", r3.data);
+      } catch (e3) {
+        console.error("❌ Toutes les méthodes de validation ont échoué.");
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            error: "Échec validation facture",
+            message: e3.message
+          })
+        };
+      }
     }
+  }
+
+} catch (err) {
+  console.error("❌ Exception inattendue :", err.message);
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      error: "Erreur validation facture (exception)",
+      message: err.message
+    })
+  };
+}
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
     const status = getFacture.data.status;
