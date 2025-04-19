@@ -51,7 +51,8 @@ exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-body: JSON.stringify({ error: "Méthode non autorisée" }};});
+      body: JSON.stringify({ error: "Méthode non autorisée" })
+    };
   }
 
   let body;
@@ -60,14 +61,16 @@ body: JSON.stringify({ error: "Méthode non autorisée" }};});
   } catch {
     return {
       statusCode: 400,
-body: JSON.stringify({ error: "JSON invalide" }};});
+      body: JSON.stringify({ error: "JSON invalide" })
+    };
   }
 
   const { customer, cart, totalTTC, paiement } = body;
   if (!customer || !cart || !totalTTC || !paiement) {
     return {
       statusCode: 400,
-body: JSON.stringify({ error: "Champs requis manquants" }};});
+      body: JSON.stringify({ error: "Champs requis manquants" })
+    };
   }
 
   const fullName = `${customer.prenom} ${customer.nom}`;
@@ -115,25 +118,16 @@ body: JSON.stringify({ error: "Champs requis manquants" }};});
       throw new Error("ID de facture invalide");
     }
 
-    console.log("🛠️ Début validation de la facture ID:", factureId);
-    const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
-
-    console.log("📡 URL :", validationUrl);
-console.log("📤 Headers envoyés :", { DOLAPIKEY: API_KEY, "Content-Type": "application/json" });
-      DOLAPIKEY: API_KEY,
-      "Content-Type": "application/json"
-    });
+    console.log("📤 Headers envoyés :");
     console.log("📦 Body envoyé : {}");
-// ✅ Validation via API custom Dolibarr
+
+    // ✅ Validation via API custom Dolibarr
     await axios.get(`https://ton-dolibarr/htdocs/custom/api_invoice_validate.php?id=${factureId}`, {
       headers: {
         DOLAPIKEY: API_KEY
       }
     });
     console.log("✅ Validation effectuée via endpoint personnalisé");
-
-    };
-    }
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
     const status = getFacture.data.status;
@@ -145,21 +139,22 @@ console.log("📤 Headers envoyés :", { DOLAPIKEY: API_KEY, "Content-Type": "ap
 
     return {
       statusCode: 200,
-body: JSON.stringify({});
+      body: JSON.stringify({
         success: true,
         facture: {
           id: factureId,
           statut: status
         }
-      }};
-
+      })
+    };
   } catch (err) {
     console.error("💥 Erreur générale :", err.message);
     return {
       statusCode: 500,
-body: JSON.stringify({});
+      body: JSON.stringify({
         error: "Erreur Dolibarr",
         message: err.message
-      }};
+      })
+    };
   }
 };
