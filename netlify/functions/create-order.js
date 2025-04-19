@@ -109,7 +109,10 @@ exports.handler = async function (event) {
       date: new Date().toISOString().split("T")[0],
       lines,
       note_public: `Commande client ${fullName} via ${paiement.toUpperCase()}`
-    }, { headers });
+    }, {
+      headers,
+      responseType: "arraybuffer" // ✅ INDISPENSABLE
+    });
 
     const raw = Buffer.from(invoiceRes.data);
     let parsed;
