@@ -51,8 +51,7 @@ exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: "Méthode non autorisée" })
-    };
+      body: JSON.stringify({ error: "Méthode non autorisée" }};
   }
 
   let body;
@@ -61,16 +60,14 @@ exports.handler = async function (event) {
   } catch {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "JSON invalide" })
-    };
+      body: JSON.stringify({ error: "JSON invalide" }};
   }
 
   const { customer, cart, totalTTC, paiement } = body;
   if (!customer || !cart || !totalTTC || !paiement) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Champs requis manquants" })
-    };
+      body: JSON.stringify({ error: "Champs requis manquants" }};
   }
 
   const fullName = `${customer.prenom} ${customer.nom}`;
@@ -135,8 +132,7 @@ exports.handler = async function (event) {
     });
     console.log("✅ Validation effectuée via endpoint personnalisé");
 
-    )
-      };
+    };
     }
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
@@ -155,8 +151,7 @@ exports.handler = async function (event) {
           id: factureId,
           statut: status
         }
-      })
-    };
+      }};
 
   } catch (err) {
     console.error("💥 Erreur générale :", err.message);
@@ -165,7 +160,6 @@ exports.handler = async function (event) {
       body: JSON.stringify({
         error: "Erreur Dolibarr",
         message: err.message
-      })
-    };
+      }};
   }
 };
