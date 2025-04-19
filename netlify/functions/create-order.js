@@ -128,8 +128,7 @@ exports.handler = async function (event) {
     });
     console.log("📦 Body envoyé : {}");
 
-    try {
-      const zlib = require("zlib");
+    const zlib = require("zlib");
 
 let rawBuffer;
 
