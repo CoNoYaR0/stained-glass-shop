@@ -52,8 +52,7 @@ exports.handler = async function (event) {
     return {
       statusCode: 405,
       body: JSON.stringify({ error: "Méthode non autorisée" })
-    };
-  }
+    }}
 
   let body;
   try {
@@ -62,16 +61,14 @@ exports.handler = async function (event) {
     return {
       statusCode: 400,
       body: JSON.stringify({ error: "JSON invalide" })
-    };
-  }
+    }}
 
   const { customer, cart, totalTTC, paiement } = body;
   if (!customer || !cart || !totalTTC || !paiement) {
     return {
       statusCode: 400,
       body: JSON.stringify({ error: "Champs requis manquants" })
-    };
-  }
+    }}
 
   const fullName = `${customer.prenom} ${customer.nom}`;
   const clientEmail = customer.email;
@@ -137,8 +134,7 @@ exports.handler = async function (event) {
           error: "Erreur parsing ID facture",
           message: parseErr.message
         })
-      };
-    }
+      }}
 
     const factureId = parsed;
     console.log("🧾 ID de la facture brouillon:", factureId);
@@ -159,17 +155,13 @@ exports.handler = async function (event) {
         error: "Erreur Dolibarr",
         message: err.message
       })
-    };
-  }
+    }}
 
 , {
       DOLAPIKEY: API_KEY,
       "Content-Type": "application/json"
     });
-    console.log("📦 Body envoyé : {}");
-
-    
-};
+    console.log("📦 Body envoyé : {}")};
 
     // ✅ Validation via API custom Dolibarr
     const validateCustomUrl = `https://7ssab.stainedglass.tn/custom/api_invoice_validate.php?id=${factureId}`;
@@ -188,5 +180,4 @@ exports.handler = async function (event) {
           error: "Erreur validation (custom endpoint)",
           message: err.message
         })
-      };
-    }
+      }}
