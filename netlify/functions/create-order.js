@@ -48,11 +48,12 @@ async function buildInvoiceLines(cart, headers) {
 }
 
 exports.handler = async function (event) {
-if (event.httpMethod !== "POST") {
+  if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
       body: JSON.stringify({ error: "Méthode non autorisée" })
-    }}
+    };
+  }
 
   let body;
   try {
@@ -61,14 +62,16 @@ if (event.httpMethod !== "POST") {
     return {
       statusCode: 400,
       body: JSON.stringify({ error: "JSON invalide" })
-    }}
+    };
+  }
 
   const { customer, cart, totalTTC, paiement } = body;
   if (!customer || !cart || !totalTTC || !paiement) {
     return {
       statusCode: 400,
       body: JSON.stringify({ error: "Champs requis manquants" })
-    }}
+    };
+  }
 
   const fullName = `${customer.prenom} ${customer.nom}`;
   const clientEmail = customer.email;
@@ -106,46 +109,78 @@ if (event.httpMethod !== "POST") {
       date: new Date().toISOString().split("T")[0],
       lines,
       note_public: `Commande client ${fullName} via ${paiement.toUpperCase()}`
-    }, {
-      headers,
-      responseType: "arraybuffer"
-    });
+    }, { headers });
 
-    const raw = Buffer.from(invoiceRes.data);
-    let parsed;
-
-    try {
-      const isGzip = raw[0] === 0x1f && raw[1] === 0x8b;
-      const zlib = require("zlib");
-
-      if (isGzip) {
-        parsed = JSON.parse(zlib.gunzipSync(raw).toString());
-        console.log("🧾 Facture ID reçu (gzip):", parsed);
-      } else {
-        parsed = JSON.parse(raw.toString());
-        console.log("🧾 Facture ID reçu (texte):", parsed);
-      }
-
-    } catch (parseErr) {
-      console.error("❌ Erreur de parsing ID facture:", parseErr.message);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: "Erreur parsing ID facture",
-          message: parseErr.message
-        })
-      }}
-
-    const factureId = parsed;
-    console.log("🧾 ID de la facture brouillon:", factureId);
+    const factureId = invoiceRes.data;
     console.log("🧾 ID de la facture brouillon:", factureId);
 
     if (!factureId || isNaN(factureId)) {
       throw new Error("ID de facture invalide");
     }
 
-    
-    console.log("📤 Headers envoyés :");
+    console.log("🛠️ Début validation de la facture ID:", factureId);
+    const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
+
+    console.log("📡 URL :", validationUrl);
+    console.log("📤 Headers envoyés :", {
+      DOLAPIKEY: API_KEY,
+      "Content-Type": "application/json"
+    });
+    console.log("📦 Body envoyé : {}");
+
+    const zlib = require("zlib");
+
+    try {
+      const validation = await axios.post(validationUrl, {}, {
+        headers: {
+          DOLAPIKEY: API_KEY,
+          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip"
+        },
+        responseType: "arraybuffer"
+      });
+
+      const encoding = validation.headers['content-encoding'];
+      let rawBuffer;
+
+      if (encoding === 'gzip') {
+        rawBuffer = zlib.gunzipSync(validation.data);
+      } else {
+        rawBuffer = Buffer.from(validation.data);
+      }
+
+      const textResponse = rawBuffer.toString();
+      console.log("✅ Validation OK (réponse):", textResponse);
+
+    } catch (validationError) {
+      console.error("❌ Erreur validation facture :", validationError.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Erreur validation facture",
+          message: validationError.message
+        })
+      };
+    }
+
+    const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
+    const status = getFacture.data.status;
+    console.log("📋 État final post-validation:", status);
+
+    if (status !== 1) {
+      throw new Error("❌ Facture toujours en brouillon après tentative de validation");
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        success: true,
+        facture: {
+          id: factureId,
+          statut: status
+        }
+      })
+    };
 
   } catch (err) {
     console.error("💥 Erreur générale :", err.message);
@@ -155,28 +190,6 @@ if (event.httpMethod !== "POST") {
         error: "Erreur Dolibarr",
         message: err.message
       })
-    }}
-
-
-    console.log("📦 Body envoyé : {}")};
-
-    // ✅ Validation via API custom Dolibarr
-    const validateCustomUrl = `https://7ssab.stainedglass.tn/custom/api_invoice_validate.php?id=${factureId}`;
-    try {
-      await axios.get(validateCustomUrl, {
-        headers: {
-          DOLAPIKEY: API_KEY
-        }
-      });
-      console.log("✅ Facture validée via endpoint custom");
-    } catch (err) {
-      console.error("❌ Erreur validation via endpoint custom :", err.message);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: "Erreur validation (custom endpoint)",
-          message: err.message
-        })
-      }}
-}
+    };
+  }
 };
