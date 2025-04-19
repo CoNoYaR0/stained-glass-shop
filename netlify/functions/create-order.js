@@ -127,39 +127,15 @@ exports.handler = async function (event) {
       "Content-Type": "application/json"
     });
     console.log("📦 Body envoyé : {}");
-
-    const zlib = require("zlib");
-
-    try {
-      const validation = await axios.post(validationUrl, {}, {
-        headers: {
-          DOLAPIKEY: API_KEY,
-          "Content-Type": "application/json",
-          "Accept-Encoding": "gzip"
-        },
-        responseType: "arraybuffer"
-      });
-
-      const encoding = validation.headers['content-encoding'];
-      let rawBuffer;
-
-      if (encoding === 'gzip') {
-        rawBuffer = zlib.gunzipSync(validation.data);
-      } else {
-        rawBuffer = Buffer.from(validation.data);
+// ✅ Validation via API custom Dolibarr
+    await axios.get(`https://ton-dolibarr/htdocs/custom/api_invoice_validate.php?id=${factureId}`, {
+      headers: {
+        DOLAPIKEY: API_KEY
       }
+    });
+    console.log("✅ Validation effectuée via endpoint personnalisé");
 
-      const textResponse = rawBuffer.toString();
-      console.log("✅ Validation OK (réponse):", textResponse);
-
-    } catch (validationError) {
-      console.error("❌ Erreur validation facture :", validationError.message);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: "Erreur validation facture",
-          message: validationError.message
-        })
+    )
       };
     }
 
