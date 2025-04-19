@@ -51,7 +51,7 @@ exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: "Méthode non autorisée" }};
+body: JSON.stringify({ error: "Méthode non autorisée" }};});
   }
 
   let body;
@@ -60,14 +60,14 @@ exports.handler = async function (event) {
   } catch {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "JSON invalide" }};
+body: JSON.stringify({ error: "JSON invalide" }};});
   }
 
   const { customer, cart, totalTTC, paiement } = body;
   if (!customer || !cart || !totalTTC || !paiement) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Champs requis manquants" }};
+body: JSON.stringify({ error: "Champs requis manquants" }};});
   }
 
   const fullName = `${customer.prenom} ${customer.nom}`;
@@ -119,7 +119,7 @@ exports.handler = async function (event) {
     const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
 
     console.log("📡 URL :", validationUrl);
-    console.log("📤 Headers envoyés :", {
+console.log("📤 Headers envoyés :", { DOLAPIKEY: API_KEY, "Content-Type": "application/json" });
       DOLAPIKEY: API_KEY,
       "Content-Type": "application/json"
     });
@@ -145,7 +145,7 @@ exports.handler = async function (event) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
+body: JSON.stringify({});
         success: true,
         facture: {
           id: factureId,
@@ -157,7 +157,7 @@ exports.handler = async function (event) {
     console.error("💥 Erreur générale :", err.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({
+body: JSON.stringify({});
         error: "Erreur Dolibarr",
         message: err.message
       }};
