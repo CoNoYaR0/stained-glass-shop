@@ -130,39 +130,38 @@ exports.handler = async function (event) {
 
     const zlib = require("zlib");
 
-let rawBuffer;
+    try {
+      const validation = await axios.post(validationUrl, {}, {
+        headers: {
+          DOLAPIKEY: API_KEY,
+          "Content-Type": "application/json",
+          "Accept-Encoding": "gzip"
+        },
+        responseType: "arraybuffer"
+      });
 
-try {
-  const validation = await axios.post(validationUrl, {}, {
-    headers: {
-      DOLAPIKEY: API_KEY,
-      "Content-Type": "application/json",
-      "Accept-Encoding": "gzip"
-    },
-    responseType: "arraybuffer"
-  });
+      const encoding = validation.headers['content-encoding'];
+      let rawBuffer;
 
-  const encoding = validation.headers['content-encoding'];
+      if (encoding === 'gzip') {
+        rawBuffer = zlib.gunzipSync(validation.data);
+      } else {
+        rawBuffer = Buffer.from(validation.data);
+      }
 
-  if (encoding === 'gzip') {
-    rawBuffer = zlib.gunzipSync(Buffer.from(validation.data));
-  } else {
-    rawBuffer = Buffer.from(validation.data);
-  }
+      const textResponse = rawBuffer.toString();
+      console.log("✅ Validation OK (réponse):", textResponse);
 
-  console.log("✅ Validation OK (décompressée)");
-  console.log("📄 Réponse texte :", rawBuffer.toString());
-
-} catch (validationError) {
-  console.error("❌ Erreur validation facture :", validationError.message);
-  return {
-    statusCode: 500,
-    body: JSON.stringify({
-      error: "Erreur validation facture",
-      message: validationError.message
-    })
-  };
-}
+    } catch (validationError) {
+      console.error("❌ Erreur validation facture :", validationError.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Erreur validation facture",
+          message: validationError.message
+        })
+      };
+    }
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
     const status = getFacture.data.status;
