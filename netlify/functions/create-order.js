@@ -8,18 +8,15 @@ const headers = {
   "Content-Type": "application/json"
 };
 
-// 🔧 Génère les lignes produit complètes pour Dolibarr
 async function buildInvoiceLines(cart, headers) {
   const lines = [];
 
   for (let i = 0; i < cart.length; i++) {
     const item = cart[i];
-    const id = parseInt(item.id);
-
-    const res = await axios.get(`${DOLIBARR_API}/products/${id}`, { headers });
+    const res = await axios.get(`${DOLIBARR_API}/products/${item.id}`, { headers });
     const product = res.data;
 
-    const line = {
+    lines.push({
       desc: product.label,
       label: product.label,
       fk_product: product.id,
@@ -44,17 +41,13 @@ async function buildInvoiceLines(cart, headers) {
       rang: i + 1,
       situation_percent: 100,
       multicurrency_subprice: product.price
-    };
-
-    lines.push(line);
+    });
   }
 
   return lines;
 }
 
 exports.handler = async function (event) {
-  console.log("📥 Reçu commande pour création dans Dolibarr");
-
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Méthode non autorisée" }) };
   }
@@ -75,12 +68,12 @@ exports.handler = async function (event) {
   const clientEmail = customer.email;
 
   try {
-    const clientRes = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
-    let client = clientRes.data.find(c => c.email?.toLowerCase() === clientEmail.toLowerCase());
+    const clients = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
+    let client = clients.data.find(c => c.email?.toLowerCase() === clientEmail.toLowerCase());
     let clientId = client?.id;
 
-    if (!client) {
-      const createRes = await axios.post(`${DOLIBARR_API}/thirdparties`, {
+    if (!clientId) {
+      const newClient = await axios.post(`${DOLIBARR_API}/thirdparties`, {
         name: fullName,
         email: clientEmail,
         client: 1,
@@ -90,55 +83,56 @@ exports.handler = async function (event) {
         address: customer.adresse || "Adresse non renseignée",
         country_id: 1
       }, { headers });
-      clientId = createRes.data;
-      console.log("🆕 Client créé :", clientId);
-    } else {
-      console.log("✅ Client trouvé :", clientId);
+      clientId = newClient.data;
     }
 
-    // 🔧 Génération lignes
-    const invoiceLines = await buildInvoiceLines(cart, headers);
+    const lines = await buildInvoiceLines(cart, headers);
 
-    // 🧾 Création facture (brouillon)
-    const invoiceData = {
+    const invoiceRes = await axios.post(`${DOLIBARR_API}/invoices`, {
       socid: clientId,
       date: new Date().toISOString().split("T")[0],
-      lines: invoiceLines,
+      lines,
       note_public: `Commande client ${fullName} via ${paiement.toUpperCase()}`
-    };
+    }, { headers });
 
-    const factureRes = await axios.post(`${DOLIBARR_API}/invoices`, invoiceData, { headers });
-    const factureId = factureRes.data;
+    const factureId = invoiceRes.data;
+    if (!factureId || isNaN(factureId)) throw new Error("Facture ID invalide");
 
-    if (!factureId || isNaN(factureId)) throw new Error("❌ ID de facture manquant");
+    // 🔒 Validation avec catch explicite
+    try {
+      const validation = await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
+      console.log("✅ Facture validée :", factureId);
+    } catch (validationError) {
+      console.error("❌ Erreur validation :", validationError.response?.data || validationError.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Erreur validation facture",
+          details: validationError.response?.data || validationError.message
+        })
+      };
+    }
 
-    console.log("🧾 Facture brouillon créée : ID", factureId);
-
-    // ✅ Validation obligatoire
-    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
-    console.log("✅ Facture validée :", factureId);
-
-    // 💳 Paiement (si CB)
+    // 💳 Paiement selon méthode
     if (paiement === "cb") {
-      const today = new Date().toISOString().split("T")[0];
       await axios.post(`${DOLIBARR_API}/invoices/${factureId}/settlements`, {
-        datepaye: today,
+        datepaye: new Date().toISOString().split("T")[0],
         amount: totalTTC,
         payment_type: 1,
         closepaidinvoices: 1
       }, { headers });
-      console.log("💳 Paiement CB enregistré");
-    } else {
-      console.log("🚚 Paiement à la livraison — facture reste impayée");
     }
 
-    // 📄 PDF après validation (patché)
+    // ⏱ Petite attente de sécurité si besoin
+    await new Promise((r) => setTimeout(r, 1000));
+
+    // 📄 Générer PDF
     await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, {
       headers,
       responseType: "arraybuffer"
     });
+
     const pdfUrl = `${DOLIBARR_API}/documents/facture/${factureId}/facture.pdf`;
-    console.log("📄 PDF généré :", pdfUrl);
 
     // 📧 Envoi email
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/sendbyemail`, {
@@ -146,8 +140,6 @@ exports.handler = async function (event) {
       subject: "📄 Votre facture StainedGlass",
       message: `Bonjour ${fullName},\n\nVeuillez trouver ci-joint votre facture.\n\nMerci pour votre commande 💛\n`
     }, { headers });
-
-    console.log("📧 Facture envoyée à :", clientEmail);
 
     return {
       statusCode: 200,
@@ -160,7 +152,7 @@ exports.handler = async function (event) {
       })
     };
   } catch (err) {
-    console.error("💥 Erreur Dolibarr :", err.response?.data || err.message);
+    console.error("💥 Erreur générale :", err.response?.data || err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({
