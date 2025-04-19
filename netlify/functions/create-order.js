@@ -133,6 +133,7 @@ exports.handler = async function (event) {
         headers: {
           DOLAPIKEY: API_KEY,
           "Content-Type": "application/json"
+          "Accept-Encoding": "identity" 
         },
         
       });
