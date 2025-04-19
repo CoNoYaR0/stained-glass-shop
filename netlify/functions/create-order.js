@@ -48,7 +48,7 @@ async function buildInvoiceLines(cart, headers) {
 }
 
 exports.handler = async function (event) {
-  if (event.httpMethod !== "POST") {
+if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
       body: JSON.stringify({ error: "Méthode non autorisée" })
@@ -178,4 +178,5 @@ exports.handler = async function (event) {
           message: err.message
         })
       }}
+}
 };
