@@ -131,10 +131,7 @@ exports.handler = async function (event) {
       throw new Error("ID de facture invalide");
     }
 
-    console.log("🛠️ Début validation de la facture ID:", factureId);
-    const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
-
-    console.log("📡 URL :", validationUrl);
+    
     console.log("📤 Headers envoyés :", {
       DOLAPIKEY: API_KEY,
       "Content-Type": "application/json"
