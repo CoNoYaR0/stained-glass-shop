@@ -40,12 +40,8 @@ exports.handler = async function (event) {
   const clientEmail = customer.email;
 
   try {
-    // 1️⃣ Liste les clients
     const clientRes = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
-
-    let client = clientRes.data.find(cli =>
-      cli.email?.toLowerCase() === clientEmail.toLowerCase()
-    );
+    let client = clientRes.data.find(cli => cli.email?.toLowerCase() === clientEmail.toLowerCase());
 
     let clientId;
 
@@ -53,7 +49,6 @@ exports.handler = async function (event) {
       clientId = client.id;
       console.log("✅ Client trouvé :", clientId);
     } else {
-      // 2️⃣ Créer nouveau client
       const newClient = {
         name: fullName,
         email: clientEmail,
@@ -70,33 +65,36 @@ exports.handler = async function (event) {
       console.log("🆕 Client créé :", clientId);
     }
 
-    // 3️⃣ Créer facture brouillon
+    // ✅ Construction des lignes
+    const invoiceLines = cart.map((p, i) => ({
+      desc: `Produit ${p.id}`,
+      product_type: 0,
+      qty: p.qty,
+      subprice: p.price_ht,
+      tva_tx: p.tva || 19,
+      fk_product: parseInt(p.id),
+      remise_percent: 0,
+      rang: i + 1
+    }));
+
     const invoiceData = {
       socid: clientId,
       date: new Date().toISOString().split("T")[0],
-      lines: cart.map(p => ({
-        desc: `Produit ${p.id}`,
-        qty: p.qty,
-        subprice: p.price_ht,
-        tva_tx: p.tva || 19
-      })),
-      note_public: `Commande client ${fullName} via ${paiement.toUpperCase()}`,
+      lines: invoiceLines,
+      note_public: `Commande client ${fullName} via ${paiement.toUpperCase()}`
     };
 
     const factureRes = await axios.post(`${DOLIBARR_API}/invoices`, invoiceData, { headers });
     const factureId = factureRes.data;
     console.log("🧾 Facture créée (brouillon) :", factureId);
 
-    // 4️⃣ Valider la facture
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
     console.log("✅ Facture validée :", factureId);
 
-    // 5️⃣ Générer PDF
     await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, { headers });
     const pdfUrl = `${DOLIBARR_API}/documents/facture/${factureId}/facture.pdf`;
     console.log("📄 PDF généré :", pdfUrl);
 
-    // 6️⃣ Envoi email
     const emailBody = {
       sendto: clientEmail,
       subject: "📄 Votre facture StainedGlass",
