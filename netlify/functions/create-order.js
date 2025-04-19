@@ -4,11 +4,11 @@ const DOLIBARR_API = "https://7ssab.stainedglass.tn/api/index.php";
 const API_KEY = process.env.DOLIBARR_TOKEN;
 
 const headers = {
-  "DOLAPIKEY": API_KEY,
+  DOLAPIKEY: API_KEY,
   "Content-Type": "application/json"
 };
 
-// 🔧 Ligne de facture complète pour Dolibarr
+// 🔧 Génère les lignes produit complètes pour Dolibarr
 async function buildInvoiceLines(cart, headers) {
   const lines = [];
 
@@ -75,7 +75,6 @@ exports.handler = async function (event) {
   const clientEmail = customer.email;
 
   try {
-    // 1️⃣ Recherche ou création du client
     const clientRes = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
     let client = clientRes.data.find(c => c.email?.toLowerCase() === clientEmail.toLowerCase());
     let clientId = client?.id;
@@ -97,10 +96,10 @@ exports.handler = async function (event) {
       console.log("✅ Client trouvé :", clientId);
     }
 
-    // 2️⃣ Génération des lignes complètes
+    // 🔧 Génération lignes
     const invoiceLines = await buildInvoiceLines(cart, headers);
 
-    // 3️⃣ Création de la facture (brouillon)
+    // 🧾 Création facture (brouillon)
     const invoiceData = {
       socid: clientId,
       date: new Date().toISOString().split("T")[0],
@@ -111,34 +110,37 @@ exports.handler = async function (event) {
     const factureRes = await axios.post(`${DOLIBARR_API}/invoices`, invoiceData, { headers });
     const factureId = factureRes.data;
 
-    if (!factureId || isNaN(factureId)) throw new Error("❌ ID de facture manquant après création");
+    if (!factureId || isNaN(factureId)) throw new Error("❌ ID de facture manquant");
 
     console.log("🧾 Facture brouillon créée : ID", factureId);
 
-    // 4️⃣ Validation de la facture
+    // ✅ Validation obligatoire
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
     console.log("✅ Facture validée :", factureId);
 
-    // 5️⃣ Paiement ou non selon méthode
+    // 💳 Paiement (si CB)
     if (paiement === "cb") {
       const today = new Date().toISOString().split("T")[0];
       await axios.post(`${DOLIBARR_API}/invoices/${factureId}/settlements`, {
         datepaye: today,
         amount: totalTTC,
-        payment_type: 1, // 💳 CB = ID 1 par défaut
+        payment_type: 1,
         closepaidinvoices: 1
       }, { headers });
-      console.log("💳 Paiement enregistré : CB");
+      console.log("💳 Paiement CB enregistré");
     } else {
-      console.log("🚚 Paiement à la livraison, facture reste impayée");
+      console.log("🚚 Paiement à la livraison — facture reste impayée");
     }
 
-    // 6️⃣ Génération PDF
-    await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, { headers });
+    // 📄 PDF après validation (patché)
+    await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, {
+      headers,
+      responseType: "arraybuffer"
+    });
     const pdfUrl = `${DOLIBARR_API}/documents/facture/${factureId}/facture.pdf`;
     console.log("📄 PDF généré :", pdfUrl);
 
-    // 7️⃣ Envoi email
+    // 📧 Envoi email
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/sendbyemail`, {
       sendto: clientEmail,
       subject: "📄 Votre facture StainedGlass",
