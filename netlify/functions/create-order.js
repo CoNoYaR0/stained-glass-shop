@@ -129,23 +129,16 @@ exports.handler = async function (event) {
     console.log("📦 Body envoyé : {}");
 
     try {
-      const validation = await axios.post(validationUrl, {}, {
+      await axios.post(validationUrl, {}, {
         headers: {
           DOLAPIKEY: API_KEY,
           "Content-Type": "application/json"
         }
       });
-
-      console.log("✅ Validation OK :", validation.data);
+      console.log("✅ Facture validée côté Dolibarr");
 
     } catch (validationError) {
       console.error("❌ Erreur validation facture :", validationError.message);
-      if (validationError.response) {
-        console.error("📄 Status :", validationError.response.status);
-        console.error("📄 Headers :", validationError.response.headers);
-        console.error("📄 Data brute :", validationError.response.data);
-      }
-
       return {
         statusCode: 500,
         body: JSON.stringify({
