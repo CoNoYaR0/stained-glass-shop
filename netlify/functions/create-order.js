@@ -129,37 +129,41 @@ exports.handler = async function (event) {
     console.log("📦 Body envoyé : {}");
 
     try {
-      const validation = await axios.post(validationUrl, {}, {
-        headers: {
-          DOLAPIKEY: API_KEY,
-          "Content-Type": "application/json",
-          "Accept-Encoding": "identity"  // 🔥 clé du fix
-        }
-      });
-      
+      const zlib = require("zlib");
 
-      console.log("✅ Validation OK");
-      console.log("🔢 Status HTTP :", validation.status);
-      console.log("📄 Headers réponse :", validation.headers);
-      console.log("📐 Type réponse :", typeof validation.data);
-      console.log("📏 Taille réponse (bytes) :", Buffer.byteLength(validation.data));
+let rawBuffer;
 
-    } catch (validationError) {
-      console.error("❌ Erreur validation facture :", validationError.message);
-      if (validationError.response) {
-        console.error("📄 Status :", validationError.response.status);
-        console.error("📄 Headers :", validationError.response.headers);
-        console.error("📄 Data type :", typeof validationError.response.data);
-      }
+try {
+  const validation = await axios.post(validationUrl, {}, {
+    headers: {
+      DOLAPIKEY: API_KEY,
+      "Content-Type": "application/json",
+      "Accept-Encoding": "gzip"
+    },
+    responseType: "arraybuffer"
+  });
 
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: "Erreur validation facture",
-          message: validationError.message
-        })
-      };
-    }
+  const encoding = validation.headers['content-encoding'];
+
+  if (encoding === 'gzip') {
+    rawBuffer = zlib.gunzipSync(Buffer.from(validation.data));
+  } else {
+    rawBuffer = Buffer.from(validation.data);
+  }
+
+  console.log("✅ Validation OK (décompressée)");
+  console.log("📄 Réponse texte :", rawBuffer.toString());
+
+} catch (validationError) {
+  console.error("❌ Erreur validation facture :", validationError.message);
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      error: "Erreur validation facture",
+      message: validationError.message
+    })
+  };
+}
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
     const status = getFacture.data.status;
