@@ -107,9 +107,12 @@ exports.handler = async function (event) {
       const validation = await axios.post(validationUrl, {}, { headers });
       console.log("✅ Validation retour brut:", validation.data, validation.status);
 
-      if (!validation.data || validation.data.toString().toLowerCase().includes("error")) {
-        throw new Error("❌ Validation échouée : Réponse Dolibarr = " + validation.data);
+      // ✅ Patche : vérification réelle de changement d'état
+      const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
+      if (getFacture.data.status !== 1) {
+        throw new Error("❌ Facture toujours en brouillon après validation");
       }
+
     } catch (validationError) {
       console.error("❌ Erreur validation:", validationError.response?.data || validationError.message);
       return {
