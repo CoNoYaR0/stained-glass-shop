@@ -1,7 +1,7 @@
 const axios = require("axios");
 
-const DOLIBARR_API = "https://7ssab.stainedglass.tn/api/index.php";
-const API_KEY = "N7qKZ2lzBLhKU7am1iCs2O6wVs9H081b";
+const DOLIBARR_API = process.env.DOLIBARR_API;
+const API_KEY = process.env.DOLIBARR_TOKEN;
 
 const headers = {
   "DOLAPIKEY": API_KEY,
