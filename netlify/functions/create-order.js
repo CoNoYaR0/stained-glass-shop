@@ -119,67 +119,46 @@ exports.handler = async function (event) {
     }
 
     // 🎯 Étape de validation
-    console.log("🛠️ Validation facture ID:", factureId);
-    const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
+console.log("🛠️ Début validation de la facture ID:", factureId);
 
-    try {
-      const validation = await axios.post(validationUrl, {}, {
-        headers: {
-          DOLAPIKEY: API_KEY,
-          "Content-Type": "application/json"
-        }
-      });      
+const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
 
-      console.log("✅ Validation reçue");
-      console.log("📡 Status:", validation.status);
-      console.log("📡 Headers:", validation.headers);
-      console.log("📡 Type de data:", typeof validation.data);
-      console.log("📡 Taille data:", Buffer.byteLength(validation.data));
+console.log("📡 URL :", validationUrl);
+console.log("📤 Headers envoyés :", {
+  DOLAPIKEY: API_KEY,
+  "Content-Type": "application/json"
+});
+console.log("📦 Body envoyé : {}");
 
-    } catch (validationError) {
-      console.error("❌ Erreur validation :", validationError.message);
-      if (validationError.response) {
-        console.error("📄 Status:", validationError.response.status);
-        console.error("📄 Headers:", validationError.response.headers);
-        console.error("📄 Data type:", typeof validationError.response.data);
-      }
+try {
+  const validation = await axios.post(validationUrl, {}, {
+    headers: {
+      DOLAPIKEY: API_KEY,
+      "Content-Type": "application/json"
+    },
+    responseType: 'arraybuffer' // 🛡️ pour éviter incorrect header check
+  });
 
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          error: "Échec de validation facture",
-          message: validationError.message
-        })
-      };
-    }
+  console.log("✅ Validation OK");
+  console.log("🔢 Status HTTP :", validation.status);
+  console.log("📄 Headers réponse :", validation.headers);
+  console.log("📐 Type réponse :", typeof validation.data);
+  console.log("📏 Taille réponse (bytes) :", Buffer.byteLength(validation.data));
 
-    const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
-    const status = getFacture.data.status;
-    console.log("📋 État final post-validation:", status);
-
-    if (status !== 1) {
-      throw new Error("❌ Facture toujours en brouillon après tentative de validation");
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        facture: {
-          id: factureId,
-          statut: status
-        }
-      })
-    };
-
-  } catch (err) {
-    console.error("💥 Erreur générale :", err.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: "Erreur Dolibarr",
-        message: err.message
-      })
-    };
+} catch (validationError) {
+  console.error("❌ Erreur validation facture :", validationError.message);
+  if (validationError.response) {
+    console.error("📄 Status :", validationError.response.status);
+    console.error("📄 Headers :", validationError.response.headers);
+    console.error("📄 Data type :", typeof validationError.response.data);
   }
+
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      error: "Erreur validation facture",
+      message: validationError.message
+    })
+  };
+}
 };
