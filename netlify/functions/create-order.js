@@ -160,16 +160,7 @@ const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
 
 console.log("📡 URL :", validationUrl);
 
-try {
-  console.error("❌ Exception inattendue :", err.message);
-  return {
-    statusCode: 500,
-    body: JSON.stringify({
-      error: "Erreur validation facture (exception)",
-      message: err.message
-    })
-  };
-}
+
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
     const status = getFacture.data.status;
