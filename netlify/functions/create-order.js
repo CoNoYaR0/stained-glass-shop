@@ -68,11 +68,13 @@ exports.handler = async function (event) {
   const clientEmail = customer.email;
 
   try {
+    console.log("🔎 Vérification client existant...");
     const clients = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
     let client = clients.data.find(c => c.email?.toLowerCase() === clientEmail.toLowerCase());
     let clientId = client?.id;
 
     if (!clientId) {
+      console.log("➕ Création nouveau client");
       const newClient = await axios.post(`${DOLIBARR_API}/thirdparties`, {
         name: fullName,
         email: clientEmail,
@@ -84,10 +86,15 @@ exports.handler = async function (event) {
         country_id: 1
       }, { headers });
       clientId = newClient.data;
+      console.log("✅ Client créé avec ID:", clientId);
+    } else {
+      console.log("✅ Client trouvé avec ID:", clientId);
     }
 
+    console.log("🧱 Construction des lignes de facture...");
     const lines = await buildInvoiceLines(cart, headers);
 
+    console.log("🧾 Création de la facture...");
     const invoiceRes = await axios.post(`${DOLIBARR_API}/invoices`, {
       socid: clientId,
       date: new Date().toISOString().split("T")[0],
@@ -96,65 +103,43 @@ exports.handler = async function (event) {
     }, { headers });
 
     const factureId = invoiceRes.data;
+    console.log("📄 Facture créée (brouillon) avec ID:", factureId);
+
     if (!factureId || isNaN(factureId)) throw new Error("Facture ID invalide");
 
-    // 🔒 Validation avec logs avancés
+    // ✅ Tentative de validation
     try {
-      console.log("🔧 Tentative de validation facture", factureId);
+      console.log("🔧 Tentative de validation de la facture...");
       const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
-      console.log("📡 URL validation:", validationUrl);
-
       const validation = await axios.post(validationUrl, {}, { headers });
-      console.log("✅ Validation retour brut:", validation.data, validation.status);
+      console.log("📬 Réponse de validation:", validation.status, validation.data);
 
-      // ✅ Patche : vérification réelle de changement d'état
+      console.log("🔁 Vérification de l'état de la facture après validation...");
       const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
+      console.log("📊 Etat actuel:", getFacture.data.status);
+
       if (getFacture.data.status !== 1) {
-        throw new Error("❌ Facture toujours en brouillon après validation");
+        throw new Error("❌ Facture toujours en brouillon");
       }
 
-    } catch (validationError) {
-      console.error("❌ Erreur validation:", validationError.response?.data || validationError.message);
+      console.log("✅ Facture validée avec succès !");
+    } catch (err) {
+      console.error("❌ Échec de validation:", err.response?.data || err.message);
       return {
         statusCode: 500,
         body: JSON.stringify({
           error: "Erreur validation facture",
-          details: validationError.response?.data || validationError.message
+          details: err.response?.data || err.message
         })
       };
     }
-
-    if (paiement === "cb") {
-      await axios.post(`${DOLIBARR_API}/invoices/${factureId}/settlements`, {
-        datepaye: new Date().toISOString().split("T")[0],
-        amount: totalTTC,
-        payment_type: 1,
-        closepaidinvoices: 1
-      }, { headers });
-    }
-
-    await new Promise((r) => setTimeout(r, 1000));
-
-    await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, {
-      headers,
-      responseType: "arraybuffer"
-    });
-
-    const pdfUrl = `${DOLIBARR_API}/documents/facture/${factureId}/facture.pdf`;
-
-    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/sendbyemail`, {
-      sendto: clientEmail,
-      subject: "📄 Votre facture StainedGlass",
-      message: `Bonjour ${fullName},\n\nVeuillez trouver ci-joint votre facture.\n\nMerci pour votre commande 💛\n`
-    }, { headers });
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
         facture: {
-          id: factureId,
-          pdfUrl
+          id: factureId
         }
       })
     };
