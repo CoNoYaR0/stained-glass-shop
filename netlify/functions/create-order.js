@@ -98,10 +98,10 @@ exports.handler = async function (event) {
     const factureId = invoiceRes.data;
     if (!factureId || isNaN(factureId)) throw new Error("Facture ID invalide");
 
-    // 🔒 Validation avec catch explicite
+    // 🔒 Validation avec catch explicite + LOG de retour
     try {
       const validation = await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
-      console.log("✅ Facture validée :", factureId);
+      console.log("✅ Validation retour :", validation.data);
     } catch (validationError) {
       console.error("❌ Erreur validation :", validationError.response?.data || validationError.message);
       return {
