@@ -40,16 +40,17 @@ exports.handler = async function (event) {
   const clientEmail = customer.email;
 
   try {
-    // 1️⃣ Cherche client existant
-    const clientRes = await axios.get(
-      `${DOLIBARR_API}/thirdparties?sqlfilters=(email:=:'${clientEmail}')`,
-      { headers }
+    // 1️⃣ Liste les clients
+    const clientRes = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
+
+    let client = clientRes.data.find(cli =>
+      cli.email?.toLowerCase() === clientEmail.toLowerCase()
     );
 
     let clientId;
 
-    if (clientRes.data.length > 0) {
-      clientId = clientRes.data[0].id;
+    if (client) {
+      clientId = client.id;
       console.log("✅ Client trouvé :", clientId);
     } else {
       // 2️⃣ Créer nouveau client
