@@ -98,15 +98,20 @@ exports.handler = async function (event) {
     const factureId = invoiceRes.data;
     if (!factureId || isNaN(factureId)) throw new Error("Facture ID invalide");
 
-    // 🔒 Validation avec log détaillé du retour
+    // 🔒 Validation avec logs avancés
     try {
-      const validation = await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
-      console.log("✅ Validation retour brut :", validation.data, validation.status);
+      console.log("🔧 Tentative de validation facture", factureId);
+      const validationUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
+      console.log("📡 URL validation:", validationUrl);
+
+      const validation = await axios.post(validationUrl, {}, { headers });
+      console.log("✅ Validation retour brut:", validation.data, validation.status);
+
       if (!validation.data || validation.data.toString().toLowerCase().includes("error")) {
-        throw new Error("❌ Validation échouée (réponse Dolibarr)");
+        throw new Error("❌ Validation échouée : Réponse Dolibarr = " + validation.data);
       }
     } catch (validationError) {
-      console.error("❌ Erreur validation :", validationError.response?.data || validationError.message);
+      console.error("❌ Erreur validation:", validationError.response?.data || validationError.message);
       return {
         statusCode: 500,
         body: JSON.stringify({
@@ -151,7 +156,7 @@ exports.handler = async function (event) {
       })
     };
   } catch (err) {
-    console.error("💥 Erreur générale :", err.response?.data || err.message);
+    console.error("💥 Erreur générale:", err.response?.data || err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({
