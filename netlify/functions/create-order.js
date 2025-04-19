@@ -125,12 +125,10 @@ exports.handler = async function (event) {
     try {
       const validation = await axios.post(validationUrl, {}, {
         headers: {
-          ...headers,
-          Accept: "*/*"
-        },
-        responseType: "arraybuffer", // évite erreurs gzip
-        decompress: false
-      });
+          DOLAPIKEY: API_KEY,
+          "Content-Type": "application/json"
+        }
+      });      
 
       console.log("✅ Validation reçue");
       console.log("📡 Status:", validation.status);
