@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const DOLIBARR_API = process.env.DOLIBARR_API;
+const DOLIBARR_API = "https://7ssab.stainedglass.tn/api/index.php";
 const API_KEY = process.env.DOLIBARR_TOKEN;
 
 const headers = {
@@ -61,7 +61,7 @@ exports.handler = async function (event) {
         zip: "0000",
         town: "Tunis",
         address: customer.adresse || "Adresse non renseignée",
-        country_id: 1, // Tunisie
+        country_id: 1
       };
 
       const createRes = await axios.post(`${DOLIBARR_API}/thirdparties`, newClient, { headers });
@@ -90,27 +90,21 @@ exports.handler = async function (event) {
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
     console.log("✅ Facture validée :", factureId);
 
-    // 5️⃣ Changer statut paiement
-    const statusToApply = paiement === "cb" ? 2 : 1; // 2 = paid, 1 = unpaid
-    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/setpaid?status=${statusToApply}`, {}, { headers });
-    console.log("💰 Statut de paiement défini :", statusToApply === 2 ? "Payé" : "Impayé");
-
-    // 6️⃣ Générer PDF
+    // 5️⃣ Générer PDF
     await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, { headers });
     const pdfUrl = `${DOLIBARR_API}/documents/facture/${factureId}/facture.pdf`;
     console.log("📄 PDF généré :", pdfUrl);
 
-    // 7️⃣ Envoi email client
+    // 6️⃣ Envoi email
     const emailBody = {
       sendto: clientEmail,
       subject: "📄 Votre facture StainedGlass",
-      message: `Bonjour ${fullName},\n\nVeuillez trouver ci-joint votre facture.\n\nMerci pour votre commande 💛\n`,
+      message: `Bonjour ${fullName},\n\nVeuillez trouver ci-joint votre facture.\n\nMerci pour votre commande 💛\n`
     };
 
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/sendbyemail`, emailBody, { headers });
     console.log("📧 Facture envoyée à :", clientEmail);
 
-    // ✅ Retour final
     return {
       statusCode: 200,
       body: JSON.stringify({
