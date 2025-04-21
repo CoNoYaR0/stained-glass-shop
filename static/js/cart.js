@@ -1,5 +1,27 @@
 const CART_KEY = "customCart";
 
+function addToCart(product) {
+  const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+  const existing = cart.find(item => item.id === product.id);
+
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    product.quantity = 1;
+    cart.push(product);
+  }
+
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  updateCartCount();
+}
+
+function updateCartCount() {
+  const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+  const total = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const countElem = document.getElementById("cart-count");
+  if (countElem) countElem.textContent = total;
+}
+
 function attachAddToCartButtons() {
   const buttons = document.querySelectorAll(".add-to-cart");
 
@@ -72,32 +94,9 @@ async function loadDolibarrProducts() {
   }
 }
 
-// Reste du code DOMContentLoaded (inchangé)
 document.addEventListener("DOMContentLoaded", function () {
   if (!localStorage.getItem(CART_KEY)) {
     localStorage.setItem(CART_KEY, JSON.stringify([]));
-  }
-
-  function addToCart(product) {
-    const cart = JSON.parse(localStorage.getItem(CART_KEY));
-    const existing = cart.find(item => item.id === product.id);
-
-    if (existing) {
-      existing.quantity += 1;
-    } else {
-      product.quantity = 1;
-      cart.push(product);
-    }
-
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    updateCartCount();
-  }
-
-  function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem(CART_KEY));
-    const total = cart.reduce((sum, item) => sum + item.quantity, 0);
-    const countElem = document.getElementById("cart-count");
-    if (countElem) countElem.textContent = total;
   }
 
   function renderCartItems() {
@@ -184,7 +183,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   loadDolibarrProducts();
-  attachAddToCartButtons();
   updateCartCount();
 
   const openCartBtn = document.getElementById("open-cart");
