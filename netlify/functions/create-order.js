@@ -156,8 +156,9 @@ exports.handler = async function (event) {
     // ✅ Validation via API custom Dolibarr
     await axios.get(`https://ton-dolibarr/htdocs/custom/api_invoice_validate.php?id=${factureId}`, {
       headers: {
-        DOLAPIKEY: API_KEY
-      , "Accept-Encoding": "identity"}
+  DOLAPIKEY: API_KEY,
+  "Accept-Encoding": "identity"
+}
     });
     console.log("✅ Validation effectuée via endpoint personnalisé");
 
