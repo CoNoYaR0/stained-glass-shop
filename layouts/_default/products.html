@@ -1,13 +1,17 @@
-<!-- layouts/_default/products.html -->
-<main class="container">
-  <h1 class="my-4"> Nos créations en verre</h1>
+<section class="section gallery">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center mb-5">
+        <h1 class="font-weight-bold">Nos créations en verre</h1>
+      </div>
 
-  <div id="category-filters" class="mb-4">
-    <button class="btn btn-outline-primary btn-sm filter-btn" data-cat="all">Tous</button>
-    <!-- Les catégories seront ajoutées dynamiquement ici -->
+      <!-- 💥 Le conteneur que ton JS attend -->
+      <div id="product-list" class="row">
+        <!-- Les produits Dolibarr seront injectés ici -->
+      </div>
+    </div>
   </div>
+</section>
 
-  <div id="product-list" class="row">
-    <!-- Produits injectés ici -->
-  </div>
+<!-- Appelle bien le JS dynamique -->
 <script src="/js/products-dynamic.js"></script>
