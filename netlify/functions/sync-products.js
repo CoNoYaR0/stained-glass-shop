@@ -3,14 +3,6 @@ const axios = require("axios");
 const DOLI_API_URL = "https://7ssab.stainedglass.tn/api/index.php";
 const DOLI_API_KEY = process.env.DOLIBARR_TOKEN;
 
-const getImageUrl = (ref) => {
-  if (!ref || typeof ref !== "string") {
-    return "/images/products/default.png";
-  }
-
-  return `/.netlify/functions/proxy-image?ref=${encodeURIComponent(ref.trim())}`;
-};
-
 exports.handler = async function (event, context) {
   try {
     const { data } = await axios.get(`${DOLI_API_URL}/products`, {
@@ -32,10 +24,10 @@ exports.handler = async function (event, context) {
 
     const products = data.map((p) => ({
       id: p.id,
+      ref: p.ref,
       name: p.label || "Sans nom",
       price: p.price || 0,
       stock: p.stock_real ?? 0,
-      image: getImageUrl(p.ref),
       highlight: false,
     }));
 
