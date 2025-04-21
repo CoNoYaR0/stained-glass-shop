@@ -1,5 +1,6 @@
 defaultContentLanguage = "fr"
 defaultContentLanguageInSubdir = false
+layoutDir = "layouts"
 ########################### Default parameters ##########################
 [params]
 logo = "images/logo.png"
