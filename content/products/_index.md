@@ -1,4 +1,4 @@
 ---
-title: "Nos Produits"
+title: "Nos créations en verre"
 layout: products
 ---
