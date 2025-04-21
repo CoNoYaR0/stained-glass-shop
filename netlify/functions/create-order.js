@@ -163,6 +163,14 @@ exports.handler = async function (event) {
       responseType: "arraybuffer"
     });
     console.log("✅ Validation effectuée via API officielle");
+
+// 💳 Paiement CB détecté, en attente de confirmation par webhook Paymee
+    if (paiement === "cb") {
+      console.log("⏳ Paiement CB en attente de confirmation via Paymee (webhook)");
+    } else {
+      console.log("🚚 Paiement à la livraison, aucun statut de paiement modifié.");
+    }
+    }
     
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
