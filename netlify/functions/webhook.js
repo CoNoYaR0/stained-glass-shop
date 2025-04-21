@@ -52,6 +52,24 @@ exports.handler = async function (event) {
 
     console.log("✅ Commande créée via webhook. Résultat:", res.data);
 
+    // 💳 Marquer la facture comme payée (après retour webhook Paymee)
+    const factureId = res.data?.facture?.id;
+    if (factureId) {
+      await axios.post(`${process.env.DOLIBARR_API}/payments`, {
+        facid: factureId,
+        datepaye: new Date().toISOString().split("T")[0],
+        amount: data.totalTTC,
+        paymenttype: 2,
+        closepaidinvoices: 1
+      }, {
+        headers: {
+          DOLAPIKEY: process.env.DOLIBARR_TOKEN,
+          "Content-Type": "application/json"
+        }
+      });
+      console.log("💰 Facture", factureId, "marquée comme payée (CB via webhook)");
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true, from: "webhook", result: res.data })
