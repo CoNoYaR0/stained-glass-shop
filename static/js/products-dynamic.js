@@ -9,12 +9,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const res = await fetch("/.netlify/functions/sync-products");
     const data = await res.json();
 
-    console.log("✅ Produits reçus :", data.products);
-
     if (!data.success || !Array.isArray(data.products)) {
-      console.error("❌ Structure inattendue :", data);
+      console.error("❌ Réponse invalide :", data);
       return;
     }
+
+    console.log("✅ Produits reçus :", data.products);
 
     data.products.forEach((product) => {
       const html = `
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       productList.insertAdjacentHTML("beforeend", html);
     });
 
-    // 🔁 Attache les boutons dynamiques (comme pour cart.js)
+    // Sécurisation des boutons après injection
     if (typeof attachAddToCartButtons === "function") {
       setTimeout(() => {
         attachAddToCartButtons();
@@ -46,6 +46,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
   } catch (err) {
-    console.error("💥 Erreur API produits :", err);
+    console.error("💥 Erreur d’injection produits :", err);
   }
 });
