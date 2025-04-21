@@ -1,5 +1,33 @@
 const CART_KEY = "customCart";
 
+function attachAddToCartButtons() {
+  const buttons = document.querySelectorAll(".add-to-cart");
+
+  if (buttons.length === 0) {
+    setTimeout(attachAddToCartButtons, 300);
+    return;
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const product = {
+        id: button.dataset.id,
+        name: button.dataset.name,
+        price: parseFloat(button.dataset.price),
+        image: button.dataset.image || "",
+        quantity: 1
+      };
+
+      button.classList.add("bounce");
+      setTimeout(() => button.classList.remove("bounce"), 400);
+
+      addToCart(product);
+    });
+  });
+}
+
 async function loadDolibarrProducts() {
   try {
     const response = await fetch('/.netlify/functions/sync-products');
@@ -44,6 +72,7 @@ async function loadDolibarrProducts() {
   }
 }
 
+// Reste du code DOMContentLoaded (inchangé)
 document.addEventListener("DOMContentLoaded", function () {
   if (!localStorage.getItem(CART_KEY)) {
     localStorage.setItem(CART_KEY, JSON.stringify([]));
@@ -150,34 +179,6 @@ document.addEventListener("DOMContentLoaded", function () {
         localStorage.setItem(CART_KEY, JSON.stringify(cart));
         updateCartCount();
         renderCartItems();
-      });
-    });
-  }
-
-  function attachAddToCartButtons() {
-    const buttons = document.querySelectorAll(".add-to-cart");
-
-    if (buttons.length === 0) {
-      setTimeout(attachAddToCartButtons, 300);
-      return;
-    }
-
-    buttons.forEach((button) => {
-      button.addEventListener("click", (e) => {
-        e.preventDefault();
-
-        const product = {
-          id: button.dataset.id,
-          name: button.dataset.name,
-          price: parseFloat(button.dataset.price),
-          image: button.dataset.image || "",
-          quantity: 1
-        };
-
-        button.classList.add("bounce");
-        setTimeout(() => button.classList.remove("bounce"), 400);
-
-        addToCart(product);
       });
     });
   }
