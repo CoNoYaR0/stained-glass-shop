@@ -1,54 +1,52 @@
-const axios = require("axios");
+document.addEventListener("DOMContentLoaded", async () => {
+  const productList = document.getElementById("product-list");
+  if (!productList) {
+    console.warn("⛔ #product-list non trouvé dans le DOM");
+    return;
+  }
 
-const DOLI_API_URL = "https://7ssab.stainedglass.tn/api/index.php";
-const DOLI_API_KEY = process.env.DOLIBARR_TOKEN;
-
-exports.handler = async function (event, context) {
   try {
-    const { data } = await axios.get(`${DOLI_API_URL}/products`, {
-      headers: {
-        DOLAPIKEY: DOLI_API_KEY,
-      },
-    });
+    const res = await fetch("/.netlify/functions/sync-products");
+    const data = await res.json();
 
-    if (!Array.isArray(data)) {
-      console.error("❌ Donnée inattendue depuis Dolibarr :", data);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          success: false,
-          message: "Réponse inattendue depuis Dolibarr.",
-        }),
-      };
+    if (!data.success || !Array.isArray(data.products)) {
+      console.error("❌ Réponse produit invalide :", data);
+      return;
     }
 
-    const products = data.map((p) => ({
-      id: p.id,
-      ref: p.ref,
-      name: p.label || "Sans nom",
-      price: p.price || 0,
-      stock: p.stock_real ?? 0,
-      image: `/.netlify/functions/proxy-image?ref=${encodeURIComponent(p.ref)}`,
-      highlight: false,
-    }));
+    data.products.forEach((product) => {
+      const imageUrl = `https://7ssab.stainedglass.tn/document.php?modulepart=product&entity=1&file=${encodeURIComponent(product.ref + '/' + product.ref + '-showcase-1.png')}`;
+      const proxyUrl = `/.netlify/functions/proxy-image?url=${encodeURIComponent(imageUrl)}`;
 
-    console.log("✅ Produits formatés :", products.length);
+      const html = `
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-info">
+          <div class="card h-100">
+            <img class="card-img-top" src="${proxyUrl}" alt="${product.name}" onerror="this.src='/images/products/default.png'">
+            <div class="card-body text-center">
+              <h5 class="card-title">${product.name}</h5>
+              <p class="card-text">${product.price} TND</p>
+              <button 
+                class="btn btn-outline-dark add-to-cart"
+                data-id="${product.id}"
+                data-name="${product.name}"
+                data-price="${product.price}"
+                data-image="${proxyUrl}">
+                Ajouter au panier
+              </button>
+            </div>
+          </div>
+        </div>`;
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        products,
-      }),
-    };
-  } catch (error) {
-    console.error("💥 Erreur Dolibarr sync-products:", error.message || error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        success: false,
-        message: "Erreur lors de la récupération des produits Dolibarr.",
-      }),
-    };
+      productList.insertAdjacentHTML("beforeend", html);
+    });
+
+    if (typeof attachAddToCartButtons === "function") {
+      setTimeout(() => {
+        attachAddToCartButtons();
+      }, 100);
+    }
+
+  } catch (err) {
+    console.error("💥 Erreur de chargement des produits:", err);
   }
-};
+});
