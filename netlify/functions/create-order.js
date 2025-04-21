@@ -153,14 +153,17 @@ exports.handler = async function (event) {
     console.log("📤 Headers envoyés :");
     console.log("📦 Body envoyé : {}");
 
-    // ✅ Validation via API custom Dolibarr
-    await axios.get(`https://7ssab.stainedglass.tn/custom/api_invoice_validate.php?id=${factureId}`, {
+    
+    // ✅ Validation via l’API REST officielle Dolibarr
+    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, {
       headers: {
-  DOLAPIKEY: API_KEY,
-  "Accept-Encoding": "identity"
-}
+        DOLAPIKEY: API_KEY,
+        "Accept-Encoding": "identity"
+      },
+      responseType: "arraybuffer"
     });
-    console.log("✅ Validation effectuée via endpoint personnalisé");
+    console.log("✅ Validation effectuée via API officielle");
+    
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
     const status = getFacture.data.status;
