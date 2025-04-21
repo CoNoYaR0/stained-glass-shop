@@ -9,7 +9,7 @@ const getImageUrl = (productName) => {
   }
 
   const encoded = encodeURIComponent(productName.trim().replace(/\s+/g, "_"));
-  return `https://7ssab.stainedglass.tn/document.php?modulepart=produit&entity=1&file=${encoded}%2F${encoded}-showcase-1.png`;
+  return `https://7ssab.stainedglass.tn/document.php?modulepart=product&entity=1&file=${encoded}%2F${encoded}-showcase-1.png`;
 };
 
 exports.handler = async function (event, context) {
