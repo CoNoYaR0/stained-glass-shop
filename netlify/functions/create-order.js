@@ -43,7 +43,7 @@ exports.handler = async function (event) {
       }],
       note_public: "Facture générée via test structuré"
     }, {
-      headers,
+      headers: { ...headers, "Accept-Encoding": "identity" },
       responseType: "arraybuffer"
     });
 
