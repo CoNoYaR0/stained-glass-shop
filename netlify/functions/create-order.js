@@ -154,7 +154,7 @@ exports.handler = async function (event) {
     console.log("📦 Body envoyé : {}");
 
     // ✅ Validation via API custom Dolibarr
-    await axios.get(`https://ton-dolibarr/htdocs/custom/api_invoice_validate.php?id=${factureId}`, {
+    await axios.get(`https://7ssab.stainedglass.tn/custom/api_invoice_validate.php?id=${factureId}`, {
       headers: {
   DOLAPIKEY: API_KEY,
   "Accept-Encoding": "identity"
