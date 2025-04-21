@@ -20,7 +20,10 @@ window.addEventListener("DOMContentLoaded", async () => {
       const links = [...doc.querySelectorAll("a")];
       const images = links
         .map(a => a.getAttribute("href"))
-        .filter(href => href.endsWith(".png|jpg|jpeg|webp|gif"));
+        .filter(href =>
+          [".png", ".jpg", ".jpeg", ".webp", ".gif"].some(ext => href.toLowerCase().endsWith(ext))
+        );
+        
 
       images.forEach(src => {
         const img = document.createElement("img");
