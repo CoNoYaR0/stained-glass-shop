@@ -5,6 +5,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  const loadProductImages = (ref, max = 5) => {
+    const images = [`/products/${ref}/main.png`];
+    for (let i = 1; i <= max; i++) {
+      images.push(`/products/${ref}/image-${i}.png`);
+    }
+    return images;
+  };
+
   try {
     const res = await fetch("/.netlify/functions/sync-products");
     const data = await res.json();
@@ -15,13 +23,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     data.products.forEach((product) => {
-      const imageUrl = `https://7ssab.stainedglass.tn/document.php?modulepart=product&entity=1&file=${encodeURIComponent(product.ref + '/' + product.ref + '-showcase-1.png')}`;
-      const proxyUrl = `/.netlify/functions/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+      const images = loadProductImages(product.ref);
+      const imageTags = images.map((src, i) => `
+        <img src="${src}" alt="${product.name} - ${i}" 
+             onerror="this.style.display='none'" 
+             class="product-img ${i === 0 ? 'main-img' : 'extra-img'} w-100 mb-2">`
+      ).join('');
 
       const html = `
         <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-info">
           <div class="card h-100">
-            <img class="card-img-top" src="${proxyUrl}" alt="${product.name}" onerror="this.src='/images/products/default.png'">
+            ${imageTags}
             <div class="card-body text-center">
               <h5 class="card-title">${product.name}</h5>
               <p class="card-text">${product.price} TND</p>
@@ -30,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 data-id="${product.id}"
                 data-name="${product.name}"
                 data-price="${product.price}"
-                data-image="${proxyUrl}">
+                data-image="/products/${product.ref}/main.png">
                 Ajouter au panier
               </button>
             </div>
