@@ -1,10 +1,9 @@
-const axios = require("axios");
-
-const DOLI_API_URL = "https://7ssab.stainedglass.tn/api/index.php";
-const DOLI_API_KEY = process.env.DOLI_API_KEY;
-
 const getImageUrl = (productName) => {
-  if (!productName) return "/images/products/default.png";
+  if (!productName || typeof productName !== "string") {
+    console.warn("❌ Nom de produit invalide pour image :", productName);
+    return "/images/products/default.png";
+  }
+
   const cleanName = encodeURIComponent(productName.trim().replace(/\s+/g, "_"));
   return `https://7ssab.stainedglass.tn/document.php?modulepart=produit&entity=1&file=${cleanName}%2F${cleanName}-showcase-1.png`;
 };
