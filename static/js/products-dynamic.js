@@ -1,64 +1,57 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const productList = document.getElementById("product-list");
-  if (!productList) {
-    console.warn("⛔ #product-list non trouvé dans le DOM");
-    return;
-  }
+// products-dynamic.js
+window.addEventListener("DOMContentLoaded", async () => {
+  const container = document.getElementById("product-list");
+  const products = window.__PRODUCTS__ || [];
 
-  const loadProductImages = (ref, max = 5) => {
-    const images = [`/products/${ref}/main.png`];
-    for (let i = 1; i <= max; i++) {
-      images.push(`/products/${ref}/image-${i}.png`);
-    }
-    return images;
-  };
+  for (const product of products) {
+    const productCard = document.createElement("div");
+    productCard.className = "col-md-4 col-sm-6 mb-4";
 
-  try {
-    const res = await fetch("/.netlify/functions/sync-products");
-    const data = await res.json();
+    // Conteneur images dynamiques
+    const imgContainer = document.createElement("div");
+    imgContainer.className = "d-flex flex-wrap mb-3";
 
-    if (!data.success || !Array.isArray(data.products)) {
-      console.error("❌ Réponse produit invalide :", data);
-      return;
-    }
+    try {
+      const imgRes = await fetch(`/images/products/${product.ref}/`);
+      const html = await imgRes.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
 
-    data.products.forEach((product) => {
-      const images = loadProductImages(product.ref);
-      const imageTags = images.map((src, i) => `
-        <img src="${src}" alt="${product.name} - ${i}" 
-             onerror="this.style.display='none'" 
-             class="product-img ${i === 0 ? 'main-img' : 'extra-img'} w-100 mb-2">`
-      ).join('');
+      const links = [...doc.querySelectorAll("a")];
+      const images = links
+        .map(a => a.getAttribute("href"))
+        .filter(href => href.endsWith(".png|jpg|jpeg|webp|gif"));
 
-      const html = `
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-info">
-          <div class="card h-100">
-            ${imageTags}
-            <div class="card-body text-center">
-              <h5 class="card-title">${product.name}</h5>
-              <p class="card-text">${product.price} TND</p>
-              <button 
-                class="btn btn-outline-dark add-to-cart"
-                data-id="${product.id}"
-                data-name="${product.name}"
-                data-price="${product.price}"
-                data-image="/products/${product.ref}/main.png">
-                Ajouter au panier
-              </button>
-            </div>
-          </div>
-        </div>`;
-
-      productList.insertAdjacentHTML("beforeend", html);
-    });
-
-    if (typeof attachAddToCartButtons === "function") {
-      setTimeout(() => {
-        attachAddToCartButtons();
-      }, 100);
+      images.forEach(src => {
+        const img = document.createElement("img");
+        img.src = `/images/products/${product.ref}/${src}`;
+        img.alt = product.name;
+        img.style.maxWidth = "100px";
+        img.className = "mr-2 mb-2 border rounded";
+        imgContainer.appendChild(img);
+      });
+    } catch (e) {
+      console.warn("Pas d'images trouvées pour", product.ref);
     }
 
-  } catch (err) {
-    console.error("💥 Erreur de chargement des produits:", err);
+    productCard.innerHTML = `
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <h5 class="card-title">${product.name}</h5>
+          <p class="card-text">${product.price.toFixed(3)} TND</p>
+          <button class="btn btn-outline-dark snipcart-add-item"
+            data-item-id="${product.ref}"
+            data-item-name="${product.name}"
+            data-item-price="${product.price}"
+            data-item-url="/products/"
+            data-item-description="${product.name}">
+            Ajouter au panier
+          </button>
+        </div>
+      </div>
+    `;
+
+    productCard.querySelector(".card-body").prepend(imgContainer);
+    container.appendChild(productCard);
   }
 });
