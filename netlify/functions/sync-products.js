@@ -1,14 +1,14 @@
-const axios = require("axios"); // <-- Import FONDAMENTAL
+const axios = require("axios");
 
 const DOLI_API_URL = "https://7ssab.stainedglass.tn/api/index.php";
-const DOLI_API_KEY = process.env.DOLIBARR_TOKEN;
+const DOLI_API_KEY = process.env.DOLIBARR_TOKEN; // clé corrigée
 
-const getImageUrl = (productName) => {
-  if (!productName || typeof productName !== "string") {
+const getImageUrl = (ref) => {
+  if (!ref || typeof ref !== "string") {
     return "/images/products/default.png";
   }
 
-  const encoded = encodeURIComponent(productName.trim().replace(/\s+/g, "_"));
+  const encoded = encodeURIComponent(ref.trim().replace(/\s+/g, "_"));
   return `https://7ssab.stainedglass.tn/document.php?modulepart=product&entity=1&file=${encoded}%2F${encoded}-showcase-1.png`;
 };
 
@@ -36,11 +36,11 @@ exports.handler = async function (event, context) {
       name: p.label || "Sans nom",
       price: p.price || 0,
       stock: p.stock_real ?? 0,
-      image: getImageUrl(p.label),
+      image: getImageUrl(p.ref),
       highlight: false,
     }));
 
-    console.log("✅ Produits chargés :", products.length);
+    console.log("✅ Produits formatés :", products.length);
 
     return {
       statusCode: 200,
