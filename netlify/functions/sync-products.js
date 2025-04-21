@@ -1,7 +1,7 @@
 const axios = require("axios"); // <-- Import FONDAMENTAL
 
 const DOLI_API_URL = "https://7ssab.stainedglass.tn/api/index.php";
-const DOLI_API_KEY = process.env.DOLI_API_KEY;
+const DOLI_API_KEY = process.env.DOLIBARR_TOKEN;
 
 const getImageUrl = (productName) => {
   if (!productName || typeof productName !== "string") {
