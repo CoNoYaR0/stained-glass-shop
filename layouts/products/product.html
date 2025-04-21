@@ -1,14 +1,23 @@
-<main class="container">
-  <h1 class="my-4">Nos Produits</h1>
+{{ define "main" }}
+<section class="section gallery">
+  <div class="container">
+    <div class="row">
+      <div class="col-12 text-center mb-5">
+        <h1 class="font-weight-bold">Nos créations en verre</h1>
+      </div>
 
-  <div id="category-filters" class="mb-4">
-    <button class="btn btn-outline-primary btn-sm filter-btn" data-cat="all">Tous</button>
-    <!-- Les catégories seront ajoutées dynamiquement ici -->
-  </div>
+      <!-- (Optionnel pour plus tard) Filtres par catégorie -->
+      <div id="category-filters" class="mb-4 text-center d-none">
+        <button class="btn btn-outline-primary btn-sm filter-btn" data-cat="all">Tous</button>
+      </div>
 
-  <div id="product-list" class="row">
-    <!-- Produits injectés ici -->
+      <!-- ✅ Zone d’injection dynamique -->
+      <div id="product-list" class="row">
+        <!-- Les produits Dolibarr seront injectés ici -->
+      </div>
+    </div>
   </div>
-</main>
+</section>
 
 <script src="/js/products-dynamic.js"></script>
+{{ end }}
