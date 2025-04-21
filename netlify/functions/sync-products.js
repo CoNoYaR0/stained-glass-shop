@@ -8,7 +8,7 @@ const getImageUrl = (ref) => {
     return "/images/products/default.png";
   }
 
-  return `/netlify/functions/proxy-image?ref=${encodeURIComponent(ref.trim())}`;
+  return `/.netlify/functions/proxy-image?ref=${encodeURIComponent(ref.trim())}`;
 };
 
 exports.handler = async function (event, context) {
