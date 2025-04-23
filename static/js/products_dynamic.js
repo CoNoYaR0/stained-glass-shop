@@ -8,13 +8,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const products = await response.json();
 
     console.log("🔍 Produits reçus :", products);
+    console.log("🧾 Liste IDs produits valides :", products.map(p => p.id));
 
-    const validProducts = products.filter(p =>
-      p.ref &&
-      p.label &&
-      parseFloat(p.price) > 0 &&
-      !p.ref.toLowerCase().includes("test")
-    );
+    const validIds = [4, 5, 6, 8, 9, 10];
+    const validProducts = products.filter(p => validIds.includes(parseInt(p.id)));
 
     container.innerHTML = validProducts.map(prod => {
       const name = prod.ref || prod.label || "Nom inconnu";
@@ -23,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const id = prod.id || prod.ref || name;
 
       return `
-        <div class="product-card" style="border: 2px solid #ffa73c; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; box-shadow: 0 0 15px rgba(0,0,0,0.05);">
+        <div class="product-card" style="border: 2px solid #0088cc; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; box-shadow: 0 0 15px rgba(0,0,0,0.05);">
           <h4 style="font-weight: bold; color: #333;">${name}</h4>
           <p style="margin: 0;">Prix : ${price} DT HT</p>
           <p style="margin: 0;">Stock : ${stock}</p>
