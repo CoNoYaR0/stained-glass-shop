@@ -7,13 +7,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const response = await fetch('https://proxy-dolibarr-production.up.railway.app/products');
     const products = await response.json();
 
+    if (!Array.isArray(products)) {
+      console.error("❌ Données reçues invalides : ", products);
+      container.innerHTML = "<p>Erreur : données invalides depuis le serveur.</p>";
+      return;
+    }
+
     container.innerHTML = products.map(prod => {
       const name = prod.ref || prod.label || "Nom inconnu";
       const price = isNaN(parseFloat(prod.price)) ? "?" : parseFloat(prod.price).toFixed(2);
       const stock = prod.stock_reel ?? 'N/A';
       const id = prod.id || prod.ref || name;
-
-      const imgUrl = `https://proxy-dolibarr-production.up.railway.app/image/${encodeURIComponent(prod.ref)}`;
+      const imgUrl = prod.image || "";  // Nouvelle clé image dynamique
 
       return `
         <div class="product-card" style="
@@ -28,13 +33,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           align-items: center;
           text-align: center;
         ">
-          <img src="${imgUrl}" alt="${name}" style="
+          ${imgUrl ? `<img src="${imgUrl}" alt="${name}" style="
             max-width: 100%;
             height: auto;
             margin-bottom: 0.5rem;
             border-radius: 8px;
             object-fit: cover;
-          " onerror="this.style.display='none'">
+          " onerror="this.style.display='none'">` : ''}
 
           <h4 style="font-weight: bold; color: #333; word-wrap: break-word;">${name}</h4>
           <p style="margin: 0;">Prix : ${price} DT HT</p>
