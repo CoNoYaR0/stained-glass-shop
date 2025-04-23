@@ -14,11 +14,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       const id = prod.id || prod.ref || name;
 
       return `
-        <div class="product-card" style="border: 2px solid orange; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; box-shadow: 0 0 15px rgba(0,0,0,0.05); max-width: 300px;">
-          <img src="${prod.image}" alt="${name}" style="width: 100%; height: auto; border-radius: 8px; margin-bottom: 0.5rem;" onerror="this.style.display='none'">
-          <h4 style="font-weight: bold; color: #333;">${name}</h4>
+        <div class="product-card" style="
+          border: 2px solid orange;
+          padding: 1rem;
+          border-radius: 10px;
+          margin-bottom: 1.5rem;
+          box-shadow: 0 0 15px rgba(0,0,0,0.05);
+          max-width: 280px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        ">
+          <img src="${prod.image}" alt="${name}" style="
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            object-fit: cover;
+          " onerror="this.style.display='none'">
+
+          <h4 style="font-weight: bold; color: #333; word-wrap: break-word;">${name}</h4>
           <p style="margin: 0;">Prix : ${price} DT HT</p>
           <p style="margin: 0;">Stock : ${stock}</p>
+
           <button class="add-to-cart bounce-on-click"
             data-id="${id}"
             data-name="${name}"
