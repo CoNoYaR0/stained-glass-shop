@@ -7,14 +7,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const response = await fetch('https://proxy-dolibarr-production.up.railway.app/products');
     const products = await response.json();
 
-    console.log("🔍 Produits reçus :", products); // <-- Debug ici
+    console.log("🔍 Produits reçus :", products);
 
-    if (!Array.isArray(products)) {
-      container.innerHTML = "<p>Erreur de format de données</p>";
-      return;
-    }
+    const validProducts = products.filter(p =>
+      p.ref &&
+      p.label &&
+      parseFloat(p.price) > 0 &&
+      !p.ref.toLowerCase().includes("test")
+    );
 
-    container.innerHTML = products.map(prod => {
+    container.innerHTML = validProducts.map(prod => {
       const name = prod.ref || prod.label || "Nom inconnu";
       const price = isNaN(parseFloat(prod.price)) ? "?" : parseFloat(prod.price).toFixed(2);
       const stock = prod.stock_reel ?? 'N/A';
