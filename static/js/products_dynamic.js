@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const container = document.getElementById('products-list');
+    const container = document.getElementById('products');
   
     if (!container) return;
   
