@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const price = isNaN(parseFloat(prod.price)) ? "?" : parseFloat(prod.price).toFixed(2);
       const stock = prod.stock_reel ?? 'N/A';
       const id = prod.id || prod.ref || name;
-      const imgUrl = prod.image || "";  // Nouvelle clé image dynamique
+      const imgUrl = prod.image || "";
 
       return `
         <div class="product-card" style="
@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           flex-direction: column;
           align-items: center;
           text-align: center;
+          word-break: break-word;
+          overflow-wrap: anywhere;
         ">
           ${imgUrl ? `<img src="${imgUrl}" alt="${name}" style="
             max-width: 100%;
