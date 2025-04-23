@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const id = prod.id || prod.ref || name;
 
       return `
-        <div class="product-card" style="border: 2px solid #0088cc; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; box-shadow: 0 0 15px rgba(0,0,0,0.05);">
+        <div class="product-card" style="border: 2px solid #ffa73c; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; box-shadow: 0 0 15px rgba(0,0,0,0.05);">
           <h4 style="font-weight: bold; color: #333;">${name}</h4>
           <p style="margin: 0;">Prix : ${price} DT HT</p>
           <p style="margin: 0;">Stock : ${stock}</p>
