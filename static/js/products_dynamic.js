@@ -11,14 +11,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    container.innerHTML = products.map(prod => `
-      <div style="margin-bottom: 1rem;">
-        <strong>${prod.ref || prod.label}</strong><br>
-        Prix : ${parseFloat(prod.price).toFixed(2)} DT HT<br>
-        Stock : ${prod.stock_reel ?? 'N/A'}
-        <hr>
-      </div>
-    `).join('');
+    container.innerHTML = products.map(prod => {
+      const name = prod.ref || prod.label || "Nom inconnu";
+      const price = isNaN(parseFloat(prod.price)) ? "?" : parseFloat(prod.price).toFixed(2);
+      const stock = prod.stock_reel ?? 'N/A';
+
+      return `
+        <div style="margin-bottom: 1rem;">
+          <strong>${name}</strong><br>
+          Prix : ${price} DT HT<br>
+          Stock : ${stock}
+          <hr>
+        </div>
+      `;
+    }).join('');
   } catch (err) {
     container.innerHTML = "<p>Erreur de chargement des produits</p>";
     console.error(err);
