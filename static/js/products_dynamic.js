@@ -1,79 +1,73 @@
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const container = document.getElementById('products-list');
-  if (!container) return;
+const express = require('express');
+const fetch = require('node-fetch');
+const cheerio = require('cheerio');
+const cors = require('cors');
 
+const app = express();
+app.use(cors({ origin: '*' }));
+app.use(express.json());
+
+const DOLI_API = 'https://7ssab.stainedglass.tn/api/index.php/products';
+const DOLI_CARD_BASE = 'https://7ssab.stainedglass.tn/product/card.php?ref=';
+const CACHE_TTL = 1000 * 60 * 60 * 6; // 6 heures
+
+const imageCache = new Map(); // ref -> { images: [...], lastUpdated: timestamp }
+
+async function scrapeImages(ref) {
+  const url = DOLI_CARD_BASE + encodeURIComponent(ref);
   try {
-    const response = await fetch('https://proxy-dolibarr-production.up.railway.app/products');
-    const products = await response.json();
+    const html = await fetch(url).then(res => res.text());
+    const $ = cheerio.load(html);
+    const links = [];
 
-    if (!Array.isArray(products)) {
-      console.error("❌ Données reçues invalides :", products);
-      container.innerHTML = "<p>Erreur : données invalides depuis le serveur.</p>";
-      return;
-    }
-
-    container.innerHTML = products.map((prod, index) => {
-      const name = prod.ref || prod.label || "Nom inconnu";
-      const price = isNaN(parseFloat(prod.price)) ? "?" : parseFloat(prod.price).toFixed(2);
-      const stock = prod.stock_reel ?? 'N/A';
-      const id = prod.id || prod.ref || name;
-
-      const images = Array.isArray(prod.images) ? prod.images : [];
-      const sliderHTML = images.length > 0 ? `
-        <div class="swiper swiper-${index}">
-          <div class="swiper-wrapper">
-            ${images.map(img => `
-              <div class="swiper-slide">
-                <img src="${img}" alt="${name}" style="width: 100%; border-radius: 8px;" onerror="this.style.display='none'">
-              </div>
-            `).join('')}
-          </div>
-          <div class="swiper-pagination"></div>
-        </div>
-      ` : '';
-
-      return `
-        <div class="product-card" style="
-          border: 2px solid orange;
-          padding: 1rem;
-          border-radius: 10px;
-          margin-bottom: 2rem;
-          box-shadow: 0 0 15px rgba(0,0,0,0.05);
-          max-width: 280px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-        ">
-          ${sliderHTML}
-          <h4 style="font-weight: bold; color: #333; word-break: break-word;">${name}</h4>
-          <p>Prix : ${price} DT HT</p>
-          <p>Stock : ${stock}</p>
-          <button class="add-to-cart bounce-on-click"
-            data-id="${id}"
-            data-name="${name}"
-            data-price="${price}">
-            Ajouter au panier
-          </button>
-        </div>
-      `;
-    }).join('');
-
-    attachAddToCartButtons();
-
-    // Initialiser tous les sliders
-    document.querySelectorAll('.swiper').forEach((el, i) => {
-      new Swiper('.swiper-' + i, {
-        loop: true,
-        pagination: {
-          el: '.swiper-' + i + ' .swiper-pagination',
-          clickable: true
-        }
-      });
+    $('a[href*="document.php?hashp="]').each((_, el) => {
+      const href = $(el).attr('href');
+      links.push('https://7ssab.stainedglass.tn/' + href);
     });
+
+    return links;
   } catch (err) {
-    container.innerHTML = "<p>Erreur de chargement des produits</p>";
-    console.error(err);
+    console.warn(`❌ Erreur scraping ${ref}:`, err.message);
+    return [];
   }
+}
+
+async function getImages(ref) {
+  const cached = imageCache.get(ref);
+  const now = Date.now();
+
+  if (cached && now - cached.lastUpdated < CACHE_TTL) {
+    return cached.images;
+  }
+
+  const images = await scrapeImages(ref);
+  imageCache.set(ref, { images, lastUpdated: now });
+  return images;
+}
+
+app.get('/products', async (req, res) => {
+  try {
+    const response = await fetch(DOLI_API, {
+      headers: { 'DOLAPIKEY': process.env.DOLIBARR_API_KEY }
+    });
+
+    const data = await response.json();
+    const filtered = data.filter(p => parseFloat(p.stock_reel) > 0);
+
+    const enriched = await Promise.all(filtered.map(async p => {
+      const images = await getImages(p.ref || '');
+      return { ...p, images };
+    }));
+
+    res.json(enriched);
+  } catch (err) {
+    console.error("❌ Erreur globale /products :", err.message);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Proxy avec enrichissement produit + cache d'images lancé sur port ${PORT}`);
 });
