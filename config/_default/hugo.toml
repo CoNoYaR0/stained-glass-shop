@@ -1,3 +1,4 @@
+theme = "vex-hugo"
 defaultContentLanguage = "fr"
 defaultContentLanguageInSubdir = false
 layoutDir = "layouts"
@@ -12,9 +13,7 @@ author = "Themefisher"
 currency = "TND"
 # contact form action
 contact_form_action = "#" # contact form works with https://formspree.io
-baseURL = "/"
-
-
+baseURL = "https://resplendent-centaur-abf462.netlify.app"
 
 # unsafe html
 [markup.goldmark.renderer]
