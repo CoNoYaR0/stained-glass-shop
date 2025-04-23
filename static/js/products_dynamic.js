@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const id = prod.id || prod.ref || name;
       const ref = prod.ref;
 
-      const imgBase = `https://cdn.stainedglass.tn/products/${ref}/${ref}`;
+      const imgBase = `https://www.stainedglass.tn/stainedglass-cdn/products${ref}/${ref}`;
       const images = [1, 2, 3, 4].map(i => `${imgBase}-${i}.jpg`);
 
       const sliderHTML = `
