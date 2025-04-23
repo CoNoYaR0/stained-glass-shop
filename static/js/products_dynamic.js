@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('products-list');
   if (!container) return;
@@ -5,6 +6,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const response = await fetch('https://proxy-dolibarr-production.up.railway.app/products');
     const products = await response.json();
+
+    console.log("🔍 Produits reçus :", products); // <-- Debug ici
 
     if (!Array.isArray(products)) {
       container.innerHTML = "<p>Erreur de format de données</p>";
@@ -32,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
     }).join('');
 
-    attachAddToCartButtons(); // relancer le binding si script séparé
+    attachAddToCartButtons();
   } catch (err) {
     container.innerHTML = "<p>Erreur de chargement des produits</p>";
     console.error(err);
