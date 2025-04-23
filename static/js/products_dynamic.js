@@ -13,38 +13,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const loadImageSet = async (ref) => {
-      try {
-        const res = await fetch('https://proxy-dolibarr-production.up.railway.app/images/' + encodeURIComponent(ref));
-        const data = await res.json();
-        return Array.isArray(data.images) ? data.images : [];
-      } catch (e) {
-        console.warn("❌ Erreur chargement images pour ref:", ref, e.message);
-        return [];
-      }
-    };
-
-    container.innerHTML = await Promise.all(products.map(async (prod, index) => {
+    container.innerHTML = products.map((prod, index) => {
       const name = prod.ref || prod.label || "Nom inconnu";
       const price = isNaN(parseFloat(prod.price)) ? "?" : parseFloat(prod.price).toFixed(2);
       const stock = prod.stock_reel ?? 'N/A';
       const id = prod.id || prod.ref || name;
       const ref = prod.ref;
 
-      const images = await loadImageSet(ref);
+      const imgBase = `https://cdn.stainedglass.tn/products/${ref}/${ref}`;
+      const images = [1, 2, 3, 4].map(i => `${imgBase}-${i}.jpg`);
 
-      const sliderHTML = images.length > 0 ? `
+      const sliderHTML = `
         <div class="swiper swiper-${index}">
           <div class="swiper-wrapper">
-            ${images.map(img => `
+            ${images.map(url => `
               <div class="swiper-slide">
-                <img src="${img}" alt="${name}" style="width: 100%; border-radius: 8px;" onerror="this.style.display='none'">
+                <img src="${url}" alt="${name}" style="width: 100%; border-radius: 8px;" onerror="this.closest('.swiper-slide').remove()">
               </div>
             `).join('')}
           </div>
           <div class="swiper-pagination"></div>
         </div>
-      ` : '';
+      `;
 
       return `
         <div class="product-card" style="
@@ -71,10 +61,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           </button>
         </div>
       `;
-    })).then(all => all.join(''));
+    }).join('');
 
     attachAddToCartButtons();
 
+    // Init SwiperJS sliders
     document.querySelectorAll('.swiper').forEach((el, i) => {
       new Swiper('.swiper-' + i, {
         loop: true,
