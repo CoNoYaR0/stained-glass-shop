@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const stock = prod.stock_reel ?? 'N/A';
       const id = prod.id || prod.ref || name;
 
+      const imgUrl = `https://proxy-dolibarr-production.up.railway.app/image/${encodeURIComponent(prod.ref)}`;
+
       return `
         <div class="product-card" style="
           border: 2px solid orange;
@@ -26,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           align-items: center;
           text-align: center;
         ">
-          <img src="${prod.image}" alt="${name}" style="
+          <img src="${imgUrl}" alt="${name}" style="
             max-width: 100%;
             height: auto;
             margin-bottom: 0.5rem;
