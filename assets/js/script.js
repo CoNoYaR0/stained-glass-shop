@@ -15,12 +15,12 @@ $(window).on('load', function () {
     dots: true,
     customPaging: function (slider, i) {
       var image = $(slider.$slides[i]).data('image');
-      return '<img class="img-fluid" src="' + image + '" alt="product-image">';
+      return '<img class="img-fluid" src="' + image + '" alt="products-image">';
     }
   });
 
   // Product slider
-  $('.product-slider').slick({
+  $('.products-slider').slick({
     infinite: true,
     slidesToShow: 4,
     slidesToScroll: 1,
