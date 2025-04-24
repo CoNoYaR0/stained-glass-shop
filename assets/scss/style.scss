@@ -1196,3 +1196,15 @@ input[type="radio"][name="payment-method"]:checked + .payment-option.delivery .p
   box-shadow: 0 0 12px rgba(249, 161, 60, 0.3);
   transform: scale(1.03);
 }
+.swiper-slide img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+.swiper {
+  width: 100%;
+  max-width: 250px; /* ou ce que tu veux */
+  height: auto;
+}
