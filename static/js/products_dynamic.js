@@ -28,40 +28,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       btn.textContent = "Ajouter au panier";
       card.appendChild(btn);
 
-      // 🔥 Forced display for testing
-      const testImg = document.createElement("img");
-      testImg.src = "https://www.stainedglass.tn/stainedglass-cdn/products/Assiette_artistique_en_Verre_Fusing_Artisanale_2/Assiette_artistique_en_Verre_Fusing_Artisanale_2-showcase-4.png";
-      testImg.style.width = "100px";
-      card.appendChild(testImg);
-
-      // 🔍 Dynamic search
+      // ✅ Image unique pour chaque produit
       const ref = prod.ref;
-      const imgBase = `https://www.stainedglass.tn/stainedglass-cdn/products/${ref}/${ref}`;
-      const extensions = ["png", "jpg", "jpeg", "webp"];
+      const imageUrl = `https://www.stainedglass.tn/stainedglass-cdn/products/${ref}/${ref}-showcase-1.png`;
 
-      let found = false;
-      (async () => {
-        for (let i = 1; i <= 6; i++) {
-          for (const ext of extensions) {
-            const url = `${imgBase}-showcase-${i}.${ext}`;
-            console.log("🔍 Test image:", url);
-            try {
-              const imgRes = await fetch(url, { method: "HEAD" });
-              if (imgRes.ok) {
-                const img = document.createElement("img");
-                img.src = url;
-                img.style.width = "100px";
-                card.appendChild(img);
-                found = true;
-                break;
-              }
-            } catch (e) {
-              console.warn("❌ Fetch failed:", url);
-            }
-          }
-          if (found) break;
-        }
-      })();
+      const img = document.createElement("img");
+      img.src = imageUrl;
+      img.alt = prod.label;
+      img.style.width = "100%";
+      img.style.borderRadius = "8px";
+      img.onerror = () => img.remove(); // remove image if it fails
+      card.appendChild(img);
 
       container.appendChild(card);
     });
