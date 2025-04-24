@@ -8,39 +8,77 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("📦 Produits chargés :", products);
 
-    products.forEach(prod => {
-      const card = document.createElement("div");
-      card.className = "product-card";
-
-      const title = document.createElement("h3");
-      title.textContent = prod.ref;
-      card.appendChild(title);
-
-      const price = document.createElement("p");
-      price.textContent = `Prix : ${parseFloat(prod.price).toFixed(2)} DT HT`;
-      card.appendChild(price);
-
-      const stock = document.createElement("p");
-      stock.textContent = `Stock : ${prod.stock_reel ?? "N/A"}`;
-      card.appendChild(stock);
-
-      const btn = document.createElement("button");
-      btn.textContent = "Ajouter au panier";
-      card.appendChild(btn);
-
-      // ✅ Image unique pour chaque produit
+    container.innerHTML = await Promise.all(products.map(async (prod, index) => {
+      const name = prod.ref || prod.label || "Nom inconnu";
+      const price = isNaN(parseFloat(prod.price)) ? "?" : parseFloat(prod.price).toFixed(2);
+      const stock = prod.stock_reel ?? 'N/A';
+      const id = prod.id || prod.ref || name;
       const ref = prod.ref;
-      const imageUrl = `https://www.stainedglass.tn/stainedglass-cdn/products/${ref}/${ref}-showcase-1.png`;
 
-      const img = document.createElement("img");
-      img.src = imageUrl;
-      img.alt = prod.label;
-      img.style.width = "100%";
-      img.style.borderRadius = "8px";
-      img.onerror = () => img.remove(); // remove image if it fails
-      card.appendChild(img);
+      const imgBase = `https://www.stainedglass.tn/stainedglass-cdn/products/${ref}/${ref}-showcase-`;
+      const validImages = [];
 
-      container.appendChild(card);
+      for (let i = 1; i <= 4; i++) {
+        const url = imgBase + i + ".png";
+        const exists = await new Promise(resolve => {
+          const test = new Image();
+          test.onload = () => resolve(true);
+          test.onerror = () => resolve(false);
+          test.src = url;
+        });
+        if (exists) validImages.push(url);
+      }
+
+      const sliderHTML = validImages.length ? `
+        <div class="swiper swiper-${index}">
+          <div class="swiper-wrapper">
+            ${validImages.map(img => `
+              <div class="swiper-slide">
+                <img src="${img}" alt="${name}" style="width: 100%; border-radius: 8px;" />
+              </div>
+            `).join('')}
+          </div>
+          <div class="swiper-pagination"></div>
+        </div>
+      ` : '';
+
+      return `
+        <div class="product-card" style="
+          border: 2px solid orange;
+          padding: 1rem;
+          border-radius: 10px;
+          margin-bottom: 2rem;
+          box-shadow: 0 0 15px rgba(0,0,0,0.05);
+          max-width: 280px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        ">
+          ${sliderHTML}
+          <h4 style="font-weight: bold; color: #333; word-break: break-word;">${name}</h4>
+          <p>Prix : ${price} DT HT</p>
+          <p>Stock : ${stock}</p>
+          <button class="add-to-cart bounce-on-click"
+            data-id="${id}"
+            data-name="${name}"
+            data-price="${price}">
+            Ajouter au panier
+          </button>
+        </div>
+      `;
+    })).then(html => html.join(''));
+
+    attachAddToCartButtons();
+
+    document.querySelectorAll('.swiper').forEach((el, i) => {
+      new Swiper('.swiper-' + i, {
+        loop: true,
+        pagination: {
+          el: '.swiper-' + i + ' .swiper-pagination',
+          clickable: true
+        }
+      });
     });
   } catch (err) {
     console.error("Erreur de chargement des produits :", err);
