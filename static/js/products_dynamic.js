@@ -1,9 +1,10 @@
+
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("products-list");
   if (!container) return;
 
   try {
-    const res = await fetch("https://proxy-dolibarr-production.up.railway.app/products");
+    const res = await fetch("https://www.stainedglass.tn/proxy/products.php");
     const products = await res.json();
 
     console.log("📦 Produits chargés :", products);
@@ -15,18 +16,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const id = prod.id || prod.ref || name;
       const ref = prod.ref;
 
-      const imgBase = `https://www.stainedglass.tn/stainedglass-cdn/products/${ref}/${ref}-showcase-`;
       const validImages = [];
 
-      for (let i = 1; i <= 4; i++) {
-        const url = imgBase + i + ".png";
-        const exists = await new Promise(resolve => {
-          const test = new Image();
-          test.onload = () => resolve(true);
-          test.onerror = () => resolve(false);
-          test.src = url;
-        });
-        if (exists) validImages.push(url);
+      try {
+        const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${prod.id}`);
+        const imgData = await imgRes.json();
+        if (imgData?.image) validImages.push(imgData.image);
+      } catch (error) {
+        console.error("Erreur récupération image :", error);
       }
 
       const sliderHTML = validImages.length ? `
@@ -34,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="swiper-wrapper">
             ${validImages.map(img => `
               <div class="swiper-slide">
-                <img src="${img}" alt="${name}" style="width: 100%; border-radius: 8px;" />
+                <img src="${img}" alt="${name}" />
               </div>
             `).join('')}
           </div>
@@ -43,26 +40,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       ` : '';
 
       return `
-        <div class="product-card" style="
-          border: 2px solid orange;
-          padding: 1rem;
-          border-radius: 10px;
-          margin-bottom: 2rem;
-          box-shadow: 0 0 15px rgba(0,0,0,0.05);
-          max-width: 280px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-        ">
+        <div class="product-card">
           ${sliderHTML}
-          <h4 style="font-weight: bold; color: #333; word-break: break-word;">${name}</h4>
+          <h4>${name}</h4>
           <p>Prix : ${price} DT HT</p>
           <p>Stock : ${stock}</p>
           <button class="add-to-cart bounce-on-click"
             data-id="${id}"
             data-name="${name}"
-            data-price="${price}">
+            data-price="${price}"
+            data-image="${validImages[0] || ''}">
             Ajouter au panier
           </button>
         </div>
