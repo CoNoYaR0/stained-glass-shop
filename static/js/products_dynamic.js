@@ -1,38 +1,38 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const container = document.getElementById("products-list");
-  if (!container) return;
-
+(async function() {
   try {
-    const response = await (await fetch("https://stainedglass.tn/proxy/products.php")).json();
-    const products = Array.isArray(response) ? response : Object.values(response);
+    const response = await fetch("https://www.stainedglass.tn/proxy/products.php");
+    const products = await response.json();
+    console.log("Produits chargés :", products);
 
-    console.log("📦 Produits chargés :", products);
+    const container = document.getElementById("products-list");
+    const html = await Promise.all(products.map(async (prod) => {
+      const ref = prod.ref || prod.label || "unknown";
+      const price = parseFloat(prod.price) || 0;
+      const stock = prod.stock_reel !== undefined ? prod.stock_reel : "N/A";
+      const id = prod.id || prod.ref || ref;
+      const name = prod.label || "Nom inconnu";
 
-    container.innerHTML = await Promise.all(products.map(async (prod, index) => {
-      const name = prod.ref || prod.label || "Nom inconnu";
-      const price = !isNaN(parseFloat(prod.price)) ? parseFloat(prod.price).toFixed(2) : "?";
-      const stock = prod.stock_reel !== undefined ? prod.stock_reel : 'N/A';
-      const id = prod.id || prod.ref || name;
-      const ref = prod.ref || "";
-
-      const validImages = [];
+      let images = [];
 
       try {
-        const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(ref || name)}`);
-        const imgData = await imgRes.json();
-        if (imgData?.images?.length) validImages.push(...imgData.images);
+        const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(ref)}`);
+        
+        if (imgRes.headers.get('content-type')?.includes('application/json')) {
+          const imgData = await imgRes.json();
+          if (imgData?.images?.length) {
+            images = imgData.images;
+          }
+        } else {
+          console.warn(`Pas d'image JSON pour le produit: ${name}`);
+        }
       } catch (error) {
-        console.error("⚠️ Erreur récupération images pour :", name, error);
+        console.error(`Erreur récupération images pour ${name}`, error);
       }
 
-      const sliderHTML = validImages.length ? `
-        <div class="swiper swiper-${index}">
+      const sliderHTML = images.length > 0 ? `
+        <div class="swiper swiper-${id}">
           <div class="swiper-wrapper">
-            ${validImages.map(img => `
-              <div class="swiper-slide">
-                <img src="${img}" alt="${name}" loading="lazy" />
-              </div>
-            `).join('')}
+            ${images.map(img => `<div class="swiper-slide"><img src="${img}" alt="${name}" /></div>`).join('')}
           </div>
           <div class="swiper-pagination"></div>
         </div>
@@ -41,39 +41,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       return `
         <div class="product-card">
           ${sliderHTML}
-          <h4>${name}</h4>
+          <h3>${name}</h3>
           <p>Prix : ${price} DT HT</p>
           <p>Stock : ${stock}</p>
-          <button class="add-to-cart bounce-on-click"
-            data-id="${id}"
-            data-name="${name}"
-            data-price="${price}"
-            data-image="${validImages[0] || ''}">
+          <button class="add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${images[0] || ''}">
             Ajouter au panier
           </button>
         </div>
       `;
-    })).then(html => html.join(''));
+    }));
+
+    container.innerHTML = html.join('');
 
     attachAddToCartButtons();
 
-    // Initialisation Swiper proprement
     document.querySelectorAll('.swiper').forEach((el, i) => {
-      new Swiper('.swiper-' + i, {
-        loop: true,
-        pagination: {
-          el: '.swiper-' + i + ' .swiper-pagination',
-          clickable: true
-        },
-        autoplay: {
-          delay: 4000,
-          disableOnInteraction: false
-        }
+      new Swiper(el, {
+        pagination: { el: el.querySelector('.swiper-pagination'), clickable: true }
       });
     });
 
-  } catch (err) {
-    console.error("🚨 Erreur de chargement global des produits :", err);
-    container.innerHTML = "<p>Erreur de chargement des produits.</p>";
+  } catch (error) {
+    console.error("Erreur de chargement des produits :", error);
   }
-});
+})();
