@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!container) return;
 
   try {
-    const response = await (await fetch("https://www.stainedglass.tn/proxy/products.php")).json();
+    const response = await (await fetch("https://stainedglass.tn/proxy/products.php")).json();
     const products = Array.isArray(response) ? response : Object.values(response);
 
     console.log("📦 Produits chargés :", products);
