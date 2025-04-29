@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Grouper par baseRef
   const grouped = {};
   products.forEach(prod => {
     const baseRef = prod.ref.split('-')[0];
@@ -39,25 +38,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       const id = prod.id || prod.ref || ref;
       const name = prod.label || "Nom inconnu";
       const displayRef = ref.replace(/_/g, " ");
-      const displayLabel = name.replace(/_/g, " ");
 
-      // Images
       let images = [];
       try {
-        const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(ref)}`);
-        if (imgRes.ok) {
-          const imgData = await imgRes.json();
-          if (imgData?.images?.length) {
-            images = imgData.images;
-          } else {
-            console.warn("⚠️ Pas d'image JSON pour le produit:", displayRef);
+        for (const p of [prod, ...group.variants]) {
+          const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(p.ref)}`);
+          if (imgRes.ok && imgRes.headers.get('Content-Type')?.includes('application/json')) {
+            const imgData = await imgRes.json();
+            if (imgData?.images?.length) images.push(...imgData.images);
           }
         }
       } catch (e) {
-        console.error("⚠️ Erreur parsing JSON pour :", name, e);
+        console.error("⚠️ Erreur de chargement des images pour :", ref, e);
       }
 
-      // Slide HTML si plusieurs images
       const sliderHTML = images.length > 0 ? `
         <div class="swiper swiper-${id}">
           <div class="swiper-wrapper">
@@ -66,12 +60,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="swiper-pagination"></div>
         </div>` : "";
 
-      // Dropdown si variantes
       const variantSelect = group.variants.length ? `
         <label>Variantes :</label>
         <select class="variant-select" data-base="${ref}">
           <option value="${ref}">${displayRef}</option>
-          ${group.variants.map(v => `<option value="${v.ref}">${v.label.replace(/_/g, ' ')}</option>`).join('')}
+          ${group.variants.map(v => `<option value="${v.ref}">${v.ref.replace(/_/g, ' ')}</option>`).join('')}
         </select>` : "";
 
       return `
@@ -85,8 +78,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             data-id="${id}"
             data-name="${name}"
             data-price="${price}"
-            data-image="${images[0] || ''}"
-          >Ajouter au panier</button>
+            data-image="${images[0] || ''}">
+            Ajouter au panier
+          </button>
         </div>`;
     })
   );
