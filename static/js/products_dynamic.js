@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Images
       let images = [];
       try {
-        const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(ref)}`);
+        const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(prod.ref)}`);
         if (imgRes.ok) {
           const imgData = await imgRes.json();
           if (imgData?.images?.length) {
@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           ${sliderHTML}
           <h3>${displayRef}</h3>
           <p>Prix : ${price} DT HT</p>
-          <p>Stock : ${stock}SOLD OUT !</p>
+          <p>Stock : ${stock}!</p>
           ${variantSelect}
           <button class="add-to-cart bounce-on-click"
             data-id="${id}"
