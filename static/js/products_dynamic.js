@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return `
         <div class="product-card">
           ${sliderHTML}
-          <h3>${displayLabel}</h3>
+          <h3>${displayRef}</h3>
           <p>Prix : ${price} DT HT</p>
           <p>Stock : ${stock}</p>
           ${variantSelect}
