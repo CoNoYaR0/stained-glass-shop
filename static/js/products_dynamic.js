@@ -1,120 +1,102 @@
-// products_dynamic.js avec support des variantes (dropdown + panier)
+document.addEventListener("DOMContentLoaded", async () => {
+  const container = document.getElementById("products-list");
 
-const container = document.getElementById("products-list");
-
-async function loadProducts() {
+  let products = [];
   try {
-    const res = await fetch("https://www.stainedglass.tn/proxy/products.php?all=1");
-    const products = await res.json();
+    const res = await fetch("https://www.stainedglass.tn/proxy/products.php");
+    products = await res.json();
+    if (!Array.isArray(products)) throw new Error("Expected array");
+    console.log("✅ Produits chargés :", products);
+  } catch (err) {
+    console.error("❌ Erreur de chargement global des produits :", err);
+    container.innerHTML = `<p>Erreur de chargement des produits.</p>`;
+    return;
+  }
 
-    if (!Array.isArray(products)) throw new Error("Mauvais format JSON reçu");
-
-    // Grouper par base ref
-    const grouped = {};
-    for (const prod of products) {
-      const base = prod.ref.replace(/[-_]?variant[e]?[ _-]?\d+$/i, '').toLowerCase();
-      if (!grouped[base]) grouped[base] = [];
-      grouped[base].push(prod);
+  // Grouper par baseRef
+  const grouped = {};
+  products.forEach(prod => {
+    const baseRef = prod.ref.split('-')[0];
+    if (!grouped[baseRef]) {
+      grouped[baseRef] = {
+        base: prod,
+        variants: []
+      };
     }
+    if (prod.ref === baseRef) {
+      grouped[baseRef].base = prod;
+    } else {
+      grouped[baseRef].variants.push(prod);
+    }
+  });
 
-    const html = await Promise.all(
-      Object.entries(grouped).map(async ([baseRef, variants]) => {
-        const main = variants[0];
-        const base = main.ref;
-        const label = main.label || base;
-        const name = base.replaceAll('_', ' ');
-        const price = parseFloat(main.price) || 0;
-        const stock = main.stock_reel !== undefined ? main.stock_reel : "N/A";
-        const id = main.id || base;
+  const html = await Promise.all(
+    Object.entries(grouped).map(async ([baseRef, group]) => {
+      const prod = group.base;
+      const ref = prod.ref;
+      const price = parseFloat(prod.price) || 0;
+      const stock = prod.stock_reel !== undefined ? prod.stock_reel : "N/A";
+      const id = prod.id || prod.ref || ref;
+      const name = prod.label || "Nom inconnu";
+      const displayRef = ref.replace(/_/g, " ");
+      const displayLabel = name.replace(/_/g, " ");
 
-        let images = [];
-        for (const v of variants) {
-          const ref = v.ref;
-          const formats = ["jpg", "jpeg", "png", "webp"];
-          for (const ext of formats) {
-            let idx = 1;
-            while (true) {
-              const filename = idx === 1 ? `${ref}.${ext}` : `${ref}-${idx}.${ext}`;
-              const url = `https://www.stainedglass.tn/stainedglass-img-cache/${filename}`;
-              const resp = await fetch(url, { method: "HEAD" });
-              if (resp.ok) {
-                images.push({ url, ref });
-                idx++;
-              } else break;
-            }
+      // Images
+      let images = [];
+      try {
+        const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(ref)}`);
+        if (imgRes.ok) {
+          const imgData = await imgRes.json();
+          if (imgData?.images?.length) {
+            images = imgData.images;
+          } else {
+            console.warn("⚠️ Pas d'image JSON pour le produit:", displayRef);
           }
         }
+      } catch (e) {
+        console.error("⚠️ Erreur parsing JSON pour :", name, e);
+      }
 
-        const sliderHTML = images.length > 0
-          ? `<div class="swiper swiper-${id}">
-              <div class="swiper-wrapper">
-                ${images.map(img => `<div class='swiper-slide'><img src='${img.url}' alt='${label}' /></div>`).join('')}
-              </div>
-              <div class="swiper-pagination"></div>
-            </div>`
-          : '';
-
-        const variantSelect = `
-          <label for="select-variant-${id}">Variante :</label>
-          <select id="select-variant-${id}" class="variant-selector">
-            ${variants.map(v => `<option value="${v.ref}">${v.ref.replaceAll('_', ' ')}</option>`).join('')}
-          </select>`;
-
-        return `
-          <div class="product-card">
-            ${sliderHTML}
-            <h3>${name}</h3>
-            <p>Prix : ${price.toFixed(2)} DT HT</p>
-            <p>Stock : ${stock}</p>
-            ${variantSelect}
-            <button class="add-to-cart bounce-on-click"
-              data-base-id="${id}"
-              data-price="${price}"
-              data-label="${label}">
-              Ajouter au panier
-            </button>
+      // Slide HTML si plusieurs images
+      const sliderHTML = images.length > 0 ? `
+        <div class="swiper swiper-${id}">
+          <div class="swiper-wrapper">
+            ${images.map(img => `<div class="swiper-slide"><img src="${img}" alt="${displayRef}" /></div>`).join('')}
           </div>
-        `;
-      })
-    );
+          <div class="swiper-pagination"></div>
+        </div>` : "";
 
-    container.innerHTML = html.join('');
+      // Dropdown si variantes
+      const variantSelect = group.variants.length ? `
+        <label>Variantes :</label>
+        <select class="variant-select" data-base="${ref}">
+          <option value="${ref}">${displayRef}</option>
+          ${group.variants.map(v => `<option value="${v.ref}">${v.label.replace(/_/g, ' ')}</option>`).join('')}
+        </select>` : "";
 
-    document.querySelectorAll(".add-to-cart").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const baseId = btn.dataset.baseId;
-        const price = parseFloat(btn.dataset.price);
-        const label = btn.dataset.label;
-        const select = document.getElementById(`select-variant-${baseId}`);
-        const selectedRef = select?.value || baseId;
-        const imageUrl = `https://www.stainedglass.tn/stainedglass-img-cache/${selectedRef}.jpg`;
+      return `
+        <div class="product-card">
+          ${sliderHTML}
+          <h3>${displayLabel}</h3>
+          <p>Prix : ${price} DT HT</p>
+          <p>Stock : ${stock}</p>
+          ${variantSelect}
+          <button class="add-to-cart bounce-on-click"
+            data-id="${id}"
+            data-name="${name}"
+            data-price="${price}"
+            data-image="${images[0] || ''}"
+          >Ajouter au panier</button>
+        </div>`;
+    })
+  );
 
-        const product = {
-          id: selectedRef,
-          name: label + ' (' + selectedRef.replaceAll('_', ' ') + ')',
-          price,
-          image: imageUrl,
-          quantity: 1
-        };
+  container.innerHTML = html.join("");
+  attachAddToCartButtons();
 
-        addToCart(product);
-      });
+  document.querySelectorAll('.swiper').forEach((el, i) => {
+    new Swiper(el, {
+      pagination: { el: el.querySelector('.swiper-pagination') },
     });
-
-    document.querySelectorAll('.swiper').forEach((el) => {
-      new Swiper(el, {
-        loop: true,
-        pagination: {
-          el: el.querySelector(".swiper-pagination"),
-          clickable: true,
-        },
-      });
-    });
-
-  } catch (error) {
-    container.innerHTML = "<p>Erreur de chargement des produits.</p>";
-    console.error("Erreur de chargement global des produits :", error);
-  }
-}
-
-loadProducts();
+  });
+});
