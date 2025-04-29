@@ -39,18 +39,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       const name = prod.label || "Nom inconnu";
       const displayRef = ref.replace(/_/g, " ");
 
-      let images = [];
-      try {
-        for (const p of [prod, ...group.variants]) {
-          const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(p.ref)}`);
-          if (imgRes.ok && imgRes.headers.get('Content-Type')?.includes('application/json')) {
-            const imgData = await imgRes.json();
-            if (imgData?.images?.length) images.push(...imgData.images);
-          }
-        }
-      } catch (e) {
-        console.error("⚠️ Erreur de chargement des images pour :", ref, e);
+      let allRefs = [prod.ref, ...group.variants.map(v => v.ref)];
+let images = [];
+
+for (const r of allRefs) {
+  try {
+    const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(r)}`);
+    if (imgRes.ok) {
+      const imgData = await imgRes.json();
+      if (imgData?.images?.length) {
+        images.push(...imgData.images);
       }
+    }
+  } catch (e) {
+    console.warn("Erreur image pour ref", r, e);
+  }
+}
 
       const sliderHTML = images.length > 0 ? `
         <div class="swiper swiper-${id}">
