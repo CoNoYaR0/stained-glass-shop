@@ -25,19 +25,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Images
       let images = [];
-      try {
-        const imgRes = await fetch(`https://www.stainedglass.tn/proxy/product_images.php?id=${encodeURIComponent(ref)}`);
-        if (imgRes.ok) {
-          const imgData = await imgRes.json();
-          if (imgData?.images?.length) {
-            images = imgData.images;
-          } else {
-            console.warn("⚠️ Pas d'image JSON pour le produit:", displayRef);
+        try {
+          const possible = ["jpg", "jpeg", "png", "webp"];
+          for (const ext of possible) {
+            let idx = 1;
+            while (true) {
+              const filename = idx === 1 ? `${ref}.${ext}` : `${ref}-${idx}.${ext}`;
+              const url = `https://www.stainedglass.tn/stainedglass-img-cache/${filename}`;
+              const resp = await fetch(url, { method: "HEAD" });
+              if (resp.ok) {
+                images.push(url);
+                idx++;
+              } else {
+                break;
+              }
+            }
           }
+        } catch (e) {
+          console.warn("Pas d'image JSON pour le produit:", name);
         }
-      } catch (e) {
-        console.error("⚠️ Erreur parsing JSON pour:", name, e);
-      }
 
       const sliderHTML = images.length > 0 ? `
         <div class="swiper swiper-${id}">
