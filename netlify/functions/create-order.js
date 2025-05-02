@@ -1,4 +1,5 @@
 const axios = require("axios");
+const zlib = require("zlib");
 
 const DOLIBARR_API = "https://7ssab.stainedglass.tn/api/index.php";
 const API_KEY = process.env.DOLIBARR_TOKEN;
@@ -109,21 +110,40 @@ exports.handler = async function (event) {
       date: new Date().toISOString().split("T")[0],
       lines,
       note_public: `Commande client ${fullName} via ${paiement.toUpperCase()}`
-    }, { headers });
+    }, {
+      headers,
+      responseType: "arraybuffer"
+    });
 
     let factureId;
 
-    // ✅ traitement robuste de la réponse
-    if (typeof invoiceRes.data === "number") {
-      factureId = invoiceRes.data;
-    } else if (typeof invoiceRes.data === "object" && invoiceRes.data.id) {
-      factureId = invoiceRes.data.id;
-    } else {
+    try {
+      const raw = invoiceRes.data;
+      const isGzip = raw[0] === 0x1f && raw[1] === 0x8b;
+      let jsonData;
+
+      if (isGzip) {
+        const uncompressed = zlib.gunzipSync(raw).toString("utf8");
+        jsonData = JSON.parse(uncompressed);
+      } else {
+        const str = raw.toString("utf8");
+        jsonData = JSON.parse(str);
+      }
+
+      if (typeof jsonData === "number") {
+        factureId = jsonData;
+      } else if (jsonData?.id) {
+        factureId = jsonData.id;
+      } else {
+        throw new Error("Format de retour inattendu de Dolibarr");
+      }
+    } catch (err) {
+      console.error("❌ Erreur parsing retour Dolibarr:", err.message);
       return {
         statusCode: 500,
         body: JSON.stringify({
-          error: "Réponse Dolibarr inattendue",
-          data: invoiceRes.data
+          error: "Erreur parsing réponse Dolibarr",
+          message: err.message
         })
       };
     }
