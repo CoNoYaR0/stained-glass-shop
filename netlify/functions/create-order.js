@@ -1,4 +1,3 @@
-console.log("✅ Version PATCHÉE CHARGÉE");
 const axios = require("axios");
 const zlib = require("zlib");
 
@@ -50,6 +49,8 @@ async function buildInvoiceLines(cart, headers) {
 }
 
 exports.handler = async function (event) {
+  console.log("✅ Version PATCHÉE CHARGÉE");
+
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -116,25 +117,27 @@ exports.handler = async function (event) {
       responseType: "arraybuffer"
     });
 
+    console.log("📨 Réponse brute (buffer):", invoiceRes.data?.slice?.(0, 20));
+
     let factureId;
 
     try {
       const raw = invoiceRes.data;
       const isGzip = raw[0] === 0x1f && raw[1] === 0x8b;
-      console.log("🔍 GZIP ?", raw[0], raw[1], isGzip);
-    
+      console.log("🔍 GZIP ?", raw[0], raw[1], "->", isGzip);
+
       let jsonData;
-    
+
       if (isGzip) {
         const uncompressed = zlib.gunzipSync(raw).toString("utf8");
-        console.log("🗃️ Réponse décompressée :", uncompressed.slice(0, 100));
+        console.log("🗃️ Réponse décompressée (début):", uncompressed.slice(0, 100));
         jsonData = JSON.parse(uncompressed);
       } else {
         const str = raw.toString("utf8");
-        console.log("🗃️ Réponse brute :", str.slice(0, 100));
+        console.log("🗃️ Réponse brute (début):", str.slice(0, 100));
         jsonData = JSON.parse(str);
       }
-    
+
       if (typeof jsonData === "number") {
         factureId = jsonData;
       } else if (jsonData?.id) {
@@ -142,9 +145,10 @@ exports.handler = async function (event) {
       } else {
         throw new Error("Format de retour inattendu de Dolibarr");
       }
-    
+
     } catch (err) {
       console.error("❌ Erreur parsing retour Dolibarr:", err.message);
+      console.log("🧾 Donnée brute (hex):", invoiceRes.data.toString("hex").slice(0, 200));
       return {
         statusCode: 500,
         body: JSON.stringify({
@@ -152,10 +156,6 @@ exports.handler = async function (event) {
           message: err.message
         })
       };
-    }    
-    
-    if (!factureId || isNaN(factureId)) {
-      throw new Error("ID de facture invalide");
     }
 
     console.log("🧾 ID de la facture brouillon:", factureId);
