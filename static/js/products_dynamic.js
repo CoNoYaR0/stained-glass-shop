@@ -97,9 +97,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   container.innerHTML = html.join("");
   attachAddToCartButtons();
 
-  document.querySelectorAll('.swiper').forEach((el, i) => {
-    new Swiper(el, {
-      pagination: { el: el.querySelector('.swiper-pagination') },
+  setTimeout(() => {
+    document.querySelectorAll('.swiper').forEach((el) => {
+      new Swiper(el, {
+        pagination: {
+          el: el.querySelector('.swiper-pagination'),
+          clickable: true
+        },
+        loop: true,
+      });
     });
-  });
+  }, 100); // petit délai pour laisser le DOM se poser
 });
