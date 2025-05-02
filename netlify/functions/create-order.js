@@ -150,19 +150,23 @@ exports.handler = async function (event) {
     };
   }
 
- // 🧾 Étape 4 : création du brouillon de facture
+// 🧾 Étape 4 : création du brouillon de facture
 let invoiceId;
 
+const invoicePayload = {
+  socid: clientId,
+  date: new Date().toISOString().split("T")[0],
+  lines,
+  note_public: `Commande client ${customer.prenom} ${customer.nom} via ${paiement.toUpperCase()}`
+};
+
+console.log("📤 Données envoyées à /invoices :", invoicePayload);
+
 try {
-  const invoiceRes = await axios.post(`${DOLIBARR_API}/invoices`, {
-    socid: clientId,
-    date: new Date().toISOString().split("T")[0],
-    lines,
-    note_public: `Commande client ${customer.prenom} ${customer.nom} via ${paiement.toUpperCase()}`
-  }, {
+  const invoiceRes = await axios.post(`${DOLIBARR_API}/invoices`, invoicePayload, {
     headers: {
       ...headers,
-      "Accept-Encoding": "identity" // ✅ empêche toute compression côté serveur
+      "Accept-Encoding": "identity"
     }
   });
 
@@ -178,6 +182,27 @@ try {
 
 } catch (err) {
   console.error("❌ Erreur création facture :", err.message);
+
+  if (err.response) {
+    console.error("📩 Réponse Dolibarr :", err.response.status, err.response.statusText);
+
+    try {
+      const contentType = err.response.headers["content-type"];
+      const data = err.response.data;
+
+      if (typeof data === "string") {
+        console.error("🧾 Contenu Dolibarr (texte) :", data.slice(0, 500));
+      } else if (data && data.toString) {
+        console.error("🧾 Contenu brut (buffer) :", data.toString("utf8").slice(0, 500));
+      } else {
+        console.error("🧾 Contenu JSON :", JSON.stringify(data).slice(0, 500));
+      }
+
+    } catch (e) {
+      console.error("⚠️ Impossible d'afficher le contenu retour :", e.message);
+    }
+  }
+
   return {
     statusCode: 500,
     body: JSON.stringify({
@@ -187,7 +212,7 @@ try {
   };
 }
 
-// ✅ Réponse finale si tout est OK jusqu'à l'étape 4
+// ✅ Réponse finale si tout est OK jusqu'à l’étape 4
 return {
   statusCode: 200,
   body: JSON.stringify({
