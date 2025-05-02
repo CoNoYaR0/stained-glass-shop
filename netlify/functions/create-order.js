@@ -150,48 +150,51 @@ exports.handler = async function (event) {
     };
   }
 
-  // 🧾 Étape 4 : création du brouillon de facture
-  let invoiceId;
+ // 🧾 Étape 4 : création du brouillon de facture
+let invoiceId;
 
-  try {
-    const invoiceRes = await axios.post(`${DOLIBARR_API}/invoices`, {
-      socid: clientId,
-      date: new Date().toISOString().split("T")[0],
-      lines,
-      note_public: `Commande client ${customer.prenom} ${customer.nom} via ${paiement.toUpperCase()}`
-    }, {
-      headers,
-      responseType: "json"
-    });
-
-    if (typeof invoiceRes.data === "number") {
-      invoiceId = invoiceRes.data;
-    } else if (invoiceRes.data?.id) {
-      invoiceId = invoiceRes.data.id;
-    } else {
-      throw new Error("Réponse Dolibarr invalide : ID manquant");
+try {
+  const invoiceRes = await axios.post(`${DOLIBARR_API}/invoices`, {
+    socid: clientId,
+    date: new Date().toISOString().split("T")[0],
+    lines,
+    note_public: `Commande client ${customer.prenom} ${customer.nom} via ${paiement.toUpperCase()}`
+  }, {
+    headers: {
+      ...headers,
+      "Accept-Encoding": "identity" // ✅ empêche toute compression côté serveur
     }
+  });
 
-    console.log("✅ Brouillon de facture créé avec ID :", invoiceId);
-
-  } catch (err) {
-    console.error("❌ Erreur création facture :", err.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: "Erreur création facture",
-        message: err.message
-      })
-    };
+  if (typeof invoiceRes.data === "number") {
+    invoiceId = invoiceRes.data;
+  } else if (invoiceRes.data?.id) {
+    invoiceId = invoiceRes.data.id;
+  } else {
+    throw new Error("Réponse Dolibarr invalide : ID manquant");
   }
 
-  // ✅ TEMPORAIRE — stop ici pour valider l’étape 4
+  console.log("✅ Brouillon de facture créé avec ID :", invoiceId);
+
+} catch (err) {
+  console.error("❌ Erreur création facture :", err.message);
   return {
-    statusCode: 200,
+    statusCode: 500,
     body: JSON.stringify({
-      success: true,
-      message: "Étape 4 OK",
-      invoiceId
+      error: "Erreur création facture",
+      message: err.message
     })
   };
+}
+
+// ✅ Réponse finale si tout est OK jusqu'à l'étape 4
+return {
+  statusCode: 200,
+  body: JSON.stringify({
+    success: true,
+    message: "Étape 4 OK",
+    invoiceId
+  })
 };
+};
+
