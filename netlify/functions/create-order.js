@@ -62,67 +62,59 @@ exports.handler = async function (event) {
 
   console.log("✅ Étape 1 validée : body conforme");
 
-  // ⚠️ TEMPORAIRE : stop ici pour test uniquement l'étape 1
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ success: true, message: "Étape 1 OK" })
-  };
-};
+  // 🔎 Étape 2 : Vérification ou création du client Dolibarr
+  console.log("🔎 Étape 2 : recherche ou création client");
 
-// Étape 2 : Vérification ou création du client Dolibarr
-console.log("🔎 Étape 2 : recherche ou création client");
+  const fullName = `${customer.prenom} ${customer.nom}`;
+  const clientEmail = customer.email;
 
-const fullName = `${customer.prenom} ${customer.nom}`;
-const clientEmail = customer.email;
+  let clientId;
 
-let clientId;
+  try {
+    const clientRes = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
+    const clients = clientRes.data;
 
-try {
-  // 1. Recherche du client existant
-  const clientRes = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
-  const clients = clientRes.data;
+    const existing = clients.find(c => c.email?.toLowerCase() === clientEmail.toLowerCase());
 
-  const existing = clients.find(c => c.email?.toLowerCase() === clientEmail.toLowerCase());
+    if (existing && existing.id) {
+      clientId = existing.id;
+      console.log("✅ Client existant trouvé avec ID :", clientId);
+    } else {
+      console.log("➕ Client non trouvé, création…");
 
-  if (existing && existing.id) {
-    clientId = existing.id;
-    console.log("✅ Client existant trouvé avec ID :", clientId);
-  } else {
-    // 2. Création nouveau client
-    console.log("➕ Client non trouvé, création…");
+      const newClientRes = await axios.post(`${DOLIBARR_API}/thirdparties`, {
+        name: fullName,
+        email: clientEmail,
+        client: 1,
+        status: 1,
+        zip: "0000",
+        town: "Tunis",
+        address: customer.adresse || "Adresse non renseignée",
+        country_id: 1
+      }, { headers });
 
-    const newClientRes = await axios.post(`${DOLIBARR_API}/thirdparties`, {
-      name: fullName,
-      email: clientEmail,
-      client: 1,
-      status: 1,
-      zip: "0000",
-      town: "Tunis",
-      address: customer.adresse || "Adresse non renseignée",
-      country_id: 1
-    }, { headers });
+      clientId = newClientRes.data;
+      console.log("✅ Nouveau client créé avec ID :", clientId);
+    }
 
-    clientId = newClientRes.data;
-    console.log("✅ Nouveau client créé avec ID :", clientId);
+  } catch (err) {
+    console.error("❌ Erreur lors de la recherche ou création du client :", err.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Erreur Dolibarr lors de la gestion client",
+        message: err.message
+      })
+    };
   }
 
-} catch (err) {
-  console.error("❌ Erreur lors de la recherche ou création du client :", err.message);
+  // ✅ Stop ici pour valider l’étape 2
   return {
-    statusCode: 500,
+    statusCode: 200,
     body: JSON.stringify({
-      error: "Erreur Dolibarr lors de la gestion client",
-      message: err.message
+      success: true,
+      message: "Étape 2 OK",
+      clientId
     })
   };
-}
-
-// ⚠️ TEMPORAIRE — stop ici pour valider l'étape 2
-return {
-  statusCode: 200,
-  body: JSON.stringify({
-    success: true,
-    message: "Étape 2 OK",
-    clientId
-  })
 };
