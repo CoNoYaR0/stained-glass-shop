@@ -118,3 +118,62 @@ exports.handler = async function (event) {
     })
   };
 };
+console.log("📦 Étape 3 : construction des lignes de facture");
+
+let lines = [];
+
+try {
+  for (const item of cart) {
+    const productRes = await axios.get(`${DOLIBARR_API}/products/${item.id}`, { headers });
+    const product = productRes.data;
+
+    lines.push({
+      desc: product.label,
+      label: product.label,
+      fk_product: product.id,
+      qty: item.qty,
+      subprice: product.price,
+      tva_tx: product.tva_tx || 19,
+      product_type: product.fk_product_type || 0,
+      remise_percent: 0,
+      localtax1_tx: 0,
+      localtax2_tx: 0,
+      fk_unit: product.fk_unit || 1,
+      fk_code_ventilation: 0,
+      pa_ht: 0,
+      date_start: null,
+      date_end: null,
+      special_code: 0,
+      info_bits: 0,
+      fk_remise_except: 0,
+      fk_fournprice: 0,
+      fk_prev_id: 0,
+      array_options: {},
+      rang: lines.length + 1,
+      situation_percent: 100,
+      multicurrency_subprice: product.price
+    });
+
+    console.log(`✅ Ligne ajoutée pour produit ${product.ref || product.id}`);
+  }
+
+} catch (err) {
+  console.error("❌ Erreur lors de la récupération des produits :", err.message);
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      error: "Erreur lors de la récupération des produits",
+      message: err.message
+    })
+  };
+}
+
+// ⚠️ TEMPORAIRE — stop ici pour valider l’étape 3
+return {
+  statusCode: 200,
+  body: JSON.stringify({
+    success: true,
+    message: "Étape 3 OK",
+    lines
+  })
+};
