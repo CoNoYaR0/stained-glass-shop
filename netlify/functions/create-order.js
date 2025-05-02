@@ -113,41 +113,26 @@ exports.handler = async function (event) {
 
     let factureId;
 
+    // ✅ traitement robuste de la réponse
     if (typeof invoiceRes.data === "number") {
       factureId = invoiceRes.data;
-      console.log("🧾 Facture ID (number) :", factureId);
+    } else if (typeof invoiceRes.data === "object" && invoiceRes.data.id) {
+      factureId = invoiceRes.data.id;
     } else {
-      const raw = Buffer.from(invoiceRes.data);
-      let parsed;
-      const zlib = require("zlib");
-
-      try {
-        const isGzip = raw[0] === 0x1f && raw[1] === 0x8b;
-
-        if (isGzip) {
-          const uncompressed = zlib.gunzipSync(raw).toString();
-          parsed = JSON.parse(uncompressed);
-        } else {
-          parsed = JSON.parse(raw.toString());
-        }
-
-        factureId = parsed;
-        console.log("🧾 Facture ID (parsed):", factureId);
-      } catch (err) {
-        console.error("❌ Erreur parsing facture ID:", err.message);
-        return {
-          statusCode: 500,
-          body: JSON.stringify({
-            error: "Erreur parsing ID facture",
-            message: err.message
-          })
-        };
-      }
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Réponse Dolibarr inattendue",
+          data: invoiceRes.data
+        })
+      };
     }
 
     if (!factureId || isNaN(factureId)) {
       throw new Error("ID de facture invalide");
     }
+
+    console.log("🧾 ID de la facture brouillon:", factureId);
 
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, {
       headers: {
