@@ -117,24 +117,34 @@ exports.handler = async function (event) {
       responseType: "arraybuffer"
     });
 
-    console.log("📨 Réponse brute (buffer):", invoiceRes.data?.slice?.(0, 20));
+    const contentType = invoiceRes.headers["content-type"];
+    console.log("📄 Content-Type réponse:", contentType);
+
+    if (!contentType || !contentType.includes("json")) {
+      console.error("❌ Réponse Dolibarr non-JSON !");
+      console.log("🧾 Contenu brut :", invoiceRes.data.toString("utf8").slice(0, 200));
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "Réponse Dolibarr invalide (pas du JSON)",
+          contentType
+        })
+      };
+    }
 
     let factureId;
-
     try {
       const raw = invoiceRes.data;
       const isGzip = raw[0] === 0x1f && raw[1] === 0x8b;
-      console.log("🔍 GZIP ?", raw[0], raw[1], "->", isGzip);
-
       let jsonData;
 
       if (isGzip) {
         const uncompressed = zlib.gunzipSync(raw).toString("utf8");
-        console.log("🗃️ Réponse décompressée (début):", uncompressed.slice(0, 100));
+        console.log("🗃️ Réponse GZIP :", uncompressed.slice(0, 100));
         jsonData = JSON.parse(uncompressed);
       } else {
         const str = raw.toString("utf8");
-        console.log("🗃️ Réponse brute (début):", str.slice(0, 100));
+        console.log("🗃️ Réponse JSON :", str.slice(0, 100));
         jsonData = JSON.parse(str);
       }
 
@@ -143,22 +153,21 @@ exports.handler = async function (event) {
       } else if (jsonData?.id) {
         factureId = jsonData.id;
       } else {
-        throw new Error("Format de retour inattendu de Dolibarr");
+        throw new Error("Format JSON Dolibarr inattendu");
       }
 
     } catch (err) {
-      console.error("❌ Erreur parsing retour Dolibarr:", err.message);
-      console.log("🧾 Donnée brute (hex):", invoiceRes.data.toString("hex").slice(0, 200));
+      console.error("❌ Parsing Dolibarr échoué:", err.message);
       return {
         statusCode: 500,
         body: JSON.stringify({
-          error: "Erreur parsing réponse Dolibarr",
+          error: "Erreur parsing JSON Dolibarr",
           message: err.message
         })
       };
     }
 
-    console.log("🧾 ID de la facture brouillon:", factureId);
+    console.log("🧾 ID facture brouillon:", factureId);
 
     await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, {
       headers: {
@@ -169,14 +178,14 @@ exports.handler = async function (event) {
     });
 
     if (paiement === "cb") {
-      console.log("⏳ Paiement CB en attente de confirmation via Paymee (webhook)");
+      console.log("⏳ Paiement CB en attente via Paymee (webhook)");
     } else {
-      console.log("🚚 Paiement à la livraison, aucun statut de paiement modifié.");
+      console.log("🚚 Paiement livraison — pas de statut modifié.");
     }
 
     const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
     const status = getFacture.data.status;
-    console.log("📋 État final post-validation:", status);
+    console.log("📋 Statut final facture:", status);
 
     return {
       statusCode: 200,
@@ -190,7 +199,7 @@ exports.handler = async function (event) {
     };
 
   } catch (err) {
-    console.error("💥 Erreur générale :", err.message);
+    console.error("💥 Erreur Dolibarr générale :", err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({
