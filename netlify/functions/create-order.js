@@ -165,40 +165,38 @@ exports.handler = async function (event) {
     console.log("✅ Validation effectuée via API officielle");
 
 // 💳 Paiement CB détecté, en attente de confirmation par webhook Paymee
-    if (paiement === "cb") {
-      console.log("⏳ Paiement CB en attente de confirmation via Paymee (webhook)");
-    } else {
-      console.log("🚚 Paiement à la livraison, aucun statut de paiement modifié.");
-    }
-    }
-    
+if (paiement === "cb") {
+  console.log("⏳ Paiement CB en attente de confirmation via Paymee (webhook)");
+} else {
+  console.log("🚚 Paiement à la livraison, aucun statut de paiement modifié.");
+}
 
-    const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
-    const status = getFacture.data.status;
-    console.log("📋 État final post-validation:", status);
+const getFacture = await axios.get(`${DOLIBARR_API}/invoices/${factureId}`, { headers });
+const status = getFacture.data.status;
+console.log("📋 État final post-validation:", status);
 
-    if (status !== 1) {
+if (status !== 1) {
   console.warn("⚠️ Facture validée mais status inattendu :", status);
 }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        facture: {
-          id: factureId,
-          statut: status
-        }
-      })
-    };
-  } catch (err) {
-    console.error("💥 Erreur générale :", err.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: "Erreur Dolibarr",
-        message: err.message
-      })
-    };
-  }
+return {
+  statusCode: 200,
+  body: JSON.stringify({
+    success: true,
+    facture: {
+      id: factureId,
+      statut: status
+    }
+  })
 };
+
+} catch (err) {
+console.error("💥 Erreur générale :", err.message);
+return {
+  statusCode: 500,
+  body: JSON.stringify({
+    error: "Erreur Dolibarr",
+    message: err.message
+  })
+};
+}
