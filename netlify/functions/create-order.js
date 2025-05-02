@@ -151,7 +151,7 @@ exports.handler = async function (event) {
           message: err.message
         })
       };
-    }
+    }    
     
     if (!factureId || isNaN(factureId)) {
       throw new Error("ID de facture invalide");
