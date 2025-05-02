@@ -108,17 +108,18 @@ document.addEventListener("DOMContentLoaded", () => {
               price_ht: p.price,
               tva: 20
             })),
-            totalTTC: client.amount
+            totalTTC: client.amount,
+            paiement // ✅ PATCH : envoi obligatoire du mode de paiement
           })
         });
 
         const result = await res.json();
         if (result.success) {
-  localStorage.setItem("facture_pdf_url", result.facture?.pdfUrl);
-  localStorage.setItem("facture_ref", result.facture?.ref);
-  localStorage.removeItem(CART_KEY);
-  window.location.href = "/merci-livraison";
-} else {
+          localStorage.setItem("facture_pdf_url", result.facture?.pdfUrl);
+          localStorage.setItem("facture_ref", result.facture?.ref);
+          localStorage.removeItem(CART_KEY);
+          window.location.href = "/merci-livraison";
+        } else {
           alert("Erreur : " + (result.error || "Échec création commande."));
         }
       } catch (err) {
@@ -130,7 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const res = await fetch("/.netlify/functions/create-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(client)
+          body: JSON.stringify({
+            ...client,
+            cart
+          })
         });
 
         const data = await res.json();
