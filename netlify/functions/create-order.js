@@ -1,3 +1,4 @@
+console.log("✅ Version PATCHÉE CHARGÉE");
 const axios = require("axios");
 const zlib = require("zlib");
 
