@@ -120,16 +120,20 @@ exports.handler = async function (event) {
     try {
       const raw = invoiceRes.data;
       const isGzip = raw[0] === 0x1f && raw[1] === 0x8b;
+      console.log("🔍 GZIP ?", raw[0], raw[1], isGzip);
+    
       let jsonData;
-
+    
       if (isGzip) {
         const uncompressed = zlib.gunzipSync(raw).toString("utf8");
+        console.log("🗃️ Réponse décompressée :", uncompressed.slice(0, 100));
         jsonData = JSON.parse(uncompressed);
       } else {
         const str = raw.toString("utf8");
+        console.log("🗃️ Réponse brute :", str.slice(0, 100));
         jsonData = JSON.parse(str);
       }
-
+    
       if (typeof jsonData === "number") {
         factureId = jsonData;
       } else if (jsonData?.id) {
@@ -137,6 +141,7 @@ exports.handler = async function (event) {
       } else {
         throw new Error("Format de retour inattendu de Dolibarr");
       }
+    
     } catch (err) {
       console.error("❌ Erreur parsing retour Dolibarr:", err.message);
       return {
@@ -147,7 +152,7 @@ exports.handler = async function (event) {
         })
       };
     }
-
+    
     if (!factureId || isNaN(factureId)) {
       throw new Error("ID de facture invalide");
     }
