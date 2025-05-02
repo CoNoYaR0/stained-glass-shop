@@ -11,7 +11,6 @@ const headers = {
 exports.handler = async function (event) {
   console.log("🔰 Étape 1 : validation requête");
 
-  // Refuser toute méthode autre que POST
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
@@ -29,7 +28,6 @@ exports.handler = async function (event) {
     };
   }
 
-  // Validation des champs requis
   const { customer, cart, totalTTC, paiement } = body;
 
   if (!customer || typeof customer !== "object") {
@@ -62,9 +60,8 @@ exports.handler = async function (event) {
 
   console.log("✅ Étape 1 validée : body conforme");
 
-  // 🔎 Étape 2 : Vérification ou création du client Dolibarr
+  // 🔎 Étape 2 : recherche ou création client
   console.log("🔎 Étape 2 : recherche ou création client");
-
   const fullName = `${customer.prenom} ${customer.nom}`;
   const clientEmail = customer.email;
 
@@ -73,7 +70,6 @@ exports.handler = async function (event) {
   try {
     const clientRes = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
     const clients = clientRes.data;
-
     const existing = clients.find(c => c.email?.toLowerCase() === clientEmail.toLowerCase());
 
     if (existing && existing.id) {
@@ -98,7 +94,7 @@ exports.handler = async function (event) {
     }
 
   } catch (err) {
-    console.error("❌ Erreur lors de la recherche ou création du client :", err.message);
+    console.error("❌ Erreur lors de la gestion du client :", err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -108,72 +104,65 @@ exports.handler = async function (event) {
     };
   }
 
-  // ✅ Stop ici pour valider l’étape 2
+  // 📦 Étape 3 : construction des lignes de facture
+  console.log("📦 Étape 3 : construction des lignes de facture");
+
+  let lines = [];
+
+  try {
+    for (const item of cart) {
+      const productRes = await axios.get(`${DOLIBARR_API}/products/${item.id}`, { headers });
+      const product = productRes.data;
+
+      lines.push({
+        desc: product.label,
+        label: product.label,
+        fk_product: product.id,
+        qty: item.qty,
+        subprice: product.price,
+        tva_tx: product.tva_tx || 19,
+        product_type: product.fk_product_type || 0,
+        remise_percent: 0,
+        localtax1_tx: 0,
+        localtax2_tx: 0,
+        fk_unit: product.fk_unit || 1,
+        fk_code_ventilation: 0,
+        pa_ht: 0,
+        date_start: null,
+        date_end: null,
+        special_code: 0,
+        info_bits: 0,
+        fk_remise_except: 0,
+        fk_fournprice: 0,
+        fk_prev_id: 0,
+        array_options: {},
+        rang: lines.length + 1,
+        situation_percent: 100,
+        multicurrency_subprice: product.price
+      });
+
+      console.log(`✅ Ligne ajoutée pour produit ${product.ref || product.id}`);
+    }
+
+  } catch (err) {
+    console.error("❌ Erreur récupération produits :", err.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Erreur lors de la récupération des produits",
+        message: err.message
+      })
+    };
+  }
+
+  // ✅ Stop ici pour valider l’étape 3
   return {
     statusCode: 200,
     body: JSON.stringify({
       success: true,
-      message: "Étape 2 OK",
-      clientId
+      message: "Étape 3 OK",
+      clientId,
+      lines
     })
   };
-};
-console.log("📦 Étape 3 : construction des lignes de facture");
-
-let lines = [];
-
-try {
-  for (const item of cart) {
-    const productRes = await axios.get(`${DOLIBARR_API}/products/${item.id}`, { headers });
-    const product = productRes.data;
-
-    lines.push({
-      desc: product.label,
-      label: product.label,
-      fk_product: product.id,
-      qty: item.qty,
-      subprice: product.price,
-      tva_tx: product.tva_tx || 19,
-      product_type: product.fk_product_type || 0,
-      remise_percent: 0,
-      localtax1_tx: 0,
-      localtax2_tx: 0,
-      fk_unit: product.fk_unit || 1,
-      fk_code_ventilation: 0,
-      pa_ht: 0,
-      date_start: null,
-      date_end: null,
-      special_code: 0,
-      info_bits: 0,
-      fk_remise_except: 0,
-      fk_fournprice: 0,
-      fk_prev_id: 0,
-      array_options: {},
-      rang: lines.length + 1,
-      situation_percent: 100,
-      multicurrency_subprice: product.price
-    });
-
-    console.log(`✅ Ligne ajoutée pour produit ${product.ref || product.id}`);
-  }
-
-} catch (err) {
-  console.error("❌ Erreur lors de la récupération des produits :", err.message);
-  return {
-    statusCode: 500,
-    body: JSON.stringify({
-      error: "Erreur lors de la récupération des produits",
-      message: err.message
-    })
-  };
-}
-
-// ⚠️ TEMPORAIRE — stop ici pour valider l’étape 3
-return {
-  statusCode: 200,
-  body: JSON.stringify({
-    success: true,
-    message: "Étape 3 OK",
-    lines
-  })
 };
