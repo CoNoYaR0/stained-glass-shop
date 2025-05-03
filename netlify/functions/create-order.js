@@ -1,11 +1,12 @@
 const axios = require("axios");
 
 const DOLIBARR_API = "https://7ssab.stainedglass.tn/api/index.php";
-const DOLAPIKEY = process.env.DOLIBARR_TOKEN; // à configurer dans Netlify env vars
+const DOLAPIKEY = process.env.DOLIBARR_TOKEN;
 
 const headers = {
   DOLAPIKEY,
-  "Content-Type": "application/json"
+  "Content-Type": "application/json",
+  "Accept-Encoding": "identity"
 };
 
 exports.handler = async function (event) {
@@ -71,14 +72,14 @@ exports.handler = async function (event) {
       const product = prodRes.data;
 
       lines.push({
-        desc: product.label,
         label: product.label,
         fk_product: product.id,
         qty: item.qty,
-        subprice: product.price,
-        tva_tx: product.tva_tx || 19,
+        subprice: parseFloat(product.price),
+        tva_tx: parseFloat(product.tva_tx) || 19.0,
         product_type: product.fk_product_type || 0,
-        fk_unit: product.fk_unit || 1
+        fk_unit: product.fk_unit || 1,
+        multicurrency_subprice: parseFloat(product.price)
       });
 
       console.log(`✅ Ligne : ${product.label}`);
@@ -90,12 +91,17 @@ exports.handler = async function (event) {
 
   // 🧾 Étape 4 : Créer la facture
   try {
-    const factureRes = await axios.post(`${DOLIBARR_API}/invoices`, {
+    const invoicePayload = {
       socid: clientId,
       date: new Date().toISOString().split("T")[0],
+      type: 0,
       lines,
       note_public: `Commande client ${fullName} via ${paiement.toUpperCase()}`
-    }, { headers });
+    };
+
+    console.log("📤 Payload pour Dolibarr:", JSON.stringify(invoicePayload, null, 2));
+
+    const factureRes = await axios.post(`${DOLIBARR_API}/invoices`, invoicePayload, { headers });
 
     const invoiceId = typeof factureRes.data === "number"
       ? factureRes.data
@@ -110,6 +116,9 @@ exports.handler = async function (event) {
     };
   } catch (err) {
     console.error("❌ Facture:", err.message);
-    return { statusCode: 500, body: JSON.stringify({ error: "Erreur facture", message: err.message }) };
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Erreur création facture", message: err.message })
+    };
   }
 };
