@@ -120,6 +120,7 @@ exports.handler = async function (event) {
   }
 
   // 🧾 Création de la facture
+  let factureId;
   try {
     console.log("🧾 Création facture brouillon...");
     const invoice = {
@@ -132,19 +133,32 @@ exports.handler = async function (event) {
     };
 
     const res = await axios.post(`${DOLIBARR_API}/invoices`, invoice, { headers });
-    const factureId = typeof res.data === "number" ? res.data : res.data?.id;
+    factureId = typeof res.data === "number" ? res.data : res.data?.id;
 
     console.log("✅ Facture créée avec ID :", factureId);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true, invoiceId: factureId })
-    };
   } catch (err) {
     console.error("❌ Erreur Dolibarr facture :", err.response?.data || err.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Erreur Dolibarr facture", details: err.message })
+      body: JSON.stringify({ error: "Erreur création facture", details: err.message })
+    };
+  }
+
+  // ✅ VALIDATION FACTURE
+  try {
+    console.log("🔐 Validation de la facture...");
+    const validateRes = await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
+    console.log("✅ Facture validée :", validateRes.data);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, invoiceId: factureId, status: "validée" })
+    };
+  } catch (err) {
+    console.error("⚠️ Facture créée mais erreur validation :", err.response?.data || err.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Facture créée mais non validée", invoiceId: factureId })
     };
   }
 };
