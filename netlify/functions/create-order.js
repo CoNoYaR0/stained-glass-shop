@@ -141,17 +141,6 @@ exports.handler = async function (event) {
     };
   }
 
-  // 🛠️ Forcer une mise à jour pour déclencher la génération automatique du PDF
-  try {
-    console.log("🛠️ Forçage update silencieux de la facture...");
-    await axios.put(`${DOLIBARR_API}/invoices/${factureId}`, {
-      note_private: "Validation de facture"
-    }, { headers });
-    console.log("✅ Mise à jour silencieuse OK");
-  } catch (err) {
-    console.error("⚠️ Erreur update silencieux (non bloquant) :", err.response?.data || err.message);
-  }
-
   let statusFacture = "validée";
 
   try {
@@ -165,6 +154,22 @@ exports.handler = async function (event) {
       statusCode: 500,
       body: JSON.stringify({ error: "Facture créée mais non validée", invoiceId: factureId })
     };
+  }
+
+  // 🛠️ Réouverture (annulation de validation), ajout note, puis revalidation
+  try {
+    console.log("🔄 Réouverture facture pour ajout de note privée...");
+    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/setdraft`, {}, { headers });
+
+    await axios.put(`${DOLIBARR_API}/invoices/${factureId}`, {
+      note_private: "Validation de facture"
+    }, { headers });
+
+    console.log("✅ Note ajoutée, revalidation en cours...");
+    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
+    console.log("✅ Revalidation OK, PDF devrait être généré");
+  } catch (err) {
+    console.error("❌ Erreur manipulation post-validation :", err.response?.data || err.message);
   }
 
   if (paiement === "cb") {
