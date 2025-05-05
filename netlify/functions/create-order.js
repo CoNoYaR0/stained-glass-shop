@@ -143,7 +143,7 @@ exports.handler = async function (event) {
 
   let statusFacture = "validée";
 
-  // ✅ VALIDATION FACTURE
+  // ✅ VALIDATION
   try {
     const validateUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
     console.log("📡 Appel validation facture :", validateUrl);
@@ -161,12 +161,12 @@ exports.handler = async function (event) {
     };
   }
 
-  // 📄 GÉNÉRATION PDF
+  // 📄 GÉNÉRATION PDF (CORRECTIF)
   try {
-    const pdfUrl = `${DOLIBARR_API}/invoices/${factureId}/generate-pdf`;
-    console.log("📄 Appel génération PDF :", pdfUrl);
-    const pdfRes = await axios.get(pdfUrl, { headers });
-    console.log("✅ PDF généré :", pdfRes.data);
+    const pdfUrl = `${DOLIBARR_API}/invoices/${factureId}/generate-document`;
+    console.log("📄 Appel génération PDF (POST) :", pdfUrl);
+    await axios.post(pdfUrl, { model: "standard" }, { headers });
+    console.log("✅ PDF généré avec modèle 'standard'");
   } catch (err) {
     console.error("❌ Erreur génération PDF :", err.response?.data || err.message);
     return {
@@ -205,7 +205,7 @@ exports.handler = async function (event) {
       success: true,
       invoiceId: factureId,
       status: statusFacture,
-      pdf: `${DOLIBARR_API}/documents/facture/${factureId}/pdf`
+      pdf: `${DOLIBARR_API}/documents/facture/${factureId}/standard.pdf`
     })
   };
 };
