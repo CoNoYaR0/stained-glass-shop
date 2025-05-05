@@ -150,10 +150,53 @@ exports.handler = async function (event) {
     const validateRes = await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
     console.log("✅ Facture validée :", validateRes.data);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true, invoiceId: factureId, status: "validée" })
-    };
+    // 🖨️ Génération PDF
+    try {
+      console.log("🖨️ Génération PDF...");
+      await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, { headers });
+      console.log("✅ PDF généré");
+
+      // 💳 Si paiement CB → enregistrer paiement
+      if (paiement === "cb") {
+        console.log("💳 Paiement CB → enregistrement paiement...");
+        const paiementPayload = {
+          facid: factureId,
+          datepaye: new Date().toISOString().split("T")[0],
+          paiementid: 6, // 6 = CB
+          amount: parseFloat(customer.amount),
+          accountid: 1 // à adapter selon ton compte bancaire
+        };
+
+        const payRes = await axios.post(`${DOLIBARR_API}/payments`, paiementPayload, { headers });
+        console.log("✅ Paiement enregistré :", payRes.data);
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            success: true,
+            invoiceId: factureId,
+            status: "payée",
+            pdf: `${DOLIBARR_API}/documents/facture/${factureId}/pdf`
+          })
+        };
+      } else {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            success: true,
+            invoiceId: factureId,
+            status: "validée (impayée)",
+            pdf: `${DOLIBARR_API}/documents/facture/${factureId}/pdf`
+          })
+        };
+      }
+    } catch (pdfErr) {
+      console.error("❌ Erreur PDF :", pdfErr.response?.data || pdfErr.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Erreur génération PDF", invoiceId: factureId })
+      };
+    }
   } catch (err) {
     console.error("⚠️ Facture créée mais erreur validation :", err.response?.data || err.message);
     return {
