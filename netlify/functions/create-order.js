@@ -40,7 +40,6 @@ exports.handler = async function (event) {
   const fullName = `${customer.prenom} ${customer.nom}`;
   let clientId;
 
-  // 🔍 Rechercher ou créer le client
   try {
     console.log("🔍 Vérification client existant via email :", clientEmail);
     const res = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
@@ -91,7 +90,6 @@ exports.handler = async function (event) {
     }
   }
 
-  // 🧾 Construire les lignes de facture
   const lines = [];
 
   try {
@@ -119,7 +117,6 @@ exports.handler = async function (event) {
     };
   }
 
-  // 🧾 Création de la facture
   let factureId;
   try {
     console.log("🧾 Création facture brouillon...");
@@ -134,7 +131,6 @@ exports.handler = async function (event) {
 
     const res = await axios.post(`${DOLIBARR_API}/invoices`, invoice, { headers });
     factureId = typeof res.data === "number" ? res.data : res.data?.id;
-
     console.log("✅ Facture créée avec ID :", factureId);
   } catch (err) {
     console.error("❌ Erreur Dolibarr facture :", err.response?.data || err.message);
@@ -144,59 +140,13 @@ exports.handler = async function (event) {
     };
   }
 
-  // ✅ VALIDATION FACTURE
+  let statusFacture = "validée";
+
+  // ✅ VALIDATION
   try {
     console.log("🔐 Validation de la facture...");
     const validateRes = await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
     console.log("✅ Facture validée :", validateRes.data);
-
-    // 🖨️ Génération PDF
-    try {
-      console.log("🖨️ Génération PDF...");
-      await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, { headers });
-      console.log("✅ PDF généré");
-
-      // 💳 Si paiement CB → enregistrer paiement
-      if (paiement === "cb") {
-        console.log("💳 Paiement CB → enregistrement paiement...");
-        const paiementPayload = {
-          facid: factureId,
-          datepaye: new Date().toISOString().split("T")[0],
-          paiementid: 6, // 6 = CB
-          amount: parseFloat(customer.amount),
-          accountid: 1 // à adapter selon ton compte bancaire
-        };
-
-        const payRes = await axios.post(`${DOLIBARR_API}/payments`, paiementPayload, { headers });
-        console.log("✅ Paiement enregistré :", payRes.data);
-
-        return {
-          statusCode: 200,
-          body: JSON.stringify({
-            success: true,
-            invoiceId: factureId,
-            status: "payée",
-            pdf: `${DOLIBARR_API}/documents/facture/${factureId}/pdf`
-          })
-        };
-      } else {
-        return {
-          statusCode: 200,
-          body: JSON.stringify({
-            success: true,
-            invoiceId: factureId,
-            status: "validée (impayée)",
-            pdf: `${DOLIBARR_API}/documents/facture/${factureId}/pdf`
-          })
-        };
-      }
-    } catch (pdfErr) {
-      console.error("❌ Erreur PDF :", pdfErr.response?.data || pdfErr.message);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Erreur génération PDF", invoiceId: factureId })
-      };
-    }
   } catch (err) {
     console.error("⚠️ Facture créée mais erreur validation :", err.response?.data || err.message);
     return {
@@ -204,4 +154,51 @@ exports.handler = async function (event) {
       body: JSON.stringify({ error: "Facture créée mais non validée", invoiceId: factureId })
     };
   }
+
+  // 🖨️ GÉNÉRATION PDF
+  try {
+    console.log("🖨️ Génération PDF...");
+    await axios.get(`${DOLIBARR_API}/invoices/${factureId}/generate-pdf`, { headers });
+    console.log("✅ PDF généré");
+  } catch (pdfErr) {
+    console.error("❌ Erreur PDF :", pdfErr.response?.data || pdfErr.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Erreur génération PDF", invoiceId: factureId })
+    };
+  }
+
+  // 💳 ENREGISTREMENT PAIEMENT SI CB
+  if (paiement === "cb") {
+    try {
+      console.log("💳 Paiement CB → enregistrement...");
+      const paiementPayload = {
+        facid: factureId,
+        datepaye: new Date().toISOString().split("T")[0],
+        paiementid: 6,
+        amount: parseFloat(customer.amount),
+        accountid: 1
+      };
+
+      const payRes = await axios.post(`${DOLIBARR_API}/payments`, paiementPayload, { headers });
+      console.log("✅ Paiement enregistré :", payRes.data);
+      statusFacture = "payée";
+    } catch (err) {
+      console.error("❌ Paiement CB échoué :", err.response?.data || err.message);
+      statusFacture = "validée (non payée)";
+    }
+  } else {
+    console.log("🚚 Paiement par livraison → pas de paiement enregistré");
+    statusFacture = "validée (non payée)";
+  }
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      success: true,
+      invoiceId: factureId,
+      status: statusFacture,
+      pdf: `${DOLIBARR_API}/documents/facture/${factureId}/pdf`
+    })
+  };
 };
