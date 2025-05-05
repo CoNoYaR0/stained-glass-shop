@@ -1,50 +1,58 @@
 const axios = require("axios");
 
-const DOLIBARR_API = "https://7ssab.stainedglass.tn/api/index.php";
+const DOLIBARR_API = process.env.DOLIBARR_API;
 const DOLAPIKEY = process.env.DOLIBARR_TOKEN;
 
 const headers = {
   DOLAPIKEY,
   "Content-Type": "application/json",
-  "Accept-Encoding": "identity"
+  Accept: "application/json"
 };
 
 exports.handler = async function (event) {
-  console.log("🔰 Étape 1 : validation requête");
+  console.log("🚀 create-order lancé");
 
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: JSON.stringify({ error: "Méthode non autorisée" }) };
+    console.warn("❌ Mauvaise méthode HTTP");
+    return { statusCode: 405, body: "Méthode non autorisée" };
   }
 
-  let body;
+  let data;
   try {
-    body = JSON.parse(event.body);
+    data = JSON.parse(event.body);
+    console.log("📥 Body reçu et parsé :", data);
   } catch (err) {
+    console.error("❌ JSON invalide :", err.message);
     return { statusCode: 400, body: JSON.stringify({ error: "JSON invalide" }) };
   }
 
-  const { customer, cart, totalTTC, paiement } = body;
+  const { customer, cart, paiement } = data;
 
-  if (!customer || !Array.isArray(cart) || cart.length === 0 || isNaN(Number(totalTTC))) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Paramètres manquants ou invalides" }) };
+  if (!customer || !Array.isArray(cart) || cart.length === 0) {
+    console.warn("❌ Données manquantes :", { customer, cart });
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Paramètres client ou panier manquants" })
+    };
   }
 
-  console.log("✅ Étape 1 validée : body conforme");
+  console.log("💳 Mode de paiement :", paiement);
 
-  // 🔎 Étape 2 : Vérifier ou créer le client
+  const clientEmail = customer.email.trim().toLowerCase();
   const fullName = `${customer.prenom} ${customer.nom}`;
-  const clientEmail = customer.email;
   let clientId;
 
   try {
+    console.log("🔍 Vérification client existant via email :", clientEmail);
     const res = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
-    const existing = res.data.find(c => c.email?.toLowerCase() === clientEmail.toLowerCase());
+    const existing = res.data.find(c => (c.email || "").toLowerCase() === clientEmail);
 
     if (existing) {
       clientId = existing.id;
-      console.log("✅ Client existant :", clientId);
+      console.log("✅ Client existant trouvé :", clientId);
     } else {
-      const createRes = await axios.post(`${DOLIBARR_API}/thirdparties`, {
+      console.log("➕ Client non trouvé, création en cours");
+      const newClient = {
         name: fullName,
         email: clientEmail,
         client: 1,
@@ -53,72 +61,73 @@ exports.handler = async function (event) {
         town: "Tunis",
         address: customer.adresse || "Adresse non renseignée",
         country_id: 1
-      }, { headers });
+      };
 
+      const createRes = await axios.post(`${DOLIBARR_API}/thirdparties`, newClient, { headers });
       clientId = createRes.data;
       console.log("✅ Nouveau client créé :", clientId);
     }
   } catch (err) {
-    console.error("❌ Client:", err.message);
-    return { statusCode: 500, body: JSON.stringify({ error: "Erreur client", message: err.message }) };
+    console.error("❌ Erreur Dolibarr client :", err.response?.data || err.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Erreur Dolibarr client", details: err.message })
+    };
   }
 
-  // 📦 Étape 3 : Préparer les lignes
   const lines = [];
 
   try {
+    console.log("📦 Traitement des produits :", cart.length, "article(s)");
     for (const item of cart) {
-      const prodRes = await axios.get(`${DOLIBARR_API}/products/${item.id}`, { headers });
-      const product = prodRes.data;
+      console.log("🔍 Produit ID:", item.id);
+      const productRes = await axios.get(`${DOLIBARR_API}/products/${item.id}`, { headers });
+      const product = productRes.data;
 
       lines.push({
-        label: product.label,
         fk_product: product.id,
+        label: product.label || product.ref,
         qty: item.qty,
         subprice: parseFloat(product.price),
         tva_tx: parseFloat(product.tva_tx) || 19.0,
-        product_type: product.fk_product_type || 0,
-        fk_unit: product.fk_unit || 1,
-        multicurrency_subprice: parseFloat(product.price)
+        product_type: product.fk_product_type || 0
       });
 
-      console.log(`✅ Ligne : ${product.label}`);
+      console.log("✅ Produit ajouté à la commande :", product.label);
     }
   } catch (err) {
-    console.error("❌ Produits:", err.message);
-    return { statusCode: 500, body: JSON.stringify({ error: "Erreur produits", message: err.message }) };
+    console.error("❌ Erreur Dolibarr produits :", err.response?.data || err.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Erreur Dolibarr produits", details: err.message })
+    };
   }
 
-  // 🧾 Étape 4 : Créer la facture
   try {
-    const invoicePayload = {
+    console.log("🧾 Création facture brouillon pour client ID:", clientId);
+    const invoice = {
       socid: clientId,
       date: new Date().toISOString().split("T")[0],
       type: 0,
+      status: 0,
       lines,
-      note_public: `Commande client ${fullName} via ${paiement.toUpperCase()}`
+      note_public: `Commande via site - Paiement : ${paiement?.toUpperCase() || "NON PRÉCISÉ"} - Client : ${fullName}`
     };
 
-    console.log("📤 Payload pour Dolibarr:", JSON.stringify(invoicePayload, null, 2));
+    const res = await axios.post(`${DOLIBARR_API}/invoices`, invoice, { headers });
+    const factureId = typeof res.data === "number" ? res.data : res.data?.id;
 
-    const factureRes = await axios.post(`${DOLIBARR_API}/invoices`, invoicePayload, { headers });
+    console.log("✅ Facture créée avec ID :", factureId);
 
-    const invoiceId = typeof factureRes.data === "number"
-      ? factureRes.data
-      : factureRes.data?.id;
-
-    if (!invoiceId) throw new Error("Réponse Dolibarr invalide");
-
-    console.log("✅ Facture créée ID:", invoiceId);
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, invoiceId })
+      body: JSON.stringify({ success: true, invoiceId: factureId })
     };
   } catch (err) {
-    console.error("❌ Facture:", err.message);
+    console.error("❌ Erreur Dolibarr facture :", err.response?.data || err.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Erreur création facture", message: err.message })
+      body: JSON.stringify({ error: "Erreur Dolibarr facture", details: err.message })
     };
   }
 };
