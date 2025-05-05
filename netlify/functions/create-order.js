@@ -156,20 +156,14 @@ exports.handler = async function (event) {
     };
   }
 
-  // 🛠️ Réouverture (annulation de validation), ajout note, puis revalidation
+  // 📄 Tentative de génération de PDF
   try {
-    console.log("🔄 Réouverture facture pour ajout de note privée...");
-    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/setdraft`, {}, { headers });
-
-    await axios.put(`${DOLIBARR_API}/invoices/${factureId}`, {
-      note_private: "Validation de facture"
-    }, { headers });
-
-    console.log("✅ Note ajoutée, revalidation en cours...");
-    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
-    console.log("✅ Revalidation OK, PDF devrait être généré");
+    const genUrl = `${DOLIBARR_API}/invoices/${factureId}/generate-document`;
+    console.log("📄 Appel génération PDF (POST) :", genUrl);
+    await axios.post(genUrl, { model: "crabe" }, { headers });
+    console.log("✅ PDF généré avec modèle 'crabe'");
   } catch (err) {
-    console.error("❌ Erreur manipulation post-validation :", err.response?.data || err.message);
+    console.warn("⚠️ Erreur génération PDF ignorée :", err.response?.data || err.message);
   }
 
   if (paiement === "cb") {
