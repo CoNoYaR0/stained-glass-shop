@@ -156,11 +156,20 @@ exports.handler = async function (event) {
     };
   }
 
+  // ✅ Forcer modèle PDF avant génération
+  try {
+    console.log("🧩 Affectation du modèle PDF 'crabe'...");
+    await axios.put(`${DOLIBARR_API}/invoices/${factureId}`, { model_pdf: "crabe" }, { headers });
+    console.log("✅ Modèle PDF affecté");
+  } catch (err) {
+    console.warn("⚠️ Erreur affectation modèle PDF :", err.response?.data || err.message);
+  }
+
   // 📄 Tentative de génération de PDF
   try {
     const genUrl = `${DOLIBARR_API}/invoices/${factureId}/generate-document`;
     console.log("📄 Appel génération PDF (POST) :", genUrl);
-    await axios.post(genUrl, { model: "crabe" }, { headers });
+    await axios.post(genUrl, {}, { headers });
     console.log("✅ PDF généré avec modèle 'crabe'");
   } catch (err) {
     console.warn("⚠️ Erreur génération PDF ignorée :", err.response?.data || err.message);
