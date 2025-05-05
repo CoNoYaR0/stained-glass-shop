@@ -119,6 +119,7 @@ exports.handler = async function (event) {
   }
 
   let factureId;
+  let invoiceRef;
   try {
     console.log("🧾 Création facture brouillon...");
     const invoice = {
@@ -147,6 +148,7 @@ exports.handler = async function (event) {
     const validateUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
     console.log("📡 Appel validation facture :", validateUrl);
     const validateRes = await axios.post(validateUrl, {}, { headers });
+    invoiceRef = validateRes.data?.ref;
     console.log("✅ Facture validée :", validateRes.data);
   } catch (err) {
     console.error("❌ Erreur validation facture :", err.response?.data || err.message);
@@ -165,14 +167,15 @@ exports.handler = async function (event) {
     console.warn("⚠️ Erreur affectation modèle PDF :", err.response?.data || err.message);
   }
 
-  // 📄 Tentative de génération de PDF
+  // 📄 Workaround final : forcer accès direct via document.php pour forcer génération
   try {
-    const genUrl = `${DOLIBARR_API}/invoices/${factureId}/generate-document`;
-    console.log("📄 Appel génération PDF (POST) :", genUrl);
-    await axios.post(genUrl, {}, { headers });
-    console.log("✅ PDF généré avec modèle 'crabe'");
+    const baseUrl = DOLIBARR_API.replace("/api/index.php", "");
+    const forcePdfUrl = `${baseUrl}/document.php?modulepart=facture&file=facture/${invoiceRef}/crabe.pdf`;
+    console.log("📄 Appel de génération via accès direct :", forcePdfUrl);
+    await axios.get(forcePdfUrl, { headers });
+    console.log("✅ PDF généré via document.php");
   } catch (err) {
-    console.warn("⚠️ Erreur génération PDF ignorée :", err.response?.data || err.message);
+    console.warn("⚠️ Erreur forcée génération PDF via document.php :", err.response?.data || err.message);
   }
 
   if (paiement === "cb") {
