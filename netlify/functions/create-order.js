@@ -150,26 +150,22 @@ exports.handler = async function (event) {
     const validateRes = await axios.post(validateUrl, {}, { headers });
     invoiceRef = validateRes.data?.ref;
     console.log("✅ Facture validée :", validateRes.data);
+
+    // 🛰️ Appel à Puppeteer pour générer le PDF
+    try {
+      console.log("🛰️ Déclenchement génération PDF via Puppeteer...");
+      await axios.get(`https://dolibarr-pdf-production.up.railway.app/generate-pdf?id=${factureId}`);
+      console.log("✅ Génération PDF confirmée par Puppeteer.");
+    } catch (err) {
+      console.warn("⚠️ Puppeteer PDF generation échouée :", err.message);
+    }
+
   } catch (err) {
     console.error("❌ Erreur validation facture :", err.response?.data || err.message);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Facture créée mais non validée", invoiceId: factureId })
     };
-  }
-
-  // ✅ Forcer une micro-modification + revalidation
-  try {
-    console.log("✏️ Mise à jour pour simuler modification réelle...");
-    await axios.put(`${DOLIBARR_API}/invoices/${factureId}`, {
-      note_private: "Revalidation pour forcer génération PDF",
-      remise_percent: 0
-    }, { headers });
-    console.log("✅ Modifications appliquées, revalidation...");
-    await axios.post(`${DOLIBARR_API}/invoices/${factureId}/validate`, {}, { headers });
-    console.log("✅ Revalidation OK");
-  } catch (err) {
-    console.warn("⚠️ Échec modification ou revalidation :", err.response?.data || err.message);
   }
 
   if (paiement === "cb") {
