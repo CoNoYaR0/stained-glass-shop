@@ -40,6 +40,7 @@ exports.handler = async function (event) {
   const fullName = `${customer.prenom} ${customer.nom}`;
   let clientId;
 
+  // 🔍 Rechercher ou créer le client
   try {
     console.log("🔍 Vérification client existant via email :", clientEmail);
     const res = await axios.get(`${DOLIBARR_API}/thirdparties?limit=100`, { headers });
@@ -49,35 +50,48 @@ exports.handler = async function (event) {
       clientId = existing.id;
       console.log("✅ Client existant trouvé :", clientId);
     } else {
-      console.log("➕ Client non trouvé, tentative de création...");
-      const newClient = {
-        name: fullName,
-        email: clientEmail,
-        client: 1,
-        status: 1,
-        zip: "0000",
-        town: "Tunis",
-        address: customer.adresse || "Adresse non renseignée",
-        country_id: 1 // Tunisie (code Dolibarr)
-      };
-
-      console.log("📤 Payload création client :", newClient);
-
-      const createRes = await axios.post(`${DOLIBARR_API}/thirdparties`, newClient, { headers });
-
-      console.log("📥 Résultat création client :", createRes.data);
-
-      clientId = typeof createRes.data === "number" ? createRes.data : createRes.data?.id;
-      console.log("✅ Client créé avec ID :", clientId);
+      throw new Error("Aucun client correspondant");
     }
   } catch (err) {
-    console.error("❌ Erreur Dolibarr client :", err.response?.data || err.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Erreur Dolibarr client", details: err.message })
-    };
+    if (err.response?.status === 404 || err.message.includes("Aucun client")) {
+      console.log("⚠️ Aucun client trouvé. Création d’un nouveau client...");
+      try {
+        const newClient = {
+          name: fullName,
+          email: clientEmail,
+          client: 1,
+          status: 1,
+          zip: "0000",
+          town: "Tunis",
+          address: customer.adresse || "Adresse non renseignée",
+          country_id: 1
+        };
+
+        console.log("📤 Payload création client :", newClient);
+
+        const createRes = await axios.post(`${DOLIBARR_API}/thirdparties`, newClient, { headers });
+
+        console.log("📥 Résultat création client :", createRes.data);
+
+        clientId = typeof createRes.data === "number" ? createRes.data : createRes.data?.id;
+        console.log("✅ Nouveau client créé avec ID :", clientId);
+      } catch (creationErr) {
+        console.error("❌ Échec création client :", creationErr.response?.data || creationErr.message);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: "Erreur création client", details: creationErr.message })
+        };
+      }
+    } else {
+      console.error("❌ Erreur Dolibarr client :", err.response?.data || err.message);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Erreur Dolibarr client", details: err.message })
+      };
+    }
   }
 
+  // 🧾 Construire les lignes de facture
   const lines = [];
 
   try {
@@ -95,7 +109,7 @@ exports.handler = async function (event) {
         product_type: product.fk_product_type || 0
       });
 
-      console.log("✅ Ligne ajoutée :", product.label);
+      console.log("✅ Produit ajouté :", product.label);
     }
   } catch (err) {
     console.error("❌ Erreur Dolibarr produits :", err.response?.data || err.message);
@@ -105,6 +119,7 @@ exports.handler = async function (event) {
     };
   }
 
+  // 🧾 Création de la facture
   try {
     console.log("🧾 Création facture brouillon...");
     const invoice = {
