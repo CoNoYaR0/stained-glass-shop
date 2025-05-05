@@ -141,9 +141,19 @@ exports.handler = async function (event) {
     };
   }
 
+  // 🛠️ Forcer une mise à jour pour déclencher la génération automatique du PDF
+  try {
+    console.log("🛠️ Forçage update silencieux de la facture...");
+    await axios.put(`${DOLIBARR_API}/invoices/${factureId}`, {
+      note_private: "Validation de facture"
+    }, { headers });
+    console.log("✅ Mise à jour silencieuse OK");
+  } catch (err) {
+    console.error("⚠️ Erreur update silencieux (non bloquant) :", err.response?.data || err.message);
+  }
+
   let statusFacture = "validée";
 
-  // ✅ VALIDATION
   try {
     const validateUrl = `${DOLIBARR_API}/invoices/${factureId}/validate`;
     console.log("📡 Appel validation facture :", validateUrl);
@@ -153,29 +163,10 @@ exports.handler = async function (event) {
     console.error("❌ Erreur validation facture :", err.response?.data || err.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: "Facture créée mais non validée",
-        invoiceId: factureId,
-        details: err.response?.data || err.message
-      })
+      body: JSON.stringify({ error: "Facture créée mais non validée", invoiceId: factureId })
     };
   }
 
-  // 📄 GÉNÉRATION PDF (CORRECTIF)
-  try {
-    const pdfUrl = `${DOLIBARR_API}/invoices/${factureId}/generate-document`;
-    console.log("📄 Appel génération PDF (POST) :", pdfUrl);
-    await axios.post(pdfUrl, { model: "standard" }, { headers });
-    console.log("✅ PDF généré avec modèle 'standard'");
-  } catch (err) {
-    console.error("❌ Erreur génération PDF :", err.response?.data || err.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "PDF non généré", invoiceId: factureId })
-    };
-  }
-
-  // 💳 PAIEMENT SI CB
   if (paiement === "cb") {
     try {
       console.log("💳 Paiement CB → enregistrement...");
@@ -191,7 +182,7 @@ exports.handler = async function (event) {
       console.log("✅ Paiement CB enregistré :", payRes.data);
       statusFacture = "payée";
     } catch (err) {
-      console.error("❌ Erreur enregistrement paiement CB :", err.response?.data || err.message);
+      console.error("❌ Erreur paiement CB :", err.response?.data || err.message);
       statusFacture = "validée (non payée)";
     }
   } else {
@@ -205,7 +196,7 @@ exports.handler = async function (event) {
       success: true,
       invoiceId: factureId,
       status: statusFacture,
-      pdf: `${DOLIBARR_API}/documents/facture/${factureId}/standard.pdf`
+      pdf: `${DOLIBARR_API}/documents/facture/${factureId}/crabe.pdf`
     })
   };
 };
