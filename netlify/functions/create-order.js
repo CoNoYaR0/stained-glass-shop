@@ -13,7 +13,6 @@ exports.handler = async function (event) {
   console.log("🚀 create-order lancé");
 
   if (event.httpMethod !== "POST") {
-    console.warn("❌ Mauvaise méthode HTTP");
     return { statusCode: 405, body: "Méthode non autorisée" };
   }
 
@@ -29,7 +28,6 @@ exports.handler = async function (event) {
   const { customer, cart, paiement } = data;
 
   if (!customer || !Array.isArray(cart) || cart.length === 0) {
-    console.warn("❌ Données manquantes :", { customer, cart });
     return {
       statusCode: 400,
       body: JSON.stringify({ error: "Paramètres client ou panier manquants" })
@@ -51,7 +49,7 @@ exports.handler = async function (event) {
       clientId = existing.id;
       console.log("✅ Client existant trouvé :", clientId);
     } else {
-      console.log("➕ Client non trouvé, création en cours");
+      console.log("➕ Client non trouvé, tentative de création...");
       const newClient = {
         name: fullName,
         email: clientEmail,
@@ -60,12 +58,17 @@ exports.handler = async function (event) {
         zip: "0000",
         town: "Tunis",
         address: customer.adresse || "Adresse non renseignée",
-        country_id: 1
+        country_id: 1 // Tunisie (code Dolibarr)
       };
 
+      console.log("📤 Payload création client :", newClient);
+
       const createRes = await axios.post(`${DOLIBARR_API}/thirdparties`, newClient, { headers });
-      clientId = createRes.data;
-      console.log("✅ Nouveau client créé :", clientId);
+
+      console.log("📥 Résultat création client :", createRes.data);
+
+      clientId = typeof createRes.data === "number" ? createRes.data : createRes.data?.id;
+      console.log("✅ Client créé avec ID :", clientId);
     }
   } catch (err) {
     console.error("❌ Erreur Dolibarr client :", err.response?.data || err.message);
@@ -78,9 +81,8 @@ exports.handler = async function (event) {
   const lines = [];
 
   try {
-    console.log("📦 Traitement des produits :", cart.length, "article(s)");
+    console.log("📦 Traitement des produits :", cart.length);
     for (const item of cart) {
-      console.log("🔍 Produit ID:", item.id);
       const productRes = await axios.get(`${DOLIBARR_API}/products/${item.id}`, { headers });
       const product = productRes.data;
 
@@ -93,7 +95,7 @@ exports.handler = async function (event) {
         product_type: product.fk_product_type || 0
       });
 
-      console.log("✅ Produit ajouté à la commande :", product.label);
+      console.log("✅ Ligne ajoutée :", product.label);
     }
   } catch (err) {
     console.error("❌ Erreur Dolibarr produits :", err.response?.data || err.message);
@@ -104,7 +106,7 @@ exports.handler = async function (event) {
   }
 
   try {
-    console.log("🧾 Création facture brouillon pour client ID:", clientId);
+    console.log("🧾 Création facture brouillon...");
     const invoice = {
       socid: clientId,
       date: new Date().toISOString().split("T")[0],
