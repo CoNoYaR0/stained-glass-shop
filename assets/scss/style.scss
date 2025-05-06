@@ -1419,3 +1419,34 @@ button.add-to-cart:hover {
     text-align: center;
   }
 }
+
+
+/* ------------------------
+   ✅ Mobile: repositionnement icône panier
+------------------------ */
+@media screen and (max-width: 768px) {
+  .cart-icon,
+  #open-cart {
+    position: absolute !important;
+    top: 15px;
+    right: 15px;
+    z-index: 999;
+    transform: scale(0.9);
+  }
+
+  header,
+  .site-header,
+  .header-nav {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .site-branding,
+  .logo {
+    max-width: 60%;
+    flex: 1 1 auto;
+  }
+}
