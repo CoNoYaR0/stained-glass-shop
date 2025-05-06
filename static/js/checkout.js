@@ -3,14 +3,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const checkoutForm = document.getElementById("checkout-form");
   const paymeeContainer = document.getElementById("paymee-iframe-container");
   const paymeeIframe = document.getElementById("paymee-iframe");
-  const amountInput = document.getElementById("amount");
   const iframeLoader = document.getElementById("iframe-loader");
 
   const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-  if (amountInput && cart.length > 0) {
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    amountInput.value = total.toFixed(2);
-  }
 
   if (!checkoutForm || !paymeeContainer || !paymeeIframe) return;
 
@@ -22,14 +17,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       prenom: document.getElementById("prenom").value,
       tel: document.getElementById("tel").value,
       email: document.getElementById("email").value,
-      adresse: document.getElementById("adresse").value,
-      amount: document.getElementById("amount").value
+      adresse: document.getElementById("adresse").value
     };
 
-    if (!client.amount || cart.length === 0) {
-      alert("Panier vide ou montant invalide.");
+    if (cart.length === 0) {
+      alert("Panier vide.");
       return;
     }
+
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
 
     try {
       const res = await fetch("/.netlify/functions/create-payment", {
@@ -37,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ ...client, cart })
+        body: JSON.stringify({ ...client, amount: totalAmount, cart })
       });
 
       const data = await res.json();
@@ -76,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     price_ht: p.price,
                     tva: 20
                   })),
-                  totalTTC: client.amount,
+                  totalTTC: totalAmount,
                   paiement: "cb"
                 })
               });
