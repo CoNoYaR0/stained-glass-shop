@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let products = [];
   try {
-    const res = await fetch("https://www.stainedglass.tn/proxy/products.php");
+    const res = await fetch("https://cdn.stainedglass.tn/proxy/products.php");
     products = await res.json();
     if (!Array.isArray(products)) throw new Error("Expected array");
     console.log("✅ Produits chargés :", products);
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           let idx = 1;
           while (true) {
             const filename = idx === 1 ? `${ref}.${ext}` : `${ref}-${idx}.${ext}`;
-            const url = `https://www.stainedglass.tn/stainedglass-img-cache/${filename}`;
+            const url = `https://cdn.stainedglass.tn/stainedglass-img-cache/${filename}`;
             const resp = await fetch(url, { method: "HEAD" });
             if (resp.ok) {
               images.push(url);
