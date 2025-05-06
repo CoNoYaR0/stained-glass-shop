@@ -3,6 +3,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const checkoutForm = document.getElementById("checkout-form");
   const paymeeContainer = document.getElementById("paymee-iframe-container");
   const paymeeIframe = document.getElementById("paymee-iframe");
+  const amountInput = document.getElementById("amount");
+  const iframeLoader = document.getElementById("iframe-loader");
+
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  if (amountInput && cart.length > 0) {
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    amountInput.value = total.toFixed(2);
+  }
 
   if (!checkoutForm || !paymeeContainer || !paymeeIframe) return;
 
@@ -17,8 +25,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       adresse: document.getElementById("adresse").value,
       amount: document.getElementById("amount").value
     };
-
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
 
     if (!client.amount || cart.length === 0) {
       alert("Panier vide ou montant invalide.");
@@ -39,6 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (data?.data?.payment_url && data?.data?.note) {
         paymeeIframe.src = data.data.payment_url;
         paymeeContainer.style.display = "block";
+        if (iframeLoader) iframeLoader.style.display = "none";
 
         const note = data.data.note;
         const intervalId = setInterval(async () => {
