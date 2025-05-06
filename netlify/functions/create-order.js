@@ -1,3 +1,7 @@
+const BASE_API = window.location.hostname.includes("stainedglass.tn")
+  ? "https://resplendent-centaur-abf462.netlify.app/.netlify/functions"
+  : "/.netlify/functions";
+
 require("dotenv").config();
 const axios = require("axios");
 
