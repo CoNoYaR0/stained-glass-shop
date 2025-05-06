@@ -40,15 +40,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       const name = prod.label || "Nom inconnu";
       const displayRef = ref.replace(/_/g, " ");
 
-      // Images présumées (on skip HEAD et assume qu'elle existe, fallback avec onerror)
-      const fallback = "/img/fallback.jpg";
-      const extensions = ["jpg", "jpeg", "png", "webp"];
-      const images = extensions.map(ext => `https://cdn.stainedglass.tn/stainedglass-img-cache/${ref}.${ext}`);
+      // Essayer uniquement l'image JPG principale
+      const imageUrl = `https://cdn.stainedglass.tn/stainedglass-img-cache/${ref}.jpg`;
 
       const sliderHTML = `
         <div class="swiper swiper-${id}">
           <div class="swiper-wrapper">
-            ${images.map(img => `<div class="swiper-slide"><img src="${img}" alt="${displayRef}" onerror="this.style.display='none'" /></div>`).join('')}
+            <div class="swiper-slide">
+              <img src="${imageUrl}" alt="${displayRef}" onerror="this.src='/img/fallback.jpg'" />
+            </div>
           </div>
           <div class="swiper-pagination"></div>
         </div>`;
@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             data-id="${id}"
             data-name="${ref}"
             data-price="${price}"
-            data-image="${images[0]}"
+            data-image="${imageUrl}"
           >Ajouter au panier</button>
         </div>`;
     })
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           el: el.querySelector('.swiper-pagination'),
           clickable: true
         },
-        loop: true,
+        loop: false,
       });
     });
   }, 100);

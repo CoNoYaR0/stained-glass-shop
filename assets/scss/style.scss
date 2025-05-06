@@ -1361,3 +1361,61 @@ button.add-to-cart:hover {
     text-align: center;
   }
 }
+
+
+/* ------------------------
+   ✅ Responsive fix: mobile clean
+------------------------ */
+@media screen and (max-width: 768px) {
+  .product-card {
+    width: 100% !important;
+    margin: 10px auto;
+    padding: 15px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+  }
+
+  .swiper {
+    width: 100% !important;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .swiper-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .swiper-slide img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .paymee-iframe-container {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .variant-select,
+  .add-to-cart {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  h3 {
+    font-size: 1.2em;
+    text-align: center;
+  }
+}
