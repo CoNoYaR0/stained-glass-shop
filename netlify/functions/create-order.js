@@ -1,11 +1,7 @@
-const BASE_API = window.location.hostname.includes("stainedglass.tn")
-  ? "https://resplendent-centaur-abf462.netlify.app/.netlify/functions"
-  : "/.netlify/functions";
-
 require("dotenv").config();
 const axios = require("axios");
 
-exports.handler = async function (event, context) {
+exports.handler = async function (event) {
   console.info("🚀 create-order lancé");
 
   try {
@@ -18,7 +14,7 @@ exports.handler = async function (event, context) {
     const dolibarrAPI = process.env.DOLIBARR_API;
     const dolibarrToken = process.env.DOLIBARR_TOKEN;
     const headers = {
-      "DOLAPIKEY": dolibarrToken,
+      DOLAPIKEY: dolibarrToken,
       "Content-Type": "application/json"
     };
 
@@ -62,6 +58,7 @@ exports.handler = async function (event, context) {
     // 📦 Créer facture
     console.info("📦 Traitement des produits :", cart.length);
     const invoiceLines = [];
+
     for (const product of cart) {
       console.info("🔎 Chargement produit ID:", product.id);
       const res = await axios.get(`${dolibarrAPI}/products/${product.id}`, { headers });
@@ -83,14 +80,15 @@ exports.handler = async function (event, context) {
       lines: invoiceLines,
       note_public: `Commande via site - Paiement : ${paiement.toUpperCase()} - Client : ${customer.nom} ${customer.prenom}`
     };
+
     const invoiceRes = await axios.post(`${dolibarrAPI}/invoices`, invoice, { headers });
     const invoiceId = invoiceRes.data;
     console.info("✅ Facture créée avec ID :", invoiceId);
 
     // ✅ Valider la facture
     console.info("📡 Appel validation facture :", `${dolibarrAPI}/invoices/${invoiceId}/validate`);
-    const validationRes = await axios.post(`${dolibarrAPI}/invoices/${invoiceId}/validate`, {}, { headers });
-    console.info("✅ Facture validée :", validationRes.data);
+    await axios.post(`${dolibarrAPI}/invoices/${invoiceId}/validate`, {}, { headers });
+    console.info("✅ Facture validée");
 
     // 💰 Régler la facture si CB uniquement
     if (paiement.toLowerCase() === "cb") {
