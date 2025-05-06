@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("products-list");
 
@@ -39,37 +40,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       const name = prod.label || "Nom inconnu";
       const displayRef = ref.replace(/_/g, " ");
 
-      // Images dynamiques
-      let images = [];
-      try {
-        const possible = ["jpg", "jpeg", "png", "webp"];
-        for (const ext of possible) {
-          let idx = 1;
-          while (true) {
-            const filename = idx === 1 ? `${ref}.${ext}` : `${ref}-${idx}.${ext}`;
-            const url = `https://cdn.stainedglass.tn/stainedglass-img-cache/${filename}`;
-            const resp = await fetch(url, { method: "HEAD" });
-            if (resp.ok) {
-              images.push(url);
-              idx++;
-            } else {
-              break;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("Pas d'image JSON pour le produit:", name);
-      }
+      // Images présumées (on skip HEAD et assume qu'elle existe, fallback avec onerror)
+      const fallback = "/img/fallback.jpg";
+      const extensions = ["jpg", "jpeg", "png", "webp"];
+      const images = extensions.map(ext => `https://cdn.stainedglass.tn/stainedglass-img-cache/${ref}.${ext}`);
 
-      const sliderHTML = images.length > 0 ? `
+      const sliderHTML = `
         <div class="swiper swiper-${id}">
           <div class="swiper-wrapper">
-            ${images.map(img => `<div class="swiper-slide"><img src="${img}" alt="${displayRef}" /></div>`).join('')}
+            ${images.map(img => `<div class="swiper-slide"><img src="${img}" alt="${displayRef}" onerror="this.style.display='none'" /></div>`).join('')}
           </div>
           <div class="swiper-pagination"></div>
-        </div>` : "";
+        </div>`;
 
-      // Dropdown si variantes
       const variantSelect = group.variants.length ? `
         <label>Variantes :</label>
         <select class="variant-select" data-base="${ref}">
@@ -88,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             data-id="${id}"
             data-name="${ref}"
             data-price="${price}"
-            data-image="${images[0] || ''}"
+            data-image="${images[0]}"
           >Ajouter au panier</button>
         </div>`;
     })
@@ -107,5 +90,5 @@ document.addEventListener("DOMContentLoaded", async () => {
         loop: true,
       });
     });
-  }, 100); // petit délai pour laisser le DOM se poser
+  }, 100);
 });

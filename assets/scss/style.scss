@@ -1301,3 +1301,63 @@ button.add-to-cart:hover {
   display: block;
   margin: 0 auto;
 }
+
+
+/* ------------------------
+   ✅ Responsive Fixes Mobile
+------------------------ */
+@media screen and (max-width: 768px) {
+  body {
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 0 10px;
+  }
+
+  .product-card {
+    width: 100% !important;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .swiper {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .swiper-slide img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .paymee-iframe-container {
+    width: 100% !important;
+    max-width: 100%;
+    overflow-x: hidden;
+    padding: 0;
+  }
+
+  .cart-sidebar {
+    width: 100vw !important;
+    max-width: 100%;
+    right: 0;
+  }
+
+  .variant-select,
+  .add-to-cart {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  h1, h2, h3, h4 {
+    font-size: 1.2em !important;
+    line-height: 1.4 !important;
+    text-align: center;
+  }
+}
