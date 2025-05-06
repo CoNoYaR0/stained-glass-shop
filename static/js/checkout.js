@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const paymeeIframe = document.getElementById("paymee-iframe");
   const iframeLoader = document.getElementById("iframe-loader");
 
-  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
 
   if (!checkoutForm || !paymeeContainer || !paymeeIframe) return;
 
