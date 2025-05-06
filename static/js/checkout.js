@@ -36,7 +36,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify({ ...client, amount: totalAmount, cart })
       });
 
-      const data = await res.json();
+      
+let data;
+try {
+  data = await res.json();
+} catch (jsonError) {
+  console.error("❌ Erreur lors du parsing JSON de la réponse Paymee:", jsonError);
+  alert("Erreur de communication avec le serveur de paiement.");
+  return;
+}
+
 
       if (data?.data?.payment_url && data?.data?.note) {
         paymeeIframe.src = data.data.payment_url;
