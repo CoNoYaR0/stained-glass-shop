@@ -1,21 +1,75 @@
-// /.netlify/functions/paymee-status.js
-const fetch = require("node-fetch");
 
-exports.handler = async (event) => {
-  const note = event.queryStringParameters.note;
-  if (!note) {
-    return { statusCode: 400, body: "Missing note" };
+const axios = require("axios");
+
+exports.handler = async function (event) {
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: "Méthode non autorisée" })
+    };
   }
 
-  const res = await fetch(`https://app.paymee.tn/api/v1/payments/${note}`, {
-    headers: {
-      "Authorization": `Token ${process.env.PAYMEE_API_KEY}`
-    }
-  });
+  try {
+    const body = JSON.parse(event.body);
+    const { nom, prenom, email, tel, adresse, amount, cart } = body;
 
-  const data = await res.json();
-  return {
-    statusCode: 200,
-    body: JSON.stringify(data)
-  };
+    console.info("🎯 Création de paiement Paymee pour:", nom, prenom);
+
+    const PAYMEE_TOKEN = process.env.PAYMEE_TOKEN;
+    const PAYMEE_VENDOR = process.env.PAYMEE_VENDOR;
+
+    const note = `SG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const return_url = "https://stainedglass.tn/merci-cb";
+
+    const payload = {
+      vendor: PAYMEE_VENDOR,
+      amount: amount,
+      note: note,
+      first_name: nom,
+      last_name: prenom,
+      phone_number: tel,
+      email: email,
+      success_url: return_url,
+      fail_url: return_url
+    };
+
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Token ${PAYMEE_TOKEN}`
+    };
+
+    const response = await axios.post("https://app.paymee.tn/api/v2/payments/create", payload, { headers });
+
+    console.info("📦 Réponse brute Paymee :", response.data);
+
+    const paymentUrl = response.data?.data?.payment_url;
+    if (!paymentUrl) {
+      console.error("❌ Aucune URL de paiement reçue.");
+      return {
+        statusCode: 502,
+        body: JSON.stringify({ error: "Aucune URL de paiement reçue de Paymee." })
+      };
+    }
+
+    console.info("✅ Lien Paymee généré :", paymentUrl);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        data: {
+          payment_url: paymentUrl,
+          note: note
+        }
+      })
+    };
+  } catch (error) {
+    console.error("💥 Erreur Paymee :", error.response?.data || error.message);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Erreur lors de la création du paiement",
+        details: error.response?.data || error.message
+      })
+    };
+  }
 };
