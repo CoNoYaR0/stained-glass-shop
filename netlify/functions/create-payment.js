@@ -19,7 +19,7 @@ exports.handler = async function (event) {
     const PAYMEE_VENDOR = process.env.PAYMEE_VENDOR;
 
     const note = `SG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const return_url = "https://stainedglass.tn/merci";
+    const return_url = "https://stainedglass.tn/merci-cb";
 
     const payload = {
       vendor: PAYMEE_VENDOR,
@@ -38,7 +38,7 @@ exports.handler = async function (event) {
       "Authorization": `Token ${PAYMEE_TOKEN}`
     };
 
-    const response = await axios.post("https://api.paymee.tn/api/v1/payments/create", payload, { headers });
+    const response = await axios.post("https://app.paymee.tn/api/v2/payments/create", payload, { headers });
 
     console.info("✅ Lien Paymee généré :", response.data?.data?.payment_url);
 

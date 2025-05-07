@@ -7,7 +7,7 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: "Missing note" };
   }
 
-  const res = await fetch(`https://www.paymee.tn/api/v1/payments/${note}`, {
+  const res = await fetch(`https://app.paymee.tn/api/v1/payments/${note}`, {
     headers: {
       "Authorization": `Token ${process.env.PAYMEE_API_KEY}`
     }
