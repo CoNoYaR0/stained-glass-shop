@@ -1,53 +1,70 @@
 {{ define "main" }}
 <section class="py-16 bg-gray-50">
-  <div class="container max-w-2xl mx-auto px-6">
-    <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-10">{{ .Title }}</h1>
-    <form id="checkout-form" class="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+  <div class="container max-w-2xl mx-auto px-4">
+    <h1 class="text-4xl font-bold text-center text-gray-800 mb-10">{{ .Title }}</h1>
+    <form id="checkout-form" class="bg-white p-8 rounded-2xl shadow-md space-y-6">
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label for="nom" class="block text-sm font-semibold text-gray-700">Nom</label>
-          <input type="text" id="nom" required class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary focus:outline-none">
+          <input type="text" id="nom" required class="input-field">
         </div>
         <div>
           <label for="prenom" class="block text-sm font-semibold text-gray-700">Prénom</label>
-          <input type="text" id="prenom" required class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary focus:outline-none">
+          <input type="text" id="prenom" required class="input-field">
         </div>
         <div class="md:col-span-2">
           <label for="email" class="block text-sm font-semibold text-gray-700">Email</label>
-          <input type="email" id="email" required class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary focus:outline-none">
+          <input type="email" id="email" required class="input-field">
         </div>
         <div>
           <label for="tel" class="block text-sm font-semibold text-gray-700">Téléphone</label>
-          <input type="text" id="tel" required class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary focus:outline-none">
+          <input type="text" id="tel" required class="input-field">
         </div>
         <div>
           <label for="adresse" class="block text-sm font-semibold text-gray-700">Adresse</label>
-          <input type="text" id="adresse" required class="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary focus:outline-none">
+          <input type="text" id="adresse" required class="input-field">
         </div>
       </div>
 
       <div>
-        <p class="block text-sm font-semibold text-gray-700 mb-2">Méthode de paiement</p>
+        <p class="block text-sm font-semibold text-gray-700 mb-2">Mode de paiement</p>
         <div class="grid grid-cols-2 gap-4">
-          <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:shadow-md transition">
+          <label class="flex items-center justify-center border border-gray-300 rounded-xl p-4 cursor-pointer hover:shadow-md peer-checked:ring-2">
             <input type="radio" name="paiement" value="cb" checked class="hidden peer">
-            <img src="/img/payments/paymee-logo.png" alt="Paymee" class="w-20 mx-auto peer-checked:scale-110 transition">
+            <img src="/img/payments/paymee-logo.png" alt="Paymee" class="w-20 h-auto peer-checked:scale-110 transition">
           </label>
-          <label class="flex items-center p-4 border rounded-xl cursor-pointer hover:shadow-md transition">
+          <label class="flex items-center justify-center border border-gray-300 rounded-xl p-4 cursor-pointer hover:shadow-md peer-checked:ring-2">
             <input type="radio" name="paiement" value="livraison" class="hidden peer">
-            <img src="/img/payments/delivery.png" alt="Livraison" class="w-20 mx-auto peer-checked:scale-110 transition">
+            <img src="/img/payments/delivery.png" alt="Paiement à la livraison" class="w-20 h-auto peer-checked:scale-110 transition">
           </label>
         </div>
       </div>
 
-      <div class="text-center pt-4">
-        <button type="submit" class="inline-flex justify-center items-center px-6 py-3 text-white bg-primary hover:bg-primary-dark rounded-xl shadow-sm text-lg font-medium">
+      <div class="text-center">
+        <button type="submit" class="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-xl text-lg shadow-md transition">
           Confirmer la commande
         </button>
       </div>
     </form>
   </div>
 </section>
+
+<style>
+.input-field {
+  margin-top: 4px;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s;
+}
+.input-field:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+</style>
 
 <script src="/js/checkout.js"></script>
 {{ end }}
