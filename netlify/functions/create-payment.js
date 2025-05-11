@@ -1,5 +1,6 @@
-
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
@@ -17,9 +18,10 @@ exports.handler = async function (event) {
 
     const PAYMEE_TOKEN = process.env.PAYMEE_TOKEN;
     const PAYMEE_VENDOR = process.env.PAYMEE_VENDOR;
-
     const note = `SG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const return_url = "https://stainedglass.tn/merci-cb";
+
+    const return_url = "https://stainedglass.tn/merci";
+    const webhook_url = "https://stainedglass.tn/.netlify/functions/webhook";
 
     const payload = {
       vendor: PAYMEE_VENDOR,
@@ -30,7 +32,8 @@ exports.handler = async function (event) {
       phone_number: tel,
       email: email,
       success_url: return_url,
-      fail_url: return_url
+      fail_url: return_url,
+      webhook_url: webhook_url
     };
 
     const headers = {
@@ -40,7 +43,20 @@ exports.handler = async function (event) {
 
     const response = await axios.post("https://app.paymee.tn/api/v2/payments/create", payload, { headers });
 
-    console.info("✅ Lien Paymee généré :", response.data?.data?.payment_url);
+    // Enregistrer temporairement la commande pour le webhook
+    const filePath = path.join("/tmp/pending-orders", `${note}.json`);
+    fs.mkdirSync("/tmp/pending-orders", { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify({
+      customer: { nom, prenom, email, tel, adresse },
+      cart: cart.map(p => ({
+        id: p.id,
+        qty: p.quantity,
+        price_ht: p.price,
+        tva: 20
+      })),
+      totalTTC: amount,
+      paiement: "cb"
+    }));
 
     return {
       statusCode: 200,

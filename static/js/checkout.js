@@ -1,13 +1,8 @@
-
 document.addEventListener("DOMContentLoaded", async () => {
   const checkoutForm = document.getElementById("checkout-form");
-  const paymeeContainer = document.getElementById("paymee-iframe-container");
-  const paymeeIframe = document.getElementById("paymee-iframe");
-  const iframeLoader = document.getElementById("iframe-loader");
-
   const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
 
-  if (!checkoutForm || !paymeeContainer || !paymeeIframe) return;
+  if (!checkoutForm) return;
 
   checkoutForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -36,62 +31,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify({ ...client, amount: totalAmount, cart })
       });
 
-      
-let data;
-try {
-  data = await res.json();
-} catch (jsonError) {
-  console.error("❌ Erreur lors du parsing JSON de la réponse Paymee:", jsonError);
-  alert("Erreur de communication avec le serveur de paiement.");
-  return;
-}
+      const data = await res.json();
 
-
-      if (data?.data?.payment_url && data?.data?.note) {
-        paymeeIframe.src = data.data.payment_url;
-        paymeeContainer.style.display = "block";
-        if (iframeLoader) iframeLoader.style.display = "none";
-
-        const note = data.data.note;
-        const intervalId = setInterval(async () => {
-          try {
-            const statusRes = await fetch("/.netlify/functions/check-payment", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ note })
-            });
-            const status = await statusRes.json();
-
-            if (status?.status === "paid") {
-              clearInterval(intervalId);
-
-              await fetch("/.netlify/functions/create-order", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "x-secret-key": "CoNoYaRosKy@55#"
-                },
-                body: JSON.stringify({
-                  customer: client,
-                  cart: cart.map(p => ({
-                    id: p.id,
-                    qty: p.quantity,
-                    price_ht: p.price,
-                    tva: 20
-                  })),
-                  totalTTC: totalAmount,
-                  paiement: "cb"
-                })
-              });
-
-              window.location.href = "/merci-cb";
-            }
-          } catch (err) {
-            console.error("Erreur vérification paiement:", err);
-          }
-        }, 5000);
+      if (data?.data?.payment_url) {
+        window.location.href = data.data.payment_url;
       } else {
         alert("Erreur de génération lien de paiement.");
         console.error(data);

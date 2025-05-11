@@ -1,9 +1,8 @@
-// ✅ Webhook Paymee → création de commande Dolibarr
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 
-const API_BASE = process.env.URL || "https://stainedglass.tn"; // pour appel interne
+const API_BASE = process.env.URL || "https://stainedglass.tn";
 const SECRET_KEY = process.env.ORDER_SECRET;
 
 exports.handler = async function (event) {
@@ -16,23 +15,17 @@ exports.handler = async function (event) {
 
   try {
     const payload = JSON.parse(event.body);
-    console.log("📩 Webhook reçu de Paymee:", payload);
+    const token = payload.note;
+    const filePath = path.join("/tmp/pending-orders", `${token}.json`);
 
-    // Vérification basique que le paiement est bien validé
     if (!payload.status || payload.status !== "success") {
-      console.warn("❌ Paiement non confirmé, ignoré");
       return {
         statusCode: 200,
         body: JSON.stringify({ message: "Ignored non-success status" })
       };
     }
 
-    // Utilisation d'une note comme token pour retrouver la commande en cache
-    const token = payload.note;
-    const filePath = path.join("/tmp/pending-orders", `${token}.json`);
-
     if (!fs.existsSync(filePath)) {
-      console.error("❌ Commande en cache introuvable pour token:", token);
       return {
         statusCode: 404,
         body: JSON.stringify({ error: "Commande introuvable" })
@@ -41,8 +34,6 @@ exports.handler = async function (event) {
 
     const data = JSON.parse(fs.readFileSync(filePath));
 
-    console.log("🧾 Commande à rejouer:", data);
-
     const res = await axios.post(`${API_BASE}/.netlify/functions/create-order`, data, {
       headers: {
         "x-secret-key": SECRET_KEY,
@@ -50,32 +41,11 @@ exports.handler = async function (event) {
       }
     });
 
-    console.log("✅ Commande créée via webhook. Résultat:", res.data);
-
-    // 💳 Marquer la facture comme payée (après retour webhook Paymee)
-    const factureId = res.data?.facture?.id;
-    if (factureId) {
-      await axios.post(`${process.env.DOLIBARR_API}/payments`, {
-        facid: factureId,
-        datepaye: new Date().toISOString().split("T")[0],
-        amount: data.totalTTC,
-        paymenttype: 2,
-        closepaidinvoices: 1
-      }, {
-        headers: {
-          DOLAPIKEY: process.env.DOLIBARR_TOKEN,
-          "Content-Type": "application/json"
-        }
-      });
-      console.log("💰 Facture", factureId, "marquée comme payée (CB via webhook)");
-    }
-
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true, from: "webhook", result: res.data })
     };
   } catch (err) {
-    console.error("💥 Erreur traitement webhook:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Erreur serveur webhook" })
