@@ -1,7 +1,6 @@
 const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
 
-const API_BASE = process.env.URL || "https://stainedglass.tn";
 const SECRET_KEY = process.env.ORDER_SECRET;
 
 const supabase = createClient(
@@ -56,7 +55,8 @@ exports.handler = async function (event) {
 
     const data = record.data;
 
-    const res = await axios.post(`${API_BASE}/.netlify/functions/create-order`, data, {
+    // ✅ Appel en interne à la fonction create-order (pas d'URL externe)
+    const res = await axios.post(`/.netlify/functions/create-order`, data, {
       headers: {
         "x-secret-key": SECRET_KEY,
         "Content-Type": "application/json"
