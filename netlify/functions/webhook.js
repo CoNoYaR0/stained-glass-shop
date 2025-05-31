@@ -18,21 +18,21 @@ exports.handler = async function (event) {
   }
 
   try {
-    // 🧠 Décodage intelligent du payload
     const payload = event.headers["content-type"]?.includes("application/json")
       ? JSON.parse(event.body)
       : Object.fromEntries(new URLSearchParams(event.body));
 
     console.log("🛰️ Webhook reçu", payload);
-    console.log("📌 Status :", payload.status);
+    console.log("💰 payment_status reçu :", payload.payment_status);
     console.log("🧾 Note :", payload.note);
 
     const token = payload.note;
 
-    if (!payload.status || payload.status !== "success") {
+    // 🔒 Vérifie que le paiement est confirmé
+    if (!payload.payment_status || payload.payment_status !== "True") {
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: "Ignored non-success status" })
+        body: JSON.stringify({ message: "Ignored non-success payment_status" })
       };
     }
 
@@ -44,7 +44,7 @@ exports.handler = async function (event) {
       .single();
 
     if (error || !record) {
-      console.error("❌ Commande introuvable :", token);
+      console.error("❌ Commande introuvable dans Supabase :", token);
       return {
         statusCode: 404,
         body: JSON.stringify({ error: "Commande introuvable dans Supabase" })
