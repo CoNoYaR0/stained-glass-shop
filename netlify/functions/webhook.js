@@ -1,10 +1,8 @@
 const axios = require("axios");
-const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 
 const API_BASE = process.env.URL || "https://stainedglass.tn";
 const SECRET_KEY = process.env.ORDER_SECRET;
-const PAYMEE_SECRET = process.env.PAYMEE_TOKEN; // <— utilise le même token
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -24,27 +22,18 @@ exports.handler = async function (event) {
 
     console.log("🛰️ Webhook reçu", payload);
 
-    const token = payload.token;
     const note = payload.note;
     const payment_status = payload.payment_status;
-    const receivedChecksum = payload.check_sum;
 
-    console.log("🔒 Vérification checksum pour token:", token);
-
-    const computedChecksum = crypto
-      .createHash("md5")
-      .update(token + payment_status + PAYMEE_SECRET)
-      .digest("hex");
-
-    if (computedChecksum !== receivedChecksum) {
-      console.error("❌ Checksum invalide. Attendu:", computedChecksum, " Reçu:", receivedChecksum);
+    if (!note || !payment_status) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Checksum invalide" })
+        body: JSON.stringify({ error: "Paramètres manquants" })
       };
     }
 
     if (payment_status !== "True") {
+      console.warn("⏹️ Paiement non validé pour note :", note);
       return {
         statusCode: 200,
         body: JSON.stringify({ message: "Paiement non validé" })
