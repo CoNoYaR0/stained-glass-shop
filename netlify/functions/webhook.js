@@ -4,7 +4,7 @@ const { createClient } = require("@supabase/supabase-js");
 
 const API_BASE = process.env.URL || "https://stainedglass.tn";
 const SECRET_KEY = process.env.ORDER_SECRET;
-const PAYMEE_TOKEN = process.env.PAYMEE_TOKEN;
+const PAYMEE_SECRET = process.env.PAYMEE_TOKEN; // <— utilise le même token
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -33,7 +33,7 @@ exports.handler = async function (event) {
 
     const computedChecksum = crypto
       .createHash("md5")
-      .update(token + payment_status + PAYMEE_TOKEN)
+      .update(token + payment_status + PAYMEE_SECRET)
       .digest("hex");
 
     if (computedChecksum !== receivedChecksum) {
@@ -45,7 +45,6 @@ exports.handler = async function (event) {
     }
 
     if (payment_status !== "True") {
-      console.warn("⏹️ Paiement non validé");
       return {
         statusCode: 200,
         body: JSON.stringify({ message: "Paiement non validé" })
@@ -59,7 +58,7 @@ exports.handler = async function (event) {
       .single();
 
     if (error || !record) {
-      console.error("❌ Commande introuvable pour note:", note);
+      console.error("❌ Commande introuvable dans Supabase pour note:", note);
       return {
         statusCode: 404,
         body: JSON.stringify({ error: "Commande introuvable dans Supabase" })
