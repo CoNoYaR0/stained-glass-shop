@@ -1,7 +1,6 @@
-const axios = require("axios");
 const { createClient } = require("@supabase/supabase-js");
+const { handleCreateOrder } = require("./create-order");
 
-const BASE_URL = process.env.SITE_URL || "https://stainedglass.tn";
 const SECRET_KEY = process.env.ORDER_SECRET;
 
 const supabase = createClient(
@@ -19,7 +18,6 @@ exports.handler = async function (event) {
 
   try {
     const payload = Object.fromEntries(new URLSearchParams(event.body));
-
     console.log("🛰️ Webhook reçu", payload);
 
     const note = payload.note;
@@ -56,18 +54,14 @@ exports.handler = async function (event) {
 
     const data = record.data;
 
-    const res = await axios.post(`${BASE_URL}/.netlify/functions/create-order`, data, {
-      headers: {
-        "x-secret-key": SECRET_KEY,
-        "Content-Type": "application/json"
-      }
-    });
+    // ✅ Appel direct à la logique de création de commande
+    const result = await handleCreateOrder(data);
 
-    console.log("✅ Commande créée avec succès :", res.data);
+    console.log("✅ Commande créée avec succès :", result);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, result: res.data })
+      body: JSON.stringify({ success: true, result })
     };
 
   } catch (err) {
