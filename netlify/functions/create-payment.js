@@ -1,6 +1,10 @@
 const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
@@ -43,20 +47,29 @@ exports.handler = async function (event) {
 
     const response = await axios.post("https://app.paymee.tn/api/v2/payments/create", payload, { headers });
 
-    // Enregistrer temporairement la commande pour le webhook
-    const filePath = path.join("/tmp/pending-orders", `${note}.json`);
-    fs.mkdirSync("/tmp/pending-orders", { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify({
-      customer: { nom, prenom, email, tel, adresse },
-      cart: cart.map(p => ({
-        id: p.id,
-        qty: p.quantity,
-        price_ht: p.price,
-        tva: 20
-      })),
-      totalTTC: amount,
-      paiement: "cb"
-    }));
+    // 🧠 Enregistrer la commande dans Supabase
+    const { error } = await supabase.from("pending_orders").insert({
+      note: note,
+      data: {
+        customer: { nom, prenom, email, tel, adresse },
+        cart: cart.map(p => ({
+          id: p.id,
+          qty: p.quantity,
+          price_ht: p.price,
+          tva: 20
+        })),
+        totalTTC: amount,
+        paiement: "cb"
+      }
+    });
+
+    if (error) {
+      console.error("❌ Erreur insertion Supabase :", error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Erreur enregistrement commande dans Supabase" })
+      };
+    }
 
     return {
       statusCode: 200,

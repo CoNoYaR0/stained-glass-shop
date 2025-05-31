@@ -1,9 +1,13 @@
-const fs = require("fs");
-const path = require("path");
 const axios = require("axios");
+const { createClient } = require("@supabase/supabase-js");
 
 const API_BASE = process.env.URL || "https://stainedglass.tn";
 const SECRET_KEY = process.env.ORDER_SECRET;
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
@@ -16,7 +20,6 @@ exports.handler = async function (event) {
   try {
     const payload = JSON.parse(event.body);
     const token = payload.note;
-    const filePath = path.join("/tmp/pending-orders", `${token}.json`);
 
     if (!payload.status || payload.status !== "success") {
       return {
@@ -25,15 +28,23 @@ exports.handler = async function (event) {
       };
     }
 
-    if (!fs.existsSync(filePath)) {
+    // 🔍 Rechercher la commande dans Supabase
+    const { data: record, error } = await supabase
+      .from("pending_orders")
+      .select("data")
+      .eq("note", token)
+      .single();
+
+    if (error || !record) {
       return {
         statusCode: 404,
-        body: JSON.stringify({ error: "Commande introuvable" })
+        body: JSON.stringify({ error: "Commande introuvable dans Supabase" })
       };
     }
 
-    const data = JSON.parse(fs.readFileSync(filePath));
+    const data = record.data;
 
+    // ✅ Appel à la fonction de création de commande
     const res = await axios.post(`${API_BASE}/.netlify/functions/create-order`, data, {
       headers: {
         "x-secret-key": SECRET_KEY,
@@ -46,6 +57,7 @@ exports.handler = async function (event) {
       body: JSON.stringify({ success: true, from: "webhook", result: res.data })
     };
   } catch (err) {
+    console.error("💥 Erreur Webhook :", err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Erreur serveur webhook" })
