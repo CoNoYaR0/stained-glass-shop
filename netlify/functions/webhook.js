@@ -18,9 +18,15 @@ exports.handler = async function (event) {
   }
 
   try {
-    const payload = const payload = event.headers["content-type"]?.includes("application/json")
-  ? JSON.parse(event.body)
-  : Object.fromEntries(new URLSearchParams(event.body));
+    // 🧠 Décodage intelligent du payload
+    const payload = event.headers["content-type"]?.includes("application/json")
+      ? JSON.parse(event.body)
+      : Object.fromEntries(new URLSearchParams(event.body));
+
+    console.log("🛰️ Webhook reçu", payload);
+    console.log("📌 Status :", payload.status);
+    console.log("🧾 Note :", payload.note);
+
     const token = payload.note;
 
     if (!payload.status || payload.status !== "success") {
@@ -38,6 +44,7 @@ exports.handler = async function (event) {
       .single();
 
     if (error || !record) {
+      console.error("❌ Commande introuvable :", token);
       return {
         statusCode: 404,
         body: JSON.stringify({ error: "Commande introuvable dans Supabase" })
