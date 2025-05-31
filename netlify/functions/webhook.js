@@ -1,8 +1,10 @@
 const axios = require("axios");
+const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 
 const API_BASE = process.env.URL || "https://stainedglass.tn";
 const SECRET_KEY = process.env.ORDER_SECRET;
+const PAYMEE_TOKEN = process.env.PAYMEE_TOKEN;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -18,33 +20,46 @@ exports.handler = async function (event) {
   }
 
   try {
-    const payload = event.headers["content-type"]?.includes("application/json")
-      ? JSON.parse(event.body)
-      : Object.fromEntries(new URLSearchParams(event.body));
+    const payload = Object.fromEntries(new URLSearchParams(event.body));
 
     console.log("🛰️ Webhook reçu", payload);
-    console.log("💰 payment_status reçu :", payload.payment_status);
-    console.log("🧾 Note :", payload.note);
 
-    const token = payload.note;
+    const token = payload.token;
+    const note = payload.note;
+    const payment_status = payload.payment_status;
+    const receivedChecksum = payload.check_sum;
 
-    // 🔒 Vérifie que le paiement est confirmé
-    if (!payload.payment_status || payload.payment_status !== "True") {
+    console.log("🔒 Vérification checksum pour token:", token);
+
+    const computedChecksum = crypto
+      .createHash("md5")
+      .update(token + payment_status + PAYMEE_TOKEN)
+      .digest("hex");
+
+    if (computedChecksum !== receivedChecksum) {
+      console.error("❌ Checksum invalide. Attendu:", computedChecksum, " Reçu:", receivedChecksum);
       return {
-        statusCode: 200,
-        body: JSON.stringify({ message: "Ignored non-success payment_status" })
+        statusCode: 400,
+        body: JSON.stringify({ error: "Checksum invalide" })
       };
     }
 
-    // 🔍 Rechercher la commande dans Supabase
+    if (payment_status !== "True") {
+      console.warn("⏹️ Paiement non validé");
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: "Paiement non validé" })
+      };
+    }
+
     const { data: record, error } = await supabase
       .from("pending_orders")
       .select("data")
-      .eq("note", token)
+      .eq("note", note)
       .single();
 
     if (error || !record) {
-      console.error("❌ Commande introuvable dans Supabase :", token);
+      console.error("❌ Commande introuvable pour note:", note);
       return {
         statusCode: 404,
         body: JSON.stringify({ error: "Commande introuvable dans Supabase" })
@@ -53,7 +68,6 @@ exports.handler = async function (event) {
 
     const data = record.data;
 
-    // ✅ Appel à la fonction de création de commande
     const res = await axios.post(`${API_BASE}/.netlify/functions/create-order`, data, {
       headers: {
         "x-secret-key": SECRET_KEY,
@@ -61,10 +75,13 @@ exports.handler = async function (event) {
       }
     });
 
+    console.log("✅ Commande créée avec succès :", res.data);
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, from: "webhook", result: res.data })
+      body: JSON.stringify({ success: true, result: res.data })
     };
+
   } catch (err) {
     console.error("💥 Erreur Webhook :", err);
     return {
