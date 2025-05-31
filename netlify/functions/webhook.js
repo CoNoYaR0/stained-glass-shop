@@ -18,7 +18,9 @@ exports.handler = async function (event) {
   }
 
   try {
-    const payload = JSON.parse(event.body);
+    const payload = const payload = event.headers["content-type"]?.includes("application/json")
+  ? JSON.parse(event.body)
+  : Object.fromEntries(new URLSearchParams(event.body));
     const token = payload.note;
 
     if (!payload.status || payload.status !== "success") {
