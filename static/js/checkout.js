@@ -1,6 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("checkout-form");
   const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
+  const btn = document.querySelector("#checkout-form button[type='submit']");
+
+  // 🎨 Style le bouton pour matcher le thème (orange + flat)
+  if (btn) {
+    btn.style.backgroundColor = "#f7931e";
+    btn.style.border = "none";
+    btn.style.color = "white";
+    btn.style.fontWeight = "bold";
+    btn.style.fontSize = "1.1rem";
+    btn.style.padding = "12px 24px";
+    btn.style.borderRadius = "2rem";
+    btn.style.cursor = "pointer";
+    btn.style.width = "100%";
+  }
+
+  // Gère le mode de paiement visible
+  const paiementRadios = document.querySelectorAll('input[name="paiement"]');
+  paiementRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      const selected = document.querySelector('input[name="paiement"]:checked')?.value;
+      const iframeWrapper = document.getElementById("cb-wrapper");
+      if (selected === "cb") {
+        iframeWrapper?.classList.remove("hidden");
+      } else {
+        iframeWrapper?.classList.add("hidden");
+      }
+    });
+  });
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -36,7 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const data = await res.json();
         if (data?.data?.payment_url) {
-          window.location.href = data.data.payment_url;
+          const token = new URL(data.data.payment_url).searchParams.get("payment_token");
+          window.location.href = `/paiement?token=${token}`;
         } else {
           alert("Erreur de création du paiement.");
           console.error(data);
@@ -50,8 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const res = await fetch("/.netlify/functions/create-order", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            "x-secret-key": "CoNoYaRosKy@55#"
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({
             customer: client,
