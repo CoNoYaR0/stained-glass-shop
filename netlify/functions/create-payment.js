@@ -27,19 +27,21 @@ exports.handler = async function (event) {
 
     const return_url = "https://stainedglass.tn/merci";
     const webhook_url = "https://stainedglass.tn/.netlify/functions/webhook";
-
+    
     const payload = {
-      vendor: PAYMEE_VENDOR,
-      amount: amount,
-      note: note,
-      first_name: nom,
-      last_name: prenom,
-      phone_number: tel,
-      email: email,
-      success_url: return_url,
-      fail_url: return_url,
-      webhook_url: webhook_url
-    };
+  vendor: PAYMEE_VENDOR,
+  amount: amount,
+  note: note,
+  first_name: nom,
+  last_name: prenom,
+  phone_number: tel,
+  email: email,
+  success_url: return_url,
+  fail_url: return_url,
+  webhook_url: webhook_url,
+  redirect_url: return_url  // 🛠️ clé manquante pour forcer la redirection
+};
+
 
     const headers = {
       "Content-Type": "application/json",
@@ -47,7 +49,7 @@ exports.handler = async function (event) {
     };
 
     const response = await axios.post(
-      "https://app.paymee.tn/api/v1/payments/create",
+      "https://app.paymee.tn/api/v2/payments/create",
       payload,
       { headers }
     );
