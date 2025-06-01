@@ -92,10 +92,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const iframe = document.getElementById("paymee-iframe");
         const wrapper = document.getElementById("cb-wrapper");
         if (iframe && wrapper) {
-          iframe.src = `https://app.paymee.tn/gateway/loader?payment_token=${token}`;
+          iframe.src = `https://app.paymee.tn/api/v2/payments/create`;
           wrapper.classList.remove("hidden");
         } else {
-          window.open(`https://app.paymee.tn/gateway/loader?payment_token=${token}`, '_blank');
+          window.open(`https://app.paymee.tn/api/v2/payments/create`, '_blank');
         }
 
       } catch (err) {
