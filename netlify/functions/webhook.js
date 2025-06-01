@@ -60,9 +60,9 @@ exports.handler = async function (event) {
     console.log("✅ Commande créée avec succès :", result);
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true, result })
-    };
+  statusCode: 200,
+  body: "OK"
+};
 
   } catch (err) {
     console.error("💥 Erreur Webhook :", err);
