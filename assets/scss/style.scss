@@ -1450,3 +1450,8 @@ button.add-to-cart:hover {
     flex: 1 1 auto;
   }
 }
+input[type="radio"].peer:checked + img {
+  transform: scale(1.1);
+  border: 2px solid #f7931e;
+  border-radius: 0.75rem;
+}
