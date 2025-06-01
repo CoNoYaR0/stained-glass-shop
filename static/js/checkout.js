@@ -16,6 +16,17 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.style.width = "100%";
   }
 
+  // Ajoute dynamiquement les options de paiement si elles n'existent pas
+  const paiementWrapper = document.getElementById("paiement-options");
+  if (paiementWrapper && paiementWrapper.children.length === 0) {
+    paiementWrapper.innerHTML = `
+      <div>
+        <label><input type="radio" name="paiement" value="cb" checked> Paiement par carte</label><br>
+        <label><input type="radio" name="paiement" value="livraison"> Paiement à la livraison</label>
+      </div>
+    `;
+  }
+
   // Gère le mode de paiement visible
   const paiementRadios = document.querySelectorAll('input[name="paiement"]');
   paiementRadios.forEach(radio => {
@@ -63,13 +74,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const data = await res.json();
-        if (data?.data?.payment_url) {
-          const token = new URL(data.data.payment_url).searchParams.get("payment_token");
-          window.location.href = `/paiement?token=${token}`;
-        } else {
-          alert("Erreur de création du paiement.");
-          console.error(data);
+
+        if (!data?.data?.payment_url) {
+          alert("Erreur : aucune URL de paiement reçue.");
+          return;
         }
+
+        const token = new URL(data.data.payment_url).searchParams.get("payment_token");
+        if (!token) {
+          alert("Erreur : token introuvable.");
+          return;
+        }
+
+        window.location.href = `/paiement?token=${token}`;
       } catch (err) {
         alert("Erreur de connexion avec Paymee.");
         console.error(err);
