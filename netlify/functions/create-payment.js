@@ -18,9 +18,15 @@ exports.handler = async function (event) {
     const body = JSON.parse(event.body);
     const { nom, prenom, email, tel, adresse, amount, cart } = body;
 
+    console.info("🎯 Création de paiement Paymee pour:", nom, prenom);
+
     const PAYMEE_TOKEN = process.env.PAYMEE_TOKEN;
     const PAYMEE_VENDOR = process.env.PAYMEE_VENDOR;
+
     const note = `SG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const return_url = "https://stainedglass.tn/merci";
+    const webhook_url = "https://stainedglass.tn/.netlify/functions/webhook";
 
     const payload = {
       vendor: PAYMEE_VENDOR,
@@ -30,9 +36,9 @@ exports.handler = async function (event) {
       last_name: prenom,
       phone_number: tel,
       email: email,
-      webhook_url: "https://stainedglass.tn/.netlify/functions/webhook",
-      success_url: "https://stainedglass.tn/merci",
-      fail_url: "https://stainedglass.tn/merci"
+      success_url: return_url,
+      fail_url: return_url,
+      webhook_url: webhook_url
     };
 
     const headers = {
@@ -46,12 +52,12 @@ exports.handler = async function (event) {
       { headers }
     );
 
-    // Sauvegarde dans Supabase
+    // Enregistrement dans Supabase
     const { error } = await supabase.from("pending_orders").insert({
       note: note,
       data: {
         customer: { nom, prenom, email, tel, adresse },
-        cart: cart.map(p => ({
+        cart: cart.map((p) => ({
           id: p.id,
           qty: p.quantity,
           price_ht: p.price,
@@ -66,27 +72,19 @@ exports.handler = async function (event) {
       console.error("❌ Erreur insertion Supabase :", error);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Erreur enregistrement commande dans Supabase" })
+        body: JSON.stringify({ error: "Erreur Supabase" })
       };
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        data: {
-          payment_url: response.data?.data?.payment_url,
-          note: note
-        }
-      })
+      body: JSON.stringify(response.data)
     };
-  } catch (error) {
-    console.error("💥 Erreur Paymee :", error.response?.data || error.message);
+  } catch (err) {
+    console.error("💥 Erreur create-payment:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: "Erreur lors de la création du paiement",
-        details: error.response?.data || error.message
-      })
+      body: JSON.stringify({ error: "Erreur interne" })
     };
   }
 };
