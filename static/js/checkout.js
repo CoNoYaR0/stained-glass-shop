@@ -76,27 +76,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const data = await res.json();
-        console.log("💬 Réponse Paymee:", data);
+        console.log("🚨 Réponse brute Paymee:", data);
 
-        const url = data?.data?.payment_url;
-        console.log("🌐 URL de paiement:", url);
-
-        const token = url ? new URL(url).searchParams.get("payment_token") : null;
-        console.log("🧩 Token extrait:", token);
-
-        if (!url || !token) {
-          alert("Erreur : lien ou token Paymee manquant.");
+        const token = data?.data?.token;
+        if (!token) {
+          alert("Erreur : token introuvable.");
           return;
         }
 
-        const iframe = document.getElementById("paymee-iframe");
-        const wrapper = document.getElementById("cb-wrapper");
-        if (iframe && wrapper) {
-          iframe.src = `https://app.paymee.tn/api/v2/payments/create`;
-          wrapper.classList.remove("hidden");
-        } else {
-          window.open(`https://app.paymee.tn/api/v2/payments/create`, '_blank');
-        }
+        // Ouvre la page de paiement dans un nouvel onglet
+        window.open(`https://app.paymee.tn/gateway/loader?payment_token=${token}`, "_blank");
+
+        // Optionnel : écoute le message de fin de paiement (non applicable ici sans iframe)
 
       } catch (err) {
         alert("Erreur de connexion avec Paymee.");
@@ -143,4 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
+
+  // Force déclenchement au chargement
+  document.querySelector('input[name="paiement"]:checked')?.dispatchEvent(new Event("change"));
 });
