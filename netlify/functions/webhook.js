@@ -54,15 +54,17 @@ exports.handler = async function (event) {
 
     const data = record.data;
 
-    // ✅ Appel direct à la logique de création de commande
     const result = await handleCreateOrder(data);
 
     console.log("✅ Commande créée avec succès :", result);
 
     return {
-  statusCode: 200,
-  body: "OK"
-};
+      statusCode: 200,
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ status: "success" })
+    };
 
   } catch (err) {
     console.error("💥 Erreur Webhook :", err);
