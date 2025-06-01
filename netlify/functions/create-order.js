@@ -72,17 +72,34 @@ async function handleCreateOrder(body) {
   const invoiceRes = await axios.post(`${dolibarrAPI}/invoices`, invoice, { headers });
   const invoiceId = invoiceRes.data;
 
-  // ✅ Valider facture
+  // ✅ Valider la facture
   await axios.post(`${dolibarrAPI}/invoices/${invoiceId}/validate`, {}, { headers });
 
+  // ❌ Pas de set_paid automatique
   if (paiement.toLowerCase() === "cb") {
-    await axios.post(`${dolibarrAPI}/invoices/${invoiceId}/set_paid`, {}, { headers });
+    console.info("📌 Paiement CB → notification manuelle uniquement");
   }
+
+  // 📣 Notification Discord enrichie
+  const webhookUrl = paiement.toLowerCase() === "cb"
+    ? "https://discord.com/api/webhooks/1378708363784753182/uuslOYq8kSHPdhSS60M_j3Y6LFWrfLOfICNGC_3eV1I9xG0t9eSN43OlY7AdDr_Jq1P6"
+    : "https://discord.com/api/webhooks/1378711499035644066/3oGD57D7mDBt_MW2h6x18WJbcr_LKyX4xlCOgW2yQpkmWDk57DwesOAC8cZ17uFnWogt";
+
+  const message = {
+    content: `📦 Nouvelle commande **${paiement.toUpperCase()}**
+👤 ${customer.prenom} ${customer.nom}
+📧 ${customer.email}
+📱 ${customer.tel}
+💰 Montant : ${totalTTC} DT
+🧾 Facture ID : ${invoiceId}`
+  };
+
+  await axios.post(webhookUrl, message);
+  console.info("📣 Notification Discord envoyée");
 
   return { success: true, invoiceId };
 }
 
-// 🔁 Si appelé en tant que fonction HTTP
 exports.handler = async function (event) {
   try {
     const body = JSON.parse(event.body);
@@ -92,6 +109,7 @@ exports.handler = async function (event) {
       body: JSON.stringify(result)
     };
   } catch (error) {
+    console.error("❌ Erreur création commande:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ success: false, error: error.message })
@@ -99,5 +117,4 @@ exports.handler = async function (event) {
   }
 };
 
-// ✅ Export logique métier réutilisable
 module.exports = { handleCreateOrder };
