@@ -1,93 +1,73 @@
+require("dotenv").config();
 const axios = require("axios");
-const { createClient } = require("@supabase/supabase-js");
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const { v4: uuidv4 } = require("uuid");
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: "Méthode non autorisée" })
+      body: JSON.stringify({ message: "Méthode non autorisée" })
     };
   }
 
   try {
-    const body = JSON.parse(event.body);
-    const { nom, prenom, email, tel, adresse, amount, cart } = body;
+    const data = JSON.parse(event.body);
+    const { cart, customer, paiement, totalTTC } = data;
 
-    console.info("🎯 Création de paiement Paymee pour:", nom, prenom);
-
-    const PAYMEE_TOKEN = process.env.PAYMEE_TOKEN;
-    const PAYMEE_VENDOR = process.env.PAYMEE_VENDOR;
+    const domain = process.env.DOMAIN || "https://stainedglass.tn";
     const note = `SG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    const return_url = "https://stainedglass.tn/merci";
-    const webhook_url = "https://stainedglass.tn/.netlify/functions/webhook";
+    // 🔐 Sauvegarde Supabase côté back
+    const { createClient } = require("@supabase/supabase-js");
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    );
 
-    const payload = {
-      vendor: PAYMEE_VENDOR,
-      amount: amount,
-      note: note,
-      first_name: nom,
-      last_name: prenom,
-      phone_number: tel,
-      email: email,
-      success_url: return_url,
-      fail_url: return_url,
-      webhook_url: webhook_url
-    };
-
-    const headers = {
-      "Content-Type": "application/json",
-      "Authorization": `Token ${PAYMEE_TOKEN}`
-    };
-
-    const response = await axios.post("https://app.paymee.tn/api/v2/payments/create", payload, { headers });
-
-    // 🧠 Enregistrer la commande dans Supabase
-    const { error } = await supabase.from("pending_orders").insert({
-      note: note,
-      data: {
-        customer: { nom, prenom, email, tel, adresse },
-        cart: cart.map(p => ({
-          id: p.id,
-          qty: p.quantity,
-          price_ht: p.price,
-          tva: 20
-        })),
-        totalTTC: amount,
-        paiement: "cb"
-      }
-    });
+    const { error } = await supabase.from("pending_orders").insert([
+      { note, data }
+    ]);
 
     if (error) {
-      console.error("❌ Erreur insertion Supabase :", error);
+      console.error("❌ Erreur Supabase :", error);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Erreur enregistrement commande dans Supabase" })
+        body: JSON.stringify({ error: "Erreur enregistrement commande" })
       };
     }
 
+    const payload = {
+      vendor: process.env.PAYMEE_VENDOR,
+      amount: totalTTC,
+      note,
+      webhook_url: `${domain}/.netlify/functions/webhook`,
+      success_url: `${domain}/merci`,
+      fail_url: `${domain}/merci`,
+      mode: process.env.PAYMEE_MODE || "DYNAMIC"
+    };
+
+    const response = await axios.post(
+      "https://app.paymee.tn/api/v1/payments/create",
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Token ${process.env.PAYMEE_TOKEN}`
+        }
+      }
+    );
+
+    const { payment_url } = response.data.data;
+
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        data: {
-          payment_url: response.data?.data?.payment_url,
-          note: note
-        }
-      })
+      body: JSON.stringify({ url: payment_url })
     };
-  } catch (error) {
-    console.error("💥 Erreur Paymee :", error.response?.data || error.message);
+  } catch (err) {
+    console.error("💥 Erreur create-payment:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: "Erreur lors de la création du paiement",
-        details: error.response?.data || error.message
-      })
+      body: JSON.stringify({ error: "Erreur serveur" })
     };
   }
 };
