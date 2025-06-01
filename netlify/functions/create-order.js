@@ -116,5 +116,3 @@ exports.handler = async function (event) {
     };
   }
 };
-
-module.exports = { handleCreateOrder };
