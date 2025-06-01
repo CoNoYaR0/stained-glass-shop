@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
   const btn = document.querySelector("#checkout-form button[type='submit']");
 
-  // 🎨 Style le bouton pour matcher le thème (orange + flat)
   if (btn) {
     btn.style.backgroundColor = "#f7931e";
     btn.style.border = "none";
@@ -16,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.style.width = "100%";
   }
 
-  // Ajoute dynamiquement les options de paiement si elles n'existent pas
   const paiementWrapper = document.getElementById("paiement-options");
   if (paiementWrapper && paiementWrapper.children.length === 0) {
     paiementWrapper.innerHTML = `
@@ -27,13 +25,11 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
-  // Affiche iframe si CB est pré-coché
   const current = document.querySelector('input[name="paiement"]:checked')?.value;
   if (current === "cb") {
     document.getElementById("cb-wrapper")?.classList.remove("hidden");
   }
 
-  // Gère le mode de paiement visible
   const paiementRadios = document.querySelectorAll('input[name="paiement"]');
   paiementRadios.forEach(radio => {
     radio.addEventListener("change", () => {
@@ -80,26 +76,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const data = await res.json();
+        console.log("💬 Réponse Paymee:", data);
 
-        if (!data?.data?.payment_url) {
-          alert("Erreur : aucune URL de paiement reçue.");
+        const url = data?.data?.payment_url;
+        console.log("🌐 URL de paiement:", url);
+
+        const token = url ? new URL(url).searchParams.get("payment_token") : null;
+        console.log("🧩 Token extrait:", token);
+
+        if (!url || !token) {
+          alert("Erreur : lien ou token Paymee manquant.");
           return;
         }
 
-        const token = new URL(data.data.payment_url).searchParams.get("payment_token");
-        if (!token) {
-          alert("Erreur : token introuvable.");
-          return;
+        const iframe = document.getElementById("paymee-iframe");
+        const wrapper = document.getElementById("cb-wrapper");
+        if (iframe && wrapper) {
+          iframe.src = `https://app.paymee.tn/gateway/loader?payment_token=${token}`;
+          wrapper.classList.remove("hidden");
+        } else {
+          window.open(`https://app.paymee.tn/gateway/loader?payment_token=${token}`, '_blank');
         }
-
-        // 🔁 Affiche le paiement en iframe directement
-        document.getElementById("cb-wrapper")?.classList.remove("hidden");
-        document.getElementById("paymee-iframe").src = `https://app.paymee.tn/gateway/loader?payment_token=${token}`;
 
       } catch (err) {
         alert("Erreur de connexion avec Paymee.");
         console.error(err);
       }
+
     } else {
       try {
         const res = await fetch("/.netlify/functions/create-order", {
