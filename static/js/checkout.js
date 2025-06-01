@@ -27,6 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
+  // Affiche iframe si CB est pré-coché
+  const current = document.querySelector('input[name="paiement"]:checked')?.value;
+  if (current === "cb") {
+    document.getElementById("cb-wrapper")?.classList.remove("hidden");
+  }
+
   // Gère le mode de paiement visible
   const paiementRadios = document.querySelectorAll('input[name="paiement"]');
   paiementRadios.forEach(radio => {
@@ -86,7 +92,10 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        window.location.href = `/paiement?token=${token}`;
+        // 🔁 Affiche le paiement en iframe directement
+        document.getElementById("cb-wrapper")?.classList.remove("hidden");
+        document.getElementById("paymee-iframe").src = `https://app.paymee.tn/gateway/loader?payment_token=${token}`;
+
       } catch (err) {
         alert("Erreur de connexion avec Paymee.");
         console.error(err);
@@ -111,13 +120,20 @@ document.addEventListener("DOMContentLoaded", () => {
           })
         });
 
-        const result = await res.json();
-        if (result.success) {
-          window.location.href = "/merci-livraison";
-        } else {
-          alert("Erreur lors de la commande.");
-          console.error(result);
+        const text = await res.text();
+        try {
+          const result = JSON.parse(text);
+          if (result.success) {
+            window.location.href = "/merci-livraison";
+          } else {
+            alert("Erreur lors de la commande.");
+            console.error(result);
+          }
+        } catch (err) {
+          alert("Erreur serveur : réponse invalide.");
+          console.error("Réponse brute create-order:", text);
         }
+
       } catch (err) {
         alert("Erreur serveur.");
         console.error(err);
