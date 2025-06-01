@@ -23,18 +23,11 @@ exports.handler = async function (event) {
     const note = payload.note;
     const payment_status = payload.payment_status;
 
-    if (!note || !payment_status) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Paramètres manquants" })
-      };
-    }
-
-    if (payment_status !== "True") {
-      console.warn("⏹️ Paiement non validé pour note :", note);
+    if (!note || payment_status !== "True") {
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: "Paiement non validé" })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "ignored" })
       };
     }
 
@@ -48,21 +41,19 @@ exports.handler = async function (event) {
       console.error("❌ Commande introuvable dans Supabase pour note:", note);
       return {
         statusCode: 404,
-        body: JSON.stringify({ error: "Commande introuvable dans Supabase" })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "not_found" })
       };
     }
 
     const data = record.data;
 
-    const result = await handleCreateOrder(data);
-
-    console.log("✅ Commande créée avec succès :", result);
+    await handleCreateOrder(data);
+    console.log("✅ Commande traitée");
 
     return {
       statusCode: 200,
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "success" })
     };
 
@@ -70,7 +61,8 @@ exports.handler = async function (event) {
     console.error("💥 Erreur Webhook :", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Erreur serveur webhook" })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "server_error" })
     };
   }
 };
