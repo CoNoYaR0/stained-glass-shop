@@ -14,10 +14,11 @@ exports.handler = async function (event) {
     const data = JSON.parse(event.body);
     const { cart, customer, paiement, totalTTC } = data;
 
+    // Génération de la note unique
     const note = `SG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const domain = process.env.DOMAIN || "https://stainedglass.tn";
 
-    // Enregistrement temporaire Supabase
+    // Enregistrement temporaire dans Supabase
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY
@@ -32,18 +33,19 @@ exports.handler = async function (event) {
       };
     }
 
-    // Préparation payload Paymee
+    // Construction du payload Paymee
     const payload = {
       vendor: process.env.PAYMEE_VENDOR,
       amount: totalTTC,
+      currency: "TND",
       note,
       webhook_url: `${domain}/.netlify/functions/webhook`,
       success_url: `${domain}/merci`,
       fail_url: `${domain}/merci`,
-      mode: process.env.PAYMEE_MODE || "DYNAMIC"
+      mode: process.env.PAYMEE_MODE || "live"
     };
 
-    const paymeeResponse = await axios.post(
+    const response = await axios.post(
       "https://app.paymee.tn/api/v1/payments/create",
       payload,
       {
@@ -54,7 +56,7 @@ exports.handler = async function (event) {
       }
     );
 
-    const { payment_url } = paymeeResponse.data.data;
+    const { payment_url } = response.data.data;
 
     return {
       statusCode: 200,
