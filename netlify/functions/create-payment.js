@@ -47,7 +47,7 @@ exports.handler = async function (event) {
     };
 
     const response = await axios.post(
-      "https://app.paymee.tn/api/v2/payments/create",
+      "https://app.paymee.tn/api/v1/payments/create",
       payload,
       { headers }
     );
