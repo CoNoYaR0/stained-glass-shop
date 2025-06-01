@@ -1,8 +1,10 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("checkout-form");
   const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
   const btn = document.querySelector("#checkout-form button[type='submit']");
+  const cbWrapper = document.getElementById("cb-wrapper");
 
+  // 🎨 Bouton stylisé
   if (btn) {
     btn.style.backgroundColor = "#f7931e";
     btn.style.border = "none";
@@ -15,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.style.width = "100%";
   }
 
+  // Ajoute les options de paiement si manquantes
   const paiementWrapper = document.getElementById("paiement-options");
   if (paiementWrapper && paiementWrapper.children.length === 0) {
     paiementWrapper.innerHTML = `
@@ -25,24 +28,67 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
-  const current = document.querySelector('input[name="paiement"]:checked')?.value;
-  if (current === "cb") {
-    document.getElementById("cb-wrapper")?.classList.remove("hidden");
-  }
-
-  const paiementRadios = document.querySelectorAll('input[name="paiement"]');
-  paiementRadios.forEach(radio => {
-    radio.addEventListener("change", () => {
-      const selected = document.querySelector('input[name="paiement"]:checked')?.value;
-      const iframeWrapper = document.getElementById("cb-wrapper");
-      if (selected === "cb") {
-        iframeWrapper?.classList.remove("hidden");
+  // Écoute les changements d’option de paiement
+  document.querySelectorAll('input[name="paiement"]').forEach(radio => {
+    radio.addEventListener("change", (e) => {
+      const value = e.target.value;
+      if (value === "cb") {
+        cbWrapper.classList.remove("hidden");
+        injectIframe();
       } else {
-        iframeWrapper?.classList.add("hidden");
+        cbWrapper.classList.add("hidden");
+        cbWrapper.innerHTML = "";
       }
     });
   });
 
+  // Fonction pour injecter l'iframe si paiement CB sélectionné
+  async function injectIframe() {
+    const paiementSelected = document.querySelector("input[name='paiement']:checked")?.value;
+    if (paiementSelected !== "cb") return;
+
+    const client = {
+      nom: document.getElementById("nom").value,
+      prenom: document.getElementById("prenom").value,
+      tel: document.getElementById("tel").value,
+      email: document.getElementById("email").value,
+      adresse: document.getElementById("adresse").value
+    };
+
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
+
+    try {
+      const res = await fetch("/.netlify/functions/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...client, amount: totalAmount, cart })
+      });
+
+      const data = await res.json();
+      const token = new URL(data?.data?.payment_url || "").searchParams.get("payment_token");
+      if (!token) {
+        console.error("❌ Token introuvable dans la réponse Paymee.");
+        return;
+      }
+
+      const iframe = document.createElement("iframe");
+      iframe.src = `https://app.paymee.tn/gateway/loader?payment_token=${token}`;
+      iframe.width = "100%";
+      iframe.height = "600";
+      iframe.frameBorder = "0";
+      iframe.allow = "payment";
+      iframe.style.borderRadius = "12px";
+
+      cbWrapper.innerHTML = "";
+      cbWrapper.appendChild(iframe);
+
+      console.log("✅ Iframe Paymee chargée avec succès");
+    } catch (err) {
+      console.error("💥 Erreur lors de la création du paiement :", err);
+    }
+  }
+
+  // Form submission
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -67,40 +113,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
 
-    if (paiement === "cb") {
-      try {
-        const res = await fetch("/.netlify/functions/create-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...client, amount: totalAmount, cart })
-        });
-
-        const data = await res.json();
-        console.log("🚨 Réponse brute Paymee:", data);
-
-        const token = data?.data?.token;
-        if (!token) {
-          alert("Erreur : token introuvable.");
-          return;
-        }
-
-        // Ouvre la page de paiement dans un nouvel onglet
-        window.open(`https://app.paymee.tn/gateway/loader?payment_token=${token}`, "_blank");
-
-        // Optionnel : écoute le message de fin de paiement (non applicable ici sans iframe)
-
-      } catch (err) {
-        alert("Erreur de connexion avec Paymee.");
-        console.error(err);
-      }
-
-    } else {
+    if (paiement === "livraison") {
       try {
         const res = await fetch("/.netlify/functions/create-order", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             customer: client,
             cart: cart.map(p => ({
@@ -114,20 +131,13 @@ document.addEventListener("DOMContentLoaded", () => {
           })
         });
 
-        const text = await res.text();
-        try {
-          const result = JSON.parse(text);
-          if (result.success) {
-            window.location.href = "/merci-livraison";
-          } else {
-            alert("Erreur lors de la commande.");
-            console.error(result);
-          }
-        } catch (err) {
-          alert("Erreur serveur : réponse invalide.");
-          console.error("Réponse brute create-order:", text);
+        const result = await res.json();
+        if (result.success) {
+          window.location.href = "/merci-livraison";
+        } else {
+          alert("Erreur lors de la commande.");
+          console.error(result);
         }
-
       } catch (err) {
         alert("Erreur serveur.");
         console.error(err);
@@ -135,6 +145,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Force déclenchement au chargement
-  document.querySelector('input[name="paiement"]:checked')?.dispatchEvent(new Event("change"));
+  // Injecter l'iframe dès le chargement si CB par défaut
+  const defaultPaiement = document.querySelector('input[name="paiement"]:checked')?.value;
+  if (defaultPaiement === "cb") {
+    cbWrapper.classList.remove("hidden");
+    injectIframe();
+  }
 });
