@@ -1,24 +1,35 @@
-
 +++
-title = "Merci pour votre commande"
+title = "Merci pour votre paiement"
 url = "/merci/"
+layout = "default"
 +++
 
-<h1>Merci ! 🎉</h1>
-<p>Votre commande a bien été reçue. Nous la traitons avec soin.</p>
-<p>Un email de confirmation vous sera envoyé sous peu afin de :</p>
-<ul>
-  <li>Confirmer les détails de votre commande</li>
-  <li>Fixer une date de livraison</li>
-  <li>Valider votre bon de livraison</li>
-</ul>
+<aside class="text-center my-4">
+  <!-- Suggestion d'image : un visuel de remerciement festif, en accord avec votre charte graphique -->
+  <img src="/images/thank-you.svg" alt="Merci pour votre paiement" class="img-fluid" style="max-width: 250px;">
+</aside>
 
-<p>Nous restons à votre disposition pour toute question complémentaire.</p>
+# Merci pour votre paiement ! 🎉
 
- <!-- 🔁 Auto-redirect fallback au cas où Paymee bloque -->
+Votre règlement a bien été pris en compte. Nous préparons votre commande dans les meilleurs délais.
+
+Un e-mail de confirmation comprenant :  
+- Les détails exacts de votre commande  
+- Votre facture au format PDF  
+- Les informations relatives à la livraison  
+
+vous sera envoyé d’ici quelques instants. Si vous ne recevez rien sous 10 minutes, vérifiez vos spams ou contactez-nous :
+
+- **Email** : support@stainedglass.tn  
+- **Téléphone** : +216 XX XXX XXX
+
+Nous restons à votre disposition pour toute question complémentaire.  
+Encore merci pour votre confiance !
+
+<!-- 🔁 Auto-redirect fallback au cas où Paymee bloquerait l’envoi du message postMessage -->
 <script>
   setTimeout(() => {
     if (!document.referrer.includes("paymee")) return;
-    window.location.href = "/merci";
+    window.location.replace("/merci/");
   }, 3000);
 </script>
