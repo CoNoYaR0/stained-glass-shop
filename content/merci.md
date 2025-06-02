@@ -1,6 +1,7 @@
 ---
-url = "/merci/"
-layout = "default"
+title: "Merci pour votre paiement"
+url: "/merci/"
+layout: "default"
 ---
 
 <aside class="text-center my-4">
