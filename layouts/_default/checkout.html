@@ -1,1 +1,25 @@
-<!-- Remplacer ici par ta version actuelle sans la section iframe -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checkout</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <form id="checkout-form">
+    <input type="text" id="nom" name="nom" placeholder="Nom" required />
+    <input type="text" id="prenom" name="prenom" placeholder="Prénom" required />
+    <input type="email" id="email" name="email" placeholder="Email" required />
+    <input type="text" id="tel" name="tel" placeholder="Téléphone" required />
+    <input type="text" id="adresse" name="adresse" placeholder="Adresse" required />
+
+    <div id="paiement-options"></div>
+
+    <div id="cb-wrapper" class="hidden"></div>
+
+    <button type="submit">Valider la commande</button>
+  </form>
+  <script src="/js/checkout.js"></script>
+</body>
+</html>
