@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("checkout-form");
+  // On lit le panier dès le début
   const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
   const btn = document.querySelector("#checkout-form button[type='submit']");
   const cbWrapper = document.getElementById("cb-wrapper");
@@ -47,7 +48,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // –– Vérifier qu’on est bien sur l’événement paymee.complete ––
     if (event.data && event.data.event_id === "paymee.complete") {
-      // Redirection vers la page de remerciement hor /merci
+      // ─── ACTION : vider le panier avant redirection ───
+      localStorage.removeItem("customCart");
+
+      // Redirection vers la page de remerciement /merci
       window.location.replace("/merci");
     }
   }, false);
@@ -115,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       console.log("✅ Iframe Paymee chargée");
       // → Note : En mode Without Redirection, l’iframe enverra un postMessage !
-      //   On n’a plus besoin de listener 'load' ici.
+      //   C’est l’écouteur “window.addEventListener('message',…)” qui s’en chargera.
     } catch (err) {
       console.error("💥 Erreur lors de la création du paiement :", err);
     }
@@ -145,6 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
       adresse: document.getElementById("adresse").value
     };
 
+    // Calcul du montant total
     const totalAmount = cart
       .reduce((sum, item) => sum + (item.price * item.quantity), 0)
       .toFixed(2);
@@ -169,6 +174,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const result = await res.json();
         if (result.success) {
+          // ─── ACTION : vider le panier avant redirection ───
+          localStorage.removeItem("customCart");
+
+          // Redirection vers la page de remerciement /merci-livraison
           window.location.href = "/merci-livraison";
         } else {
           alert("Erreur lors de la commande.");
