@@ -1,8 +1,7 @@
-+++
-title = "Merci pour votre paiement"
+---
 url = "/merci/"
 layout = "default"
-+++
+---
 
 <aside class="text-center my-4">
   <!-- Suggestion d'image : un visuel de remerciement festif, en accord avec votre charte graphique -->

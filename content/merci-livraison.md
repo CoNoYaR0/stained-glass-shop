@@ -1,5 +1,4 @@
 ---
-title: "Merci pour votre commande"
 url: "/merci-livraison"
 layout: "default"
 ---
