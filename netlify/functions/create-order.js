@@ -116,3 +116,6 @@ exports.handler = async function (event) {
     };
   }
 };
+
+// ✅ Export requis pour le webhook
+exports.handleCreateOrder = handleCreateOrder;
