@@ -1,25 +1,64 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Checkout</title>
   <link rel="stylesheet" href="/scss/style.min.css" />
+  <script defer src="/js/checkout.js"></script>
 </head>
+
 <body>
-  <form id="checkout-form">
-    <input type="text" id="nom" name="nom" placeholder="Nom" required />
-    <input type="text" id="prenom" name="prenom" placeholder="Prénom" required />
-    <input type="email" id="email" name="email" placeholder="Email" required />
-    <input type="text" id="tel" name="tel" placeholder="Téléphone" required />
-    <input type="text" id="adresse" name="adresse" placeholder="Adresse" required />
+  {% include "header.html" %}
 
-    <div id="paiement-options"></div>
+  <main class="max-w-4xl mx-auto p-4 space-y-6">
+    <h1 class="text-2xl font-bold text-center">Finaliser ma commande</h1>
+    <form id="checkout-form" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="nom">Nom</label>
+          <input id="nom" name="nom" type="text" class="w-full" required />
+        </div>
+        <div>
+          <label for="prenom">Prénom</label>
+          <input id="prenom" name="prenom" type="text" class="w-full" required />
+        </div>
+      </div>
 
-    <div id="cb-wrapper" class="hidden"></div>
+      <div class="space-y-4">
+        <div>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" class="w-full" required />
+        </div>
+        <div>
+          <label for="tel">Téléphone</label>
+          <input id="tel" name="tel" type="tel" class="w-full" required />
+        </div>
+        <div>
+          <label for="adresse">Adresse</label>
+          <input id="adresse" name="adresse" type="text" class="w-full" required />
+        </div>
+      </div>
 
-    <button type="submit">Valider la commande</button>
-  </form>
-  <script src="/js/checkout.js"></script>
+      <div id="paiement-options" class="space-y-2">
+        <label class="block">
+          <input type="radio" name="paiement" value="cb" /> Paiement par carte
+        </label>
+        <label class="block">
+          <input type="radio" name="paiement" value="livraison" /> Paiement à la livraison
+        </label>
+      </div>
+
+      <div id="cb-wrapper" class="hidden"></div>
+
+      <button type="submit" class="bg-orange-500 text-white font-bold py-2 px-6 rounded-full w-full">
+        Valider la commande
+      </button>
+    </form>
+  </main>
+
+  {% include "footer.html" %}
 </body>
+
 </html>
