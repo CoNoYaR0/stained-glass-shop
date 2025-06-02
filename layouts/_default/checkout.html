@@ -11,10 +11,6 @@
   <!-- Si vous utilisez Hugo Pipes pour combiner les assets, adaptez les liens en conséquence -->
 </head>
 <body>
-
-  <!-- Inclusion de l’en-tête du thème -->
-  {{ partial "header.html" . }}
-
   <!-- Section Checkout -->
   <section class="section-padding">
     <div class="container">
@@ -58,10 +54,6 @@
       </form>
     </div>
   </section>
-
-  <!-- Inclusion du pied de page du thème -->
-  {{ partial "footer.html" . }}
-
   <!-- Script checkout.js pour gérer le panier, le calcul et l’injection d’iframe Paymee -->
   <script src="{{ "js/checkout.js" | relURL }}"></script>
 </body>
