@@ -1,10 +1,10 @@
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("checkout-form");
   const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
   const btn = document.querySelector("#checkout-form button[type='submit']");
   const cbWrapper = document.getElementById("cb-wrapper");
 
-  // 🎨 Bouton stylisé
+  // 🎨 Style du bouton “Valider la commande”
   if (btn) {
     btn.style.backgroundColor = "#f7931e";
     btn.style.border = "none";
@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.style.width = "100%";
   }
 
-  // Ajoute les options de paiement
+  // Ajoute les options de paiement (CB / Livraison)
   const paiementWrapper = document.getElementById("paiement-options");
   if (paiementWrapper) {
     paiementWrapper.innerHTML = `
@@ -28,7 +28,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
   }
 
-  // Écoute les changements d’option de paiement
+  // ─────────────────────────────────────────────────────────────────
+  // 1) ÉCOUTEUR GLOBAL POUR paymee.complete (postMessage) ↓
+  //    Permet de recevoir l’événement envoyé par l’iframe Paymee
+  //    quand le paiement est terminé (mode Without Redirection).
+  window.addEventListener("message", (event) => {
+    // –– Sécurisation de l’origine ––
+    // Remplacez par l'origine exacte de Paymee selon votre env.
+    //   * En sandbox : "https://sandbox.paymee.tn"
+    //   * En production : "https://app.paymee.tn"
+    const allowedOrigins = [
+      "https://sandbox.paymee.tn",
+      "https://app.paymee.tn"
+    ];
+    if (!allowedOrigins.includes(event.origin)) {
+      return; // on ignore tout message qui ne vient pas de Paymee
+    }
+
+    // –– Vérifier qu’on est bien sur l’événement paymee.complete ––
+    if (event.data && event.data.event_id === "paymee.complete") {
+      // Redirection vers la page de remerciement hor /merci
+      window.location.replace("/merci");
+    }
+  }, false);
+  // ─────────────────────────────────────────────────────────────────
+
+  // 2) Gestion du changement de mode de paiement
   document.querySelectorAll('input[name="paiement"]').forEach(radio => {
     radio.addEventListener("change", (e) => {
       const value = e.target.value;
@@ -42,11 +67,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Fonction pour injecter l'iframe si paiement CB sélectionné
+  // 3) Fonction pour injecter l’iframe si paiement CB sélectionné
   async function injectIframe() {
     const paiementSelected = document.querySelector("input[name='paiement']:checked")?.value;
     if (paiementSelected !== "cb") return;
 
+    // On récupère les données client
     const client = {
       nom: document.getElementById("nom").value,
       prenom: document.getElementById("prenom").value,
@@ -55,9 +81,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       adresse: document.getElementById("adresse").value
     };
 
-    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
+    // Calcul du montant total
+    const totalAmount = cart
+      .reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      .toFixed(2);
 
     try {
+      // On appelle la Netlify Function create-payment
       const res = await fetch("/.netlify/functions/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,6 +101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
+      // Création et injection de l’iframe Paymee
       const iframe = document.createElement("iframe");
       iframe.src = paymentUrl;
       iframe.width = "100%";
@@ -82,13 +113,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       cbWrapper.innerHTML = "";
       cbWrapper.appendChild(iframe);
 
-      console.log("✅ Iframe Paymee chargée depuis URL officielle");
+      console.log("✅ Iframe Paymee chargée");
+      // → Note : En mode Without Redirection, l’iframe enverra un postMessage !
+      //   On n’a plus besoin de listener 'load' ici.
     } catch (err) {
       console.error("💥 Erreur lors de la création du paiement :", err);
     }
   }
 
-  // Form submission
+  // 4) Soumission du formulaire (uniquement pour paiement à la livraison)
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -103,6 +136,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    // Relecture des données client
     const client = {
       nom: document.getElementById("nom").value,
       prenom: document.getElementById("prenom").value,
@@ -111,7 +145,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       adresse: document.getElementById("adresse").value
     };
 
-    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
+    const totalAmount = cart
+      .reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      .toFixed(2);
 
     if (paiement === "livraison") {
       try {
@@ -143,5 +179,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(err);
       }
     }
+    // Si paiement CB, on ne fait rien ici : c’est l’iframe + postMessage qui gèrent.
   });
 });
