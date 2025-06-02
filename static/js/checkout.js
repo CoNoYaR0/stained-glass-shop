@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btn = document.querySelector("#checkout-form button[type='submit']");
   const cbWrapper = document.getElementById("cb-wrapper");
 
-  // 🎨 Bouton stylisé
+  // 🎨 Style du bouton
   if (btn) {
     btn.style.backgroundColor = "#f7931e";
     btn.style.border = "none";
@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.style.width = "100%";
   }
 
-  // Ajoute les options de paiement si manquantes
+  // Options de paiement
   const paiementWrapper = document.getElementById("paiement-options");
   if (paiementWrapper && paiementWrapper.children.length === 0) {
     paiementWrapper.innerHTML = `
@@ -28,13 +28,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
   }
 
-  // Écoute les changements d’option de paiement
+  // Gestion du choix de paiement
   document.querySelectorAll('input[name="paiement"]').forEach(radio => {
-    radio.addEventListener("change", (e) => {
+    radio.addEventListener("change", async (e) => {
       const value = e.target.value;
       if (value === "cb") {
         cbWrapper.classList.remove("hidden");
-        injectIframe();
+        await injectIframe();
       } else {
         cbWrapper.classList.add("hidden");
         cbWrapper.innerHTML = "";
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Fonction pour injecter l'iframe si paiement CB sélectionné
+  // Injection de l'iframe Paymee
   async function injectIframe() {
     const paiementSelected = document.querySelector("input[name='paiement']:checked")?.value;
     if (paiementSelected !== "cb") return;
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       adresse: document.getElementById("adresse").value
     };
 
-    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(3);
 
     try {
       const res = await fetch("/.netlify/functions/create-payment", {
@@ -65,30 +65,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       const data = await res.json();
-      const token = new URL(data?.data?.payment_url || "").searchParams.get("payment_token");
-      if (!token) {
-        console.error("❌ Token introuvable dans la réponse Paymee.");
+      const url = data?.data?.payment_url;
+      if (!url) {
+        console.error("❌ URL de paiement introuvable dans la réponse Paymee.");
         return;
       }
 
       const iframe = document.createElement("iframe");
-      iframe.src = `https://app.paymee.tn/gateway/loader?payment_token=${token}`;
+      iframe.src = url;
       iframe.width = "100%";
-      iframe.height = "600";
+      iframe.height = "650";
       iframe.frameBorder = "0";
       iframe.allow = "payment";
       iframe.style.borderRadius = "12px";
+      iframe.style.backgroundColor = "white";
 
       cbWrapper.innerHTML = "";
       cbWrapper.appendChild(iframe);
 
-      console.log("✅ Iframe Paymee chargée avec succès");
+      console.log("✅ Iframe Paymee chargée depuis URL officielle");
     } catch (err) {
       console.error("💥 Erreur lors de la création du paiement :", err);
     }
   }
 
-  // Form submission
+  // Soumission du formulaire
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -111,7 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       adresse: document.getElementById("adresse").value
     };
 
-    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(3);
 
     if (paiement === "livraison") {
       try {
@@ -145,10 +146,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Injecter l'iframe dès le chargement si CB par défaut
+  // Chargement initial si paiement CB
   const defaultPaiement = document.querySelector('input[name="paiement"]:checked')?.value;
   if (defaultPaiement === "cb") {
     cbWrapper.classList.remove("hidden");
-    injectIframe();
+    await injectIframe();
   }
 });
