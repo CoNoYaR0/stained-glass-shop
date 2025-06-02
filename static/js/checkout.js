@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btn = document.querySelector("#checkout-form button[type='submit']");
   const cbWrapper = document.getElementById("cb-wrapper");
 
-  // 🎨 Style du bouton
+  // 🎨 Bouton stylisé
   if (btn) {
     btn.style.backgroundColor = "#f7931e";
     btn.style.border = "none";
@@ -17,24 +17,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.style.width = "100%";
   }
 
-  // Options de paiement
+  // Ajoute les options de paiement
   const paiementWrapper = document.getElementById("paiement-options");
-  if (paiementWrapper && paiementWrapper.children.length === 0) {
+  if (paiementWrapper) {
     paiementWrapper.innerHTML = `
       <div>
-        <label><input type="radio" name="paiement" value="cb" checked> Paiement par carte</label><br>
+        <label><input type="radio" name="paiement" value="cb"> Paiement par carte</label><br>
         <label><input type="radio" name="paiement" value="livraison"> Paiement à la livraison</label>
       </div>
     `;
   }
 
-  // Gestion du choix de paiement
+  // Écoute les changements d’option de paiement
   document.querySelectorAll('input[name="paiement"]').forEach(radio => {
-    radio.addEventListener("change", async (e) => {
+    radio.addEventListener("change", (e) => {
       const value = e.target.value;
       if (value === "cb") {
         cbWrapper.classList.remove("hidden");
-        await injectIframe();
+        injectIframe();
       } else {
         cbWrapper.classList.add("hidden");
         cbWrapper.innerHTML = "";
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Injection de l'iframe Paymee
+  // Fonction pour injecter l'iframe si paiement CB sélectionné
   async function injectIframe() {
     const paiementSelected = document.querySelector("input[name='paiement']:checked")?.value;
     if (paiementSelected !== "cb") return;
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       adresse: document.getElementById("adresse").value
     };
 
-    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(3);
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
 
     try {
       const res = await fetch("/.netlify/functions/create-payment", {
@@ -65,20 +65,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       const data = await res.json();
-      const url = data?.data?.payment_url;
-      if (!url) {
+      const paymentUrl = data?.data?.payment_url;
+      if (!paymentUrl) {
         console.error("❌ URL de paiement introuvable dans la réponse Paymee.");
         return;
       }
 
       const iframe = document.createElement("iframe");
-      iframe.src = url;
+      iframe.src = paymentUrl;
       iframe.width = "100%";
-      iframe.height = "650";
+      iframe.height = "600";
       iframe.frameBorder = "0";
       iframe.allow = "payment";
       iframe.style.borderRadius = "12px";
-      iframe.style.backgroundColor = "white";
 
       cbWrapper.innerHTML = "";
       cbWrapper.appendChild(iframe);
@@ -89,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Soumission du formulaire
+  // Form submission
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -112,7 +111,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       adresse: document.getElementById("adresse").value
     };
 
-    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(3);
+    const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
 
     if (paiement === "livraison") {
       try {
@@ -145,11 +144,4 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
   });
-
-  // Chargement initial si paiement CB
-  const defaultPaiement = document.querySelector('input[name="paiement"]:checked')?.value;
-  if (defaultPaiement === "cb") {
-    cbWrapper.classList.remove("hidden");
-    await injectIframe();
-  }
 });
