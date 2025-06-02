@@ -1455,3 +1455,11 @@ input[type="radio"].peer:checked + img {
   border: 2px solid #f7931e;
   border-radius: 0.75rem;
 }
+.product-card-link {
+  cursor: pointer;
+  display: block;   /* pour que toute la carte soit cliquable */
+  color: inherit;   /* garder la couleur du texte d'origine */
+}
+.product-card-link:hover {
+  text-decoration: none; /* pour ne pas souligner */
+}

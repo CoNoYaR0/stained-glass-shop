@@ -1,0 +1,119 @@
+{{ define "main" }}
+<section class="section section--product-single">
+  <div class="container">
+    <!-- Placeholder pour le spinner / chargement -->
+    <div id="loading" class="text-center my-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Chargement en cours...</span>
+      </div>
+    </div>
+
+    <!-- Conteneur invisible au départ, qu'on remplira via JS -->
+    <div id="product-content" class="row d-none">
+      <!-- Colonne image -->
+      <div class="col-md-5 mb-4 mb-md-0">
+        <div class="sticky-image">
+          <!-- On laisse un <img> vide, on positionne ses attributs en JS -->
+          <img id="product-image" src="" alt="" class="img-fluid w-100" />
+        </div>
+      </div>
+      <!-- Colonne texte (titre + description/storytelling) -->
+      <div class="col-lg-6 col-md-7 offset-lg-1">
+        <h1 id="product-title" class="mb-4"></h1>
+        <div id="product-description" class="content"></div>
+        <!-- On peut éventuellement ajouter un bouton “Ajouter au panier” ici si besoin -->
+        <button id="single-add-to-cart" type="button" class="btn btn-primary mt-4">Ajouter au panier</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Script qui va récupérer REF depuis l’URL et remplir la page -->
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const loadingEl = document.getElementById("loading");
+    const contentEl = document.getElementById("product-content");
+    const imgEl = document.getElementById("product-image");
+    const titleEl = document.getElementById("product-title");
+    const descEl = document.getElementById("product-description");
+    const addBtn = document.getElementById("single-add-to-cart");
+
+    // 1) Récupérer la "ref" du produit depuis le chemin URL, ex : /products/Assiette_sidi/
+    //    On part du principe que l’on est sur /products/<REF>/…
+    let pathname = window.location.pathname;     // ex "/products/Assiette_sidi/"
+    // On enlève les slashs de début/fin, puis on split sur "/"
+    const parts = pathname.replace(/^\/|\/$/g, "").split("/");
+    // parts = ["products", "Assiette_sidi"]
+    if (parts.length < 2) {
+      // URL inattendue → on affiche un message d'erreur
+      loadingEl.innerHTML = "<p>Produit non trouvé.</p>";
+      return;
+    }
+    const ref = parts[1]; // "Assiette_sidi"
+
+    try {
+      // 2) Récupérer tous les produits depuis votre proxy
+      const res = await fetch("https://cdn.stainedglass.tn/proxy/products.php");
+      const allProducts = await res.json();
+      if (!Array.isArray(allProducts)) throw new Error("Données invalides");
+
+      // 3) Filtrer pour trouver l’objet dont ref === ref
+      const product = allProducts.find(p => p.ref === ref);
+      if (!product) {
+        loadingEl.innerHTML = "<p>Produit introuvable.</p>";
+        return;
+      }
+
+      // 4) Construire le visuel de la page single
+      //    → On considère que Dolibarr fournit un champ "label" (nom),
+      //      un champ "description" (texte long/storytelling), etc.
+      const displayRef = (product.ref || "").replace(/_/g, " ");
+      const imageUrl = `https://cdn.stainedglass.tn/stainedglass-img-cache/${product.ref}.jpg`;
+      const priceDT = parseFloat(product.price) || 0;
+      const description = product.description || "Aucune description disponible pour ce produit.";
+      // Vous pouvez ajouter d'autres champs si Dolibarr en renvoie (ex : stock, dimensions, etc.)
+
+      // 5) Remplir le DOM
+      imgEl.src = imageUrl;
+      imgEl.alt = displayRef;
+
+      titleEl.textContent = displayRef + " — " + priceDT.toFixed(2) + " DT HT";
+
+      // On peut par exemple mettre la partie “storytelling” dans un <p> ou un <div>
+      // Si la description contient du HTML, utilisez innerHTML, sinon textContent
+      descEl.innerHTML = `
+        <p>${description}</p>
+        <p><strong>Stock actuel :</strong> ${product.stock_reel !== undefined ? product.stock_reel : "N/A"}</p>
+      `;
+
+      // 6) Bouton "Ajouter au panier" (facultatif) : on récupère les data que l’on souhaite
+      addBtn.addEventListener("click", () => {
+        // Implémenter ici votre logique “add to cart” si vous voulez que le bouton du single fonctionne
+        const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
+        const existing = cart.find(item => item.id === product.id || item.ref === product.ref);
+        if (existing) {
+          existing.quantity++;
+        } else {
+          cart.push({
+            id: product.id || product.ref,
+            ref: product.ref,
+            name: displayRef,
+            price: priceDT,
+            quantity: 1,
+            image: imageUrl
+          });
+        }
+        localStorage.setItem("customCart", JSON.stringify(cart));
+        alert("Produit ajouté au panier !");
+      });
+
+      // 7) Cacher le spinner et afficher le contenu
+      loadingEl.classList.add("d-none");
+      contentEl.classList.remove("d-none");
+    } catch (err) {
+      console.error("Erreur lors du chargement du produit unique :", err);
+      loadingEl.innerHTML = "<p>Erreur lors du chargement du produit.</p>";
+    }
+  });
+</script>
+{{ end }}
