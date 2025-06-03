@@ -1,0 +1,49 @@
+{{ define "main" }}
+<section class="section article-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-10 mx-auto">
+        {{ with .Params.image }}
+        <div class="article-image mb-4">
+          {{ partial "image.html" (dict "Src" . "Alt" $.Title "Class" "img-fluid w-100 rounded" ) }}
+        </div>
+        {{ end }}
+
+        <h1 class="article-title mb-3">{{ .Title | markdownify }}</h1>
+
+        <div class="article-meta mb-4">
+          <span class="publish-date">Published on: {{ .PublishDate.Format "January 2, 2006" }}</span> |
+          <span class="reading-time">{{ .ReadingTime }} minute read</span>
+          {{ with .Params.author }} | <span class="author">By: {{ . }}</span>{{ end }}
+          <br>
+          {{ with .Params.categories }}
+            <span class="categories mt-2 d-inline-block">Categories:
+              {{ range $index, $value := . }}
+                <a href="{{ `categories/` | relLangURL }}{{ . | urlize }}">{{ . }}</a>{{ if ne $index (sub (len $.Params.categories) 1) }}, {{ end }}
+              {{ end }}
+            </span>
+          {{ end }}
+          {{ with .Params.tags }}
+            <span class="tags mt-2 d-inline-block">Tags:
+              {{ range $index, $value := . }}
+                <a href="{{ `tags/` | relLangURL }}{{ . | urlize }}">{{ . }}</a>{{ if ne $index (sub (len $.Params.tags) 1) }}, {{ end }}
+              {{ end }}
+            </span>
+          {{ end }}
+        </div>
+
+        <div class="content article-content">
+          {{ .Content }}
+        </div>
+
+        <!-- Placeholder for Social Sharing -->
+        <div class="social-sharing mt-5">
+          <p>Share this article:</p>
+          <!-- Add social sharing links/buttons here later -->
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+{{ end }}
