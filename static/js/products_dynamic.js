@@ -1,6 +1,9 @@
+// static/js/products_dynamic.js
+
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("products-list");
 
+  // 1) On récupère tous les produits depuis le proxy Dolibarr
   let products = [];
   try {
     const res = await fetch("https://cdn.stainedglass.tn/proxy/products.php");
@@ -13,15 +16,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // On regroupe par référence de base (ex : "Assiette" puis variantes "Assiette_blue", "Assiette_red", etc.)
+  // 2) On regroupe par référence de base
   const grouped = {};
   products.forEach(prod => {
+    // Exemple : prod.ref = "Assiette-sidi-red" → baseRef = "Assiette"
     const baseRef = prod.ref.split('-')[0];
     if (!grouped[baseRef]) {
-      grouped[baseRef] = {
-        base: prod,
-        variants: []
-      };
+      grouped[baseRef] = { base: prod, variants: [] };
     }
     if (prod.ref === baseRef) {
       grouped[baseRef].base = prod;
@@ -30,71 +31,110 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // On génère le HTML pour chacune des cartes en les enveloppant dans <a href="/products/REF/">
-  const html = await Promise.all(
+  // 3) On génère le HTML pour chaque groupe
+  const htmlPieces = await Promise.all(
     Object.entries(grouped).map(async ([baseRef, group]) => {
-      const prod = group.base;
-      const ref = prod.ref; // ex : "Assiette_sidi"
-      const price = parseFloat(prod.price) || 0;
-      const stock = prod.stock_reel !== undefined ? prod.stock_reel : "N/A";
-      const id = prod.id || prod.ref || ref;
-      const name = prod.label || "Nom inconnu";
-      const displayRef = ref.replace(/_/g, " ");
+      const prod      = group.base;
+      const ref       = prod.ref; // ex: "Assiette_sidi"
+      const price     = parseFloat(prod.price) || 0;
+      const stock     = prod.stock_reel !== undefined ? prod.stock_reel : "N/A";
+      const id        = prod.id || prod.ref || ref;
+      const label     = prod.label || "Nom inconnu";
+      const displayRef= ref.replace(/_/g, " ");
 
-      // On construit l'URL de l'image
+      // URL de l'image
       const imageUrl = `https://cdn.stainedglass.tn/stainedglass-img-cache/${ref}.jpg`;
 
-      // Si vous voulez un slider pour les variantes, gardez cette partie inchangée
+      // 3.1) Slider Swiper pour la variante de base
       const sliderHTML = `
         <div class="swiper swiper-${id}">
           <div class="swiper-wrapper">
             <div class="swiper-slide">
-              <img src="${imageUrl}" alt="${displayRef}" onerror="this.src='/img/fallback.jpg'" />
+              <img src="${imageUrl}"
+                   alt="${displayRef}"
+                   onerror="this.src='/img/fallback.jpg'"
+                   class="w-100" />
             </div>
           </div>
           <div class="swiper-pagination"></div>
         </div>`;
 
-      // S'il y a des variantes, on peut laisser la <select> ici si besoin
+      // 3.2) Si variantes, on prépare un <select> pour les choisir
       const variantSelect = group.variants.length ? `
-        <label>Variantes :</label>
-        <select class="variant-select" data-base="${ref}">
-          <option value="${ref}">${ref.replace(/_/g, ' ')}</option>
-          ${group.variants.map(v => `<option value="${v.ref}">${v.ref.replace(/_/g, ' ')}</option>`).join('')}
+        <label for="variants-${id}">Variantes&nbsp;:</label>
+        <select id="variants-${id}" class="variant-select" data-base="${ref}">
+          <option value="${ref}">${displayRef}</option>
+          ${group.variants.map(v => {
+            const disp = v.ref.replace(/_/g, " ");
+            return `<option value="${v.ref}">${disp}</option>`;
+          }).join("")}
         </select>` : "";
 
-      // → On enveloppe la carte dans un lien vers /products/{{ref}}/
+      // 3.3) On enveloppe la carte dans un lien vers /products/<REF>/
+      //       et on insère le bouton “Ajouter au panier” DANS le lien,
+      //       mais **on bloquera la propagation du click** pour que le bouton n’active pas le lien.
       return `
-        <a href="/products/${ref}/" class="product-card-link" style="text-decoration: none;">
-          <div class="product-card">
+        <a href="/products/${ref}/" 
+           class="product-card-link d-block text-decoration-none mb-4"
+           style="width: 100%; max-width: 360px;">
+          <div class="card h-100 border-warning">
             ${sliderHTML}
-            <h3>${displayRef}</h3>
-            <p>Prix : ${price} DT HT</p>
-            <p>Stock : ${stock}</p>
-            ${variantSelect}
-            <button type="button" class="add-to-cart bounce-on-click"
-              data-id="${id}"
-              data-name="${ref}"
-              data-price="${price}"
-              data-image="${imageUrl}"
-            >Ajouter au panier</button>
+            <div class="card-body">
+              <h5 class="card-title">${displayRef}</h5>
+              <p class="card-text mb-1">Prix&nbsp;: ${price.toFixed(2)} DT HT</p>
+              <p class="card-text mb-2">Stock&nbsp;: ${stock}</p>
+              ${variantSelect}
+              <button type="button"
+                      class="add-to-cart btn btn-warning mt-3"
+                      data-id="${id}"
+                      data-name="${ref}"
+                      data-price="${price}"
+                      data-image="${imageUrl}">
+                Ajouter au panier
+              </button>
+            </div>
           </div>
         </a>`;
     })
   );
 
-  container.innerHTML = html.join("");
-  attachAddToCartButtons();
+  // 4) On injecte l’ensemble du HTML dans le conteneur
+  container.innerHTML = htmlPieces.join("");
 
-  // Initialisation de Swiper (slider) après un petit délai pour laisser le DOM se mettre en place
+  // 5) On branche les événements “Ajouter au panier”
+  attachAddToCartButtons(); // fonction que tu avais déjà
+
+  // 6) Pour éviter que le clic sur le bouton add-to-cart suive le lien,
+  //    on empêche la propagation de l’événement click du bouton vers son parent <a>
+  document.querySelectorAll(".add-to-cart").forEach(button => {
+    button.addEventListener("click", event => {
+      event.preventDefault();    // annule la navigation du lien parent
+      event.stopPropagation();   // empêche la propagation sur l'<a>
+      // Puis on appelle la logique existante d'ajout au panier
+      const ref   = button.getAttribute("data-name");
+      const price = parseFloat(button.getAttribute("data-price")) || 0;
+      const image = button.getAttribute("data-image");
+      const id    = button.getAttribute("data-id");
+
+      // Exemple simplifié d’ajout au panier (puisque tu avais déjà attachAddToCartButtons)
+      let cart = JSON.parse(localStorage.getItem("customCart") || "[]");
+      const exist = cart.find(item => item.ref === ref);
+      if (exist) {
+        exist.quantity++;
+      } else {
+        cart.push({ ref, name: ref.replace(/_/g, " "), price, quantity: 1, image });
+      }
+      localStorage.setItem("customCart", JSON.stringify(cart));
+      alert("Produit ajouté au panier !");
+    });
+  });
+
+  // 7) Initialisation Swiper (slider) après un petit délai
   setTimeout(() => {
-    document.querySelectorAll('.swiper').forEach((el) => {
+    document.querySelectorAll('.swiper').forEach(el => {
       new Swiper(el, {
-        pagination: {
-          el: el.querySelector('.swiper-pagination'),
-          clickable: true
-        },
-        loop: false,
+        pagination: { el: el.querySelector('.swiper-pagination'), clickable: true },
+        loop: false
       });
     });
   }, 100);

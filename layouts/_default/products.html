@@ -5,22 +5,17 @@
         <h1 class="font-weight-bold">Nos créations en verre</h1>
       </div>
 
-      <!-- 💥 Le conteneur que ton JS attend -->
+      <!-- 💥 On garde ce conteneur vide : c’est lui que JS va remplir -->
       <div id="products-list" class="row">
-        <!-- Les produits Dolibarr seront injectés ici -->
+        <!-- Les produits Dolibarr seront injectés ici par products_dynamic.js -->
       </div>
     </div>
   </div>
 </section>
 
-
-<!-- Swiper CSS -->
+<!-- Swiper CSS et JS (inchangés) -->
 <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-
-<!-- Swiper JS -->
 <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
-<!-- Ton script produit (doit venir APRÈS Swiper) -->
-<script type="module" src="/products_dynamic.js"></script>
-
-
+<!-- Le script qui alimente la liste : on le laisse en dernier -->
+<script type="module" src="/js/products_dynamic.js"></script>

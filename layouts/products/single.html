@@ -1,119 +1,141 @@
 {{ define "main" }}
-<section class="section section--product-single">
-  <div class="container">
-    <!-- Placeholder pour le spinner / chargement -->
-    <div id="loading" class="text-center my-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Chargement en cours...</span>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+
+  {{/* ─────── 1) On extrait “ref” de l’URL courante ─────── */}}
+  {{ $url := .Permalink }}
+  {{/* Exemple : https://ton-site.tld/products/Assiette_sidi/ */}}
+  {{ $parts := split (replaceRE "^https?://[^/]+/products/|/$" "" $url) "/" }}
+  {{ $ref := index $parts 0 }}
+
+  {{/* ─────── 2) On lit le JSON de métadonnées pour trouver title & description ─────── */}}
+  {{ $allMeta := getJSON "data/products-metadata.json" }}
+  {{ $meta := index (where $allMeta "ref" $ref) 0 }}
+
+  {{ if $meta }}
+    <title>{{ $meta.title }} · {{ .Site.Title }}</title>
+    <meta name="description" content="{{ $meta.description }}">
+  {{ else }}
+    <title>Produit introuvable · {{ .Site.Title }}</title>
+    <meta name="description" content="Ce produit n'existe pas.">
+  {{ end }}
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  {{/* (Optionnel) OpenGraph, analytics, etc. */}}
+  {{ template "_internal/opengraph.html" . }}
+  {{ template "_internal/google_analytics.html" . }}
+
+  {{/* ─────── 3) Chargement des CSS : Vex, Bootstrap, puis ton CSS perso ─────── */}}
+  <link rel="stylesheet" href="{{ "scss/style.scss" | relURL }}">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        integrity="sha384-9ndCyUa0R+0Y7DhWR0IxCjMuJjLgCW3Xkez36Qmrh4jjvW8jDfzeUjRRV0W9+QFf"
+        crossorigin="anonymous">
+  <link rel="stylesheet" href="{{ "scss/style.min.css" | relURL }}" media="screen">
+
+  {{/* Favicon */}}
+  <link rel="shortcut icon" href="{{ "images/favicon.png" | relURL }}" type="image/x-icon">
+  <link rel="icon"        href="{{ "images/favicon.png" | relURL }}" type="image/x-icon">
+</head>
+
+<body>
+  {{ partial "header.html" . }}
+
+  <main class="container my-5">
+    <!-- 4) Loader pendant la récupération des détails -->
+    <div id="product-loading" class="text-center">
+      <div class="spinner-border text-secondary" role="status">
+        <span class="visually-hidden">Chargement du produit…</span>
       </div>
+      <p class="mt-2">Chargement du produit…</p>
     </div>
 
-    <!-- Conteneur invisible au départ, qu'on remplira via JS -->
+    <!-- 5) Contenu détaillé (initialement caché) -->
     <div id="product-content" class="row d-none">
-      <!-- Colonne image -->
-      <div class="col-md-5 mb-4 mb-md-0">
-        <div class="sticky-image">
-          <!-- On laisse un <img> vide, on positionne ses attributs en JS -->
-          <img id="product-image" src="" alt="" class="img-fluid w-100" />
-        </div>
+      <div class="col-md-5">
+        <img id="prod-image" src="" alt="" class="img-fluid rounded">
       </div>
-      <!-- Colonne texte (titre + description/storytelling) -->
-      <div class="col-lg-6 col-md-7 offset-lg-1">
-        <h1 id="product-title" class="mb-4"></h1>
-        <div id="product-description" class="content"></div>
-        <!-- On peut éventuellement ajouter un bouton “Ajouter au panier” ici si besoin -->
-        <button id="single-add-to-cart" type="button" class="btn btn-primary mt-4">Ajouter au panier</button>
+      <div class="col-md-7">
+        <h1 id="prod-title" class="mb-3"></h1>
+        <p id="prod-description"></p>
+        <p><strong>Prix :</strong> <span id="prod-prix"></span> DT HT</p>
+        <p><strong>Stock :</strong> <span id="prod-stock"></span></p>
+
+        <button id="single-add-to-cart" class="btn btn-warning mt-3">
+          Ajouter au panier
+        </button>
       </div>
     </div>
-  </div>
-</section>
+  </main>
 
-<!-- Script qui va récupérer REF depuis l’URL et remplir la page -->
-<script>
-  document.addEventListener("DOMContentLoaded", async () => {
-    const loadingEl = document.getElementById("loading");
-    const contentEl = document.getElementById("product-content");
-    const imgEl = document.getElementById("product-image");
-    const titleEl = document.getElementById("product-title");
-    const descEl = document.getElementById("product-description");
-    const addBtn = document.getElementById("single-add-to-cart");
+  {{ partial "footer.html" . }}
 
-    // 1) Récupérer la "ref" du produit depuis le chemin URL, ex : /products/Assiette_sidi/
-    //    On part du principe que l’on est sur /products/<REF>/…
-    let pathname = window.location.pathname;     // ex "/products/Assiette_sidi/"
-    // On enlève les slashs de début/fin, puis on split sur "/"
-    const parts = pathname.replace(/^\/|\/$/g, "").split("/");
-    // parts = ["products", "Assiette_sidi"]
-    if (parts.length < 2) {
-      // URL inattendue → on affiche un message d'erreur
-      loadingEl.innerHTML = "<p>Produit non trouvé.</p>";
-      return;
-    }
-    const ref = parts[1]; // "Assiette_sidi"
-
-    try {
-      // 2) Récupérer tous les produits depuis votre proxy
-      const res = await fetch("https://cdn.stainedglass.tn/proxy/products.php");
-      const allProducts = await res.json();
-      if (!Array.isArray(allProducts)) throw new Error("Données invalides");
-
-      // 3) Filtrer pour trouver l’objet dont ref === ref
-      const product = allProducts.find(p => p.ref === ref);
-      if (!product) {
-        loadingEl.innerHTML = "<p>Produit introuvable.</p>";
+  <!-- 6) Script pour récupérer TOUT le tableau “products” puis filtrer par ref -->
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const pathParts = window.location.pathname.replace(/^\/|\/$/g, "").split("/");
+      const ref = pathParts.length >= 2 ? pathParts[1] : null;
+      if (!ref) {
+        document.getElementById("product-loading").textContent = "Produit introuvable.";
         return;
       }
 
-      // 4) Construire le visuel de la page single
-      //    → On considère que Dolibarr fournit un champ "label" (nom),
-      //      un champ "description" (texte long/storytelling), etc.
-      const displayRef = (product.ref || "").replace(/_/g, " ");
-      const imageUrl = `https://cdn.stainedglass.tn/stainedglass-img-cache/${product.ref}.jpg`;
-      const priceDT = parseFloat(product.price) || 0;
-      const description = product.description || "Aucune description disponible pour ce produit.";
-      // Vous pouvez ajouter d'autres champs si Dolibarr en renvoie (ex : stock, dimensions, etc.)
+      try {
+        // ─── 6.1) Récupère “tous” les produits depuis le proxy Dolibarr ───
+        const res = await fetch("https://cdn.stainedglass.tn/proxy/products.php");
+        const products = await res.json(); // tableau d’objets
 
-      // 5) Remplir le DOM
-      imgEl.src = imageUrl;
-      imgEl.alt = displayRef;
+        // ─── 6.2) Cherche le bon objet en fonction de la “ref” ───
+        const product = Array.isArray(products)
+          ? products.find(p => p.ref === ref)
+          : null;
 
-      titleEl.textContent = displayRef + " — " + priceDT.toFixed(2) + " DT HT";
-
-      // On peut par exemple mettre la partie “storytelling” dans un <p> ou un <div>
-      // Si la description contient du HTML, utilisez innerHTML, sinon textContent
-      descEl.innerHTML = `
-        <p>${description}</p>
-        <p><strong>Stock actuel :</strong> ${product.stock_reel !== undefined ? product.stock_reel : "N/A"}</p>
-      `;
-
-      // 6) Bouton "Ajouter au panier" (facultatif) : on récupère les data que l’on souhaite
-      addBtn.addEventListener("click", () => {
-        // Implémenter ici votre logique “add to cart” si vous voulez que le bouton du single fonctionne
-        const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
-        const existing = cart.find(item => item.id === product.id || item.ref === product.ref);
-        if (existing) {
-          existing.quantity++;
-        } else {
-          cart.push({
-            id: product.id || product.ref,
-            ref: product.ref,
-            name: displayRef,
-            price: priceDT,
-            quantity: 1,
-            image: imageUrl
-          });
+        if (!product) {
+          document.getElementById("product-loading").textContent = "Produit introuvable.";
+          return;
         }
-        localStorage.setItem("customCart", JSON.stringify(cart));
-        alert("Produit ajouté au panier !");
-      });
 
-      // 7) Cacher le spinner et afficher le contenu
-      loadingEl.classList.add("d-none");
-      contentEl.classList.remove("d-none");
-    } catch (err) {
-      console.error("Erreur lors du chargement du produit unique :", err);
-      loadingEl.innerHTML = "<p>Erreur lors du chargement du produit.</p>";
-    }
-  });
-</script>
+        // ─── 6.3) Remplit le DOM avec les données récupérées ───
+        document.getElementById("prod-title").textContent = product.label || ref.replace(/_/g, " ");
+        document.getElementById("prod-image").src = `https://cdn.stainedglass.tn/stainedglass-img-cache/${ref}.jpg`;
+        document.getElementById("prod-image").alt = product.label || ref.replace(/_/g, " ");
+        document.getElementById("prod-description").textContent = product.description || "Pas de description disponible.";
+        document.getElementById("prod-prix").textContent = parseFloat(product.price || 0).toFixed(2);
+        document.getElementById("prod-stock").textContent = product.stock_reel !== undefined
+          ? product.stock_reel
+          : "N/A";
+
+        // ─── 6.4) Gestion du bouton “Ajouter au panier” ───
+        document.getElementById("single-add-to-cart").addEventListener("click", () => {
+          const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
+          const exist = cart.find(item => item.ref === product.ref);
+          if (exist) {
+            exist.quantity++;
+          } else {
+            cart.push({
+              ref: product.ref,
+              name: product.label || ref.replace(/_/g, " "),
+              price: parseFloat(product.price || 0),
+              quantity: 1,
+              image: document.getElementById("prod-image").src
+            });
+          }
+          localStorage.setItem("customCart", JSON.stringify(cart));
+          alert("Produit ajouté au panier !");
+        });
+
+        // ─── 6.5) Masquer le loader et afficher le contenu ───
+        document.getElementById("product-loading").classList.add("d-none");
+        document.getElementById("product-content").classList.remove("d-none");
+      } catch (err) {
+        console.error("Erreur au chargement du produit :", err);
+        document.getElementById("product-loading").textContent = "Erreur au chargement.";
+      }
+    });
+  </script>
+</body>
+</html>
 {{ end }}

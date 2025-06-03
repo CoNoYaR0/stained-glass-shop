@@ -1,0 +1,18 @@
+[
+  {
+    "ref": "Assiette_sidi",
+    "title": "Assiette Sidi en verre soufflé",
+    "description": "Élégante assiette en verre soufflé, fabriquée à la main depuis 1920."
+  },
+  {
+    "ref": "Verre_bleu",
+    "title": "Verre Bleu Traditionnel",
+    "description": "Verre bleu artisanal pour vos tables raffinées."
+  },
+  {
+    "ref": "Vase_oriental",
+    "title": "Vase Oriental Coloré",
+    "description": "Vase en verre coloré d’inspiration orientale, parfait pour la décoration."
+  }
+  // … ajoute un objet par produit Dolibarr …
+]
