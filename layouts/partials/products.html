@@ -17,7 +17,13 @@
                 <i class="tf-ion-plus-round"></i>
               </a>
             </div>
-            <img class="img-fluid" src="{{range first 1 .Params.images}}{{.|absURL}}{{end}}" alt="{{.Title}}">
+            {{ $image_url := "" }}
+            {{ with .Params.images }}
+              {{ with index . 0 }}
+                {{ $image_url = . | absURL }}
+              {{ end }}
+            {{ end }}
+            <img class="img-fluid" src="{{ $image_url }}" alt="{{ .Title }}">
           </div>
           {{ end }}
         </div>
