@@ -17,8 +17,13 @@
   {{ end }}
 
   {{ "<!-- Main Stylesheet -->" | safeHTML }}
-  {{ $styles := resources.Get "scss/style.scss" | resources.Sass (dict "outputStyle" "compressed") | resources.Minify }}
-  <link rel="stylesheet" href="{{ $styles.Permalink }}" media="screen">
+  {{ $scssResource := resources.Get "scss/style.scss" }}
+  {{ if $scssResource }}
+    {{ $styles := $scssResource | resources.Sass (dict "outputStyle" "compressed") | resources.Minify }}
+    <link rel="stylesheet" href="{{ $styles.Permalink }}" media="screen">
+  {{ else }}
+    {{ warnf "SCSS resource assets/scss/style.scss not found when processed in layouts/partials/head.html. Main stylesheet will be missing." }}
+  {{ end }}
 
   {{ "<!--Favicon-->" | safeHTML }}
   <link rel="shortcut icon" href="{{ `images/favicon.png` | absURL }} " type="image/x-icon">
