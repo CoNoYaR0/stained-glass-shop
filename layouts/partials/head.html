@@ -17,10 +17,21 @@
   {{ end }}
 
   {{ "<!-- Main Stylesheet -->" | safeHTML }}
-  {{ $scssResource := resources.Get "scss/style.scss" }}
-  {{ if $scssResource }}
-    {{ $styles := $scssResource | resources.Sass (dict "outputStyle" "compressed") | resources.Minify }}
-    <link rel="stylesheet" href="{{ $styles.Permalink }}" media="screen">
+  {{ $scssFile := "scss/style.scss" }}
+  {{ $scssOptions := (dict "outputStyle" "compressed") }}
+  {{ $stylesheet := "" }} {{/* Initialize $stylesheet */}}
+
+  {{ $originalResource := resources.Get $scssFile }}
+
+  {{ if $originalResource }}
+    {{ if ne $originalResource.Content "" }} {{/* Check if content is not empty */}}
+      {{ $processedStyles := resources.Sass $originalResource $scssOptions }}
+      {{ $minifiedStyles := $processedStyles | resources.Minify }}
+      {{ $stylesheet = $minifiedStyles }}
+      <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" media="screen">
+    {{ else }}
+      {{ warnf "SCSS resource assets/scss/style.scss is empty when processed in layouts/partials/head.html." }}
+    {{ end }}
   {{ else }}
     {{ warnf "SCSS resource assets/scss/style.scss not found when processed in layouts/partials/head.html. Main stylesheet will be missing." }}
   {{ end }}
