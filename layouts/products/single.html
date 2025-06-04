@@ -53,7 +53,7 @@
   {{ template "_internal/google_analytics.html" . }}
 
   {{/* ─────── 3) Chargement des CSS : Vex, Bootstrap, puis ton CSS perso ─────── */}}
-  {{ $scssPathKey := "assets/scss/style.scss" }} {{/* CHANGED THIS LINE */}}
+  {{ $scssPathKey := "scss/style.scss" }}
   {{ $scssOptions := (dict "outputStyle" "compressed") }}
   {{ $stylesheet := "" }} {{/* Initialize */}}
 
