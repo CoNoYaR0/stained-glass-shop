@@ -14,6 +14,9 @@ currency = "TND"
 # contact form action
 contact_form_action = "#" # contact form works with https://formspree.io
 baseURL = "https://resplendent-centaur-abf462.netlify.app"
+# Supabase configuration (values will be pulled from environment variables in templates)
+supabase_url = ""
+supabase_anon_key = ""
 
 # unsafe html
 [markup.goldmark.renderer]
