@@ -62,10 +62,8 @@
   {{ if $originalResource }}
     {{ if ne $originalResource.Content "" }} {{/* Check if content is not empty */}}
       {{ $processedStyles := resources.Sass $originalResource $scssOptions }}
-      {{ $minifiedStyles := $processedStyles | resources.Minify }}
-      {{ $fingerprintedStyles := $minifiedStyles | resources.Fingerprint }}
-      {{ $stylesheet = $fingerprintedStyles }}
-      <link rel="stylesheet" href="{{ $stylesheet.RelPermalink }}" integrity="{{ $stylesheet.Data.Integrity }}">
+      {{ $stylesheet = $processedStyles }} {{/* Temporarily skip Minify and Fingerprint */}}
+      <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" integrity=""> {{/* No integrity without fingerprint */}}
     {{ else }}
       {{ warnf "SCSS resource assets/scss/style.scss is empty when processed in layouts/products/single.html." }}
     {{ end }}
