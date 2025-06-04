@@ -23,16 +23,28 @@
 
   {{ $originalResource := resources.Get $scssFile }}
 
+  {{/* --- DEBUGGING BLOCK START --- */}}
+  {{ if $originalResource }}
+    {{ warnf "DEBUG head.html: Found $originalResource. Name: %s, Type: %T, MediaType: %s, Content Length: %d" $originalResource.Name (printf "%T" $originalResource) $originalResource.MediaType (len $originalResource.Content) }}
+    {{/* Let's try to see if .RelPermalink exists on $originalResource directly, indicating it's some kind of file */}}
+    {{ warnf "DEBUG head.html: $originalResource.Permalink: %s" $originalResource.Permalink }}
+    {{ warnf "DEBUG head.html: $originalResource.RelPermalink: %s" $originalResource.RelPermalink }}
+  {{ else }}
+    {{ warnf "DEBUG head.html: $originalResource for %s is NIL." $scssFile }}
+  {{ end }}
+  {{/* --- DEBUGGING BLOCK END --- */}}
+
+
   {{ if $originalResource }}
     {{ if ne $originalResource.Content "" }} {{/* Check if content is not empty */}}
       {{ $processedStyles := resources.Sass $originalResource $scssOptions }}
       {{ $stylesheet = $processedStyles }} {{/* Temporarily skip Minify */}}
       <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" media="screen">
     {{ else }}
-      {{ warnf "SCSS resource assets/scss/style.scss is empty when processed in layouts/partials/head.html." }}
+      {{ warnf "SCSS resource assets/scss/style.scss is empty when processed in layouts/partials/head.html. (Content check)" }}
     {{ end }}
   {{ else }}
-    {{ warnf "SCSS resource assets/scss/style.scss not found when processed in layouts/partials/head.html. Main stylesheet will be missing." }}
+    {{ warnf "SCSS resource assets/scss/style.scss not found when processed in layouts/partials/head.html. (Resource check)" }}
   {{ end }}
 
   {{ "<!--Favicon-->" | safeHTML }}
