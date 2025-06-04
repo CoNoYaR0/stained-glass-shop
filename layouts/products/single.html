@@ -4,22 +4,46 @@
 <head>
   <meta charset="utf-8">
 
-  {{/* ─────── 1) On extrait “ref” de l’URL courante ─────── */}}
-  {{ $url := .Permalink }}
-  {{/* Exemple : https://ton-site.tld/products/Assiette_sidi/ */}}
-  {{ $parts := split (replaceRE "^https?://[^/]+/products/|/$" "" $url) "/" }}
-  {{ $ref := index $parts 0 }}
+  {{/* Extract product reference (ref) from the URL */}}
+  {{ $urlPath := .Permalink }}
+  {{ $pathParts := split (replaceRE "^https?://[^/]+/products/|/$" "" $urlPath) "/" }}
+  {{ $ref := index $pathParts 0 | default .File.BaseFileName }} {{/* Use filename as fallback for ref */}}
 
-  {{/* ─────── 2) On lit le JSON de métadonnées pour trouver title & description ─────── */}}
-  {{ $allMeta := getJSON "data/products-metadata.json" }}
-  {{ $meta := index (where $allMeta "ref" $ref) 0 }}
+  {{ $pageTitle := "" }}
+  {{ $pageDesc := "" }}
+  {{ $metadataFileExists := false }}
+  {{ $productSpecificMetaFound := false }}
 
-  {{ if $meta }}
-    <title>{{ $meta.title }} · {{ .Site.Title }}</title>
-    <meta name="description" content="{{ $meta.description }}">
+  {{/* Attempt to load and process products-metadata.json */}}
+  {{ $metadataResource := resources.Get "data/products-metadata.json" }}
+  {{ if $metadataResource }}
+    {{ $metadataFileExists = true }}
+    {{ $allMeta := $metadataResource.Content | transform.Unmarshal }}
+    {{ if $allMeta }}
+      {{ $productMeta := where $allMeta "ref" $ref }}
+      {{ if gt (len $productMeta) 0 }}
+        {{ $metaItem := index $productMeta 0 }}
+        {{ $pageTitle = $metaItem.title }}
+        {{ $pageDesc = $metaItem.description }}
+        {{ $productSpecificMetaFound = true }}
+      {{ end }}
+    {{ else }}
+      {{ warnf "Could not unmarshal data/products-metadata.json. Content: %s" $metadataResource.Content }}
+    {{ end }}
   {{ else }}
-    <title>Produit introuvable · {{ .Site.Title }}</title>
-    <meta name="description" content="Ce produit n'existe pas.">
+    {{ warnf "data/products-metadata.json not found. Product pages will use fallback titles/descriptions." }}
+  {{ end }}
+
+  {{/* Set title and description based on findings */}}
+  {{ if $productSpecificMetaFound }}
+    <title>{{ $pageTitle }} · {{ .Site.Title }}</title>
+    <meta name="description" content="{{ $pageDesc }}">
+  {{ else }}
+    {{/* Fallback if metadata file or specific product ref not found */}}
+    {{ $fallbackTitle := printf "%s - %s" ($ref | replaceRE "_" " " | strings.Title) .Site.Title }}
+    <title>{{ $fallbackTitle }}</title>
+    {{/* You can set a generic site description or leave it empty if preferred */}}
+    <meta name="description" content="{{ printf "Details for product %s." ($ref | replaceRE "_" " " | strings.Title) }}">
   {{ end }}
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
