@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { statusCode: 405, body: JSON.stringify({ message: 'Method Not Allowed' }) };
   }
 
   const { name, email, message } = JSON.parse(event.body);
@@ -10,11 +10,11 @@ exports.handler = async (event) => {
 
   if (!discordWebhookUrl) {
     console.error('Discord webhook URL is not configured.');
-    return { statusCode: 500, body: 'Internal Server Error: Webhook not configured.' };
+    return { statusCode: 500, body: JSON.stringify({ message: 'Internal Server Error: Webhook not configured.' }) };
   }
 
   if (!name || !email || !message) {
-    return { statusCode: 400, body: 'Bad Request: Missing name, email, or message.' };
+    return { statusCode: 400, body: JSON.stringify({ message: 'Bad Request: Missing name, email, or message.' }) };
   }
 
   const payload = {
@@ -51,13 +51,14 @@ exports.handler = async (event) => {
     });
 
     if (!response.ok) {
-      console.error(`Error sending to Discord: ${response.status} ${response.statusText}`, await response.text());
-      return { statusCode: 500, body: 'Error sending message to Discord.' };
+      const errorBody = await response.text();
+      console.error(`Error sending to Discord: ${response.status} ${response.statusText}`, errorBody);
+      return { statusCode: 500, body: JSON.stringify({ message: 'Error sending message to Discord.', error: errorBody }) };
     }
 
-    return { statusCode: 200, body: 'Message sent successfully to Discord!' };
+    return { statusCode: 200, body: JSON.stringify({ message: 'Message sent successfully to Discord!' }) };
   } catch (error) {
     console.error('Error sending to Discord:', error);
-    return { statusCode: 500, body: 'Error sending message to Discord.' };
+    return { statusCode: 500, body: JSON.stringify({ message: 'Error sending message to Discord.', error: error.message }) };
   }
 };
