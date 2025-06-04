@@ -53,10 +53,22 @@
   {{ template "_internal/google_analytics.html" . }}
 
   {{/* ─────── 3) Chargement des CSS : Vex, Bootstrap, puis ton CSS perso ─────── */}}
-  {{ $scssResource := resources.Get "scss/style.scss" }}
-  {{ if $scssResource }}
-    {{ $style := $scssResource | resources.Sass (dict "outputStyle" "compressed") | resources.Minify | resources.Fingerprint }}
-    <link rel="stylesheet" href="{{ $style.RelPermalink }}" integrity="{{ $style.Data.Integrity }}">
+  {{ $scssFile := "scss/style.scss" }}
+  {{ $scssOptions := (dict "outputStyle" "compressed") }}
+  {{ $stylesheet := "" }} {{/* Initialize $stylesheet */}}
+
+  {{ $originalResource := resources.Get $scssFile }}
+
+  {{ if $originalResource }}
+    {{ if ne $originalResource.Content "" }} {{/* Check if content is not empty */}}
+      {{ $processedStyles := resources.Sass $originalResource $scssOptions }}
+      {{ $minifiedStyles := $processedStyles | resources.Minify }}
+      {{ $fingerprintedStyles := $minifiedStyles | resources.Fingerprint }}
+      {{ $stylesheet = $fingerprintedStyles }}
+      <link rel="stylesheet" href="{{ $stylesheet.RelPermalink }}" integrity="{{ $stylesheet.Data.Integrity }}">
+    {{ else }}
+      {{ warnf "SCSS resource assets/scss/style.scss is empty when processed in layouts/products/single.html." }}
+    {{ end }}
   {{ else }}
     {{ warnf "SCSS resource assets/scss/style.scss not found when processed in layouts/products/single.html. Main stylesheet will be missing for product pages." }}
   {{ end }}
