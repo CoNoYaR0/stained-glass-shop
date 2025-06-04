@@ -17,42 +17,63 @@
   {{ end }}
 
   {{ "<!-- Main Stylesheet -->" | safeHTML }}
-  {{ $scssFilePath := "assets/scss/style.scss" }} {{/* Path relative to project root for readFile */}}
-  {{ $targetResourceName := "scss/style.scss" }} {{/* Target name/path for the resource created by FromString */}}
+  {{ $scssPathKey := "assets/scss/style.scss" }} {{/* CHANGED THIS LINE */}}
   {{ $scssOptions := (dict "outputStyle" "compressed") }}
   {{ $stylesheet := "" }} {{/* Initialize */}}
 
-  {{ $fileContent := "" }}
-  {{ $fileExists := fileExists $scssFilePath }}
+  {{ $initialResourceAttempt := resources.Get $scssPathKey }}
+  {{ $actualResource := "" }} {{/* Initialize */}}
+  {{ $debugInitialType := printf "%T" $initialResourceAttempt }}
+  {{ $debugSourceMethod := "initial resources.Get" }} {{/* For logging */}}
+  {{ $correctedPathForNextAttempt := $scssPathKey }} {{/* Default path for any re-attempts */}}
 
-  {{ if $fileExists }}
-    {{ $fileContent = readFile $scssFilePath }}
-    {{ warnf "DEBUG head.html: readFile '%s' - File exists. Content Length: %d" $scssFilePath (len $fileContent) }}
+
+  {{ if eq $debugInitialType "string" }}
+    {{ $pathStringFromGet := $initialResourceAttempt }}
+    {{ if strings.HasPrefix $pathStringFromGet "/" }}
+      {{ $correctedPathForNextAttempt = strings.TrimPrefix "/" $pathStringFromGet }}
+      {{ warnf "DEBUG head.html: Initial resources.Get for '%s' returned STRING '%s'. Trimmed leading '/' to '%s' for next Match attempt." $scssPathKey $pathStringFromGet $correctedPathForNextAttempt }}
+    {{ else }}
+      {{ $correctedPathForNextAttempt = $pathStringFromGet }}
+      {{ warnf "DEBUG head.html: Initial resources.Get for '%s' returned STRING '%s'. No leading '/' to trim. Using as is for next Match attempt." $scssPathKey $pathStringFromGet }}
+    {{ end }}
+
+    {{ $matchedResources := resources.Match $correctedPathForNextAttempt }}
+    {{ if gt (len $matchedResources) 0 }}
+      {{ $actualResource = index $matchedResources 0 }}
+      {{ $debugSourceMethod = (printf "resources.Match fallback on '%s'" $correctedPathForNextAttempt) }}
+    {{ else }}
+      {{ warnf "DEBUG head.html: resources.Match for path '%s' found NO resources. $initialResourceAttempt (type: %s) will be used directly." $correctedPathForNextAttempt $debugInitialType }}
+      {{ $actualResource = $initialResourceAttempt }} {{/* If match fails, pass on the original string to see its type logged by next debug block */}}
+       {{ $debugSourceMethod = (printf "original string from resources.Get ('%s') after Match failed on '%s'" $initialResourceAttempt $correctedPathForNextAttempt) }}
+    {{ end }}
   {{ else }}
-    {{ warnf "DEBUG head.html: readFile '%s' - File does NOT exist." $scssFilePath }}
+    {{ $actualResource = $initialResourceAttempt }}
   {{ end }}
 
-  {{ if and $fileExists (ne $fileContent "") }}
-    {{/* Create a resource from the string content.
-         The second argument to resources.FromString is the target path/name for this resource.
-         It helps Hugo understand what kind of resource it is (e.g., by its .scss extension)
-         and is used in internal caching. */}}
-    {{ $scssResource := resources.FromString $targetResourceName $fileContent }}
+  {{/* --- DEBUGGING BLOCK for $actualResource --- */}}
+  {{ if $actualResource }}
+    {{ warnf "DEBUG head.html: $actualResource (obtained via %s). Name: %s, Type: %T, MediaType: %s, Content Length: %d" $debugSourceMethod $actualResource.Name (printf "%T" $actualResource) $actualResource.MediaType (len $actualResource.Content) }}
+  {{ else }}
+    {{ warnf "DEBUG head.html: $actualResource for '%s' is NIL (Initial type was: %s, Source method: %s)." $scssPathKey $debugInitialType $debugSourceMethod }}
+  {{ end }}
+  {{/* --- DEBUGGING BLOCK END --- */}}
 
-    {{ if $scssResource }}
-      {{ warnf "DEBUG head.html: Successfully created resource from string. Name: %s, Type: %T, MediaType: %s" $scssResource.Name (printf "%T" $scssResource) $scssResource.MediaType }}
-      {{ $processedStyles := resources.Sass $scssResource $scssOptions }}
-      {{ $stylesheet = $processedStyles }}
-      <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" media="screen">
+
+  {{ if $actualResource }}
+    {{ if ne $actualResource.Content "" }}
+      {{ if not (eq (printf "%T" $actualResource) "string") }}
+        {{ $processedStyles := resources.Sass $actualResource $scssOptions }}
+        {{ $stylesheet = $processedStyles }}
+        <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" media="screen">
+      {{ else }}
+        {{ warnf "ERROR head.html: $actualResource is STILL a string ('%s') even after fallback logic. Cannot process with resources.Sass. Source: %s" $actualResource $debugSourceMethod }}
+      {{ end }}
     {{ else }}
-      {{ warnf "ERROR head.html: resources.FromString for target '%s' returned NIL." $targetResourceName }}
+      {{ warnf "SCSS resource %s (%s) is empty. (Content check on $actualResource)" $scssPathKey $debugSourceMethod }}
     {{ end }}
   {{ else }}
-    {{ if not $fileExists }}
-      {{ warnf "SCSS file '%s' not found by readFile. Main stylesheet will be missing." $scssFilePath }}
-    {{ else }}
-      {{ warnf "SCSS file '%s' is empty. Main stylesheet will be missing." $scssFilePath }}
-    {{ end }}
+    {{ warnf "SCSS resource %s (%s) not found. (Resource check on $actualResource)" $scssPathKey $debugSourceMethod }}
   {{ end }}
 
   {{ "<!--Favicon-->" | safeHTML }}
