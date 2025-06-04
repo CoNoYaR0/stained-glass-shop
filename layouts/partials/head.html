@@ -25,15 +25,27 @@
   {{ $actualResource := "" }} {{/* Initialize */}}
   {{ $debugInitialType := printf "%T" $initialResourceAttempt }}
   {{ $debugSourceMethod := "initial resources.Get" }} {{/* For logging */}}
+  {{ $correctedPathForNextAttempt := $scssPathKey }} {{/* Default path for any re-attempts */}}
+
 
   {{ if eq $debugInitialType "string" }}
-    {{ warnf "DEBUG head.html: Initial resources.Get for '%s' returned a STRING: '%s'. Attempting resources.Match with this string." $scssPathKey $initialResourceAttempt }}
-    {{ $matchedResources := resources.Match $initialResourceAttempt }}
+    {{ $pathStringFromGet := $initialResourceAttempt }}
+    {{ if strings.HasPrefix $pathStringFromGet "/" }}
+      {{ $correctedPathForNextAttempt = strings.TrimPrefix "/" $pathStringFromGet }}
+      {{ warnf "DEBUG head.html: Initial resources.Get for '%s' returned STRING '%s'. Trimmed leading '/' to '%s' for next Match attempt." $scssPathKey $pathStringFromGet $correctedPathForNextAttempt }}
+    {{ else }}
+      {{ $correctedPathForNextAttempt = $pathStringFromGet }}
+      {{ warnf "DEBUG head.html: Initial resources.Get for '%s' returned STRING '%s'. No leading '/' to trim. Using as is for next Match attempt." $scssPathKey $pathStringFromGet }}
+    {{ end }}
+
+    {{ $matchedResources := resources.Match $correctedPathForNextAttempt }}
     {{ if gt (len $matchedResources) 0 }}
       {{ $actualResource = index $matchedResources 0 }}
-      {{ $debugSourceMethod = "resources.Match fallback" }}
+      {{ $debugSourceMethod = (printf "resources.Match fallback on '%s'" $correctedPathForNextAttempt) }}
     {{ else }}
-      {{ warnf "DEBUG head.html: resources.Match for string '%s' found no resources." $initialResourceAttempt }}
+      {{ warnf "DEBUG head.html: resources.Match for path '%s' found NO resources. $initialResourceAttempt (type: %s) will be used directly." $correctedPathForNextAttempt $debugInitialType }}
+      {{ $actualResource = $initialResourceAttempt }} {{/* If match fails, pass on the original string to see its type logged by next debug block */}}
+       {{ $debugSourceMethod = (printf "original string from resources.Get ('%s') after Match failed on '%s'" $initialResourceAttempt $correctedPathForNextAttempt) }}
     {{ end }}
   {{ else }}
     {{ $actualResource = $initialResourceAttempt }}
@@ -50,7 +62,6 @@
 
   {{ if $actualResource }}
     {{ if ne $actualResource.Content "" }}
-      {{/* Ensure $actualResource is truly a resource object that resources.Sass can handle */}}
       {{ if not (eq (printf "%T" $actualResource) "string") }}
         {{ $processedStyles := resources.Sass $actualResource $scssOptions }}
         {{ $stylesheet = $processedStyles }}
