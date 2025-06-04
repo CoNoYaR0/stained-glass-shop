@@ -17,34 +17,47 @@
   {{ end }}
 
   {{ "<!-- Main Stylesheet -->" | safeHTML }}
-  {{ $scssFile := "scss/style.scss" }}
+  {{ $scssPathKey := "scss/style.scss" }}
   {{ $scssOptions := (dict "outputStyle" "compressed") }}
-  {{ $stylesheet := "" }} {{/* Initialize $stylesheet */}}
+  {{ $stylesheet := "" }} {{/* Initialize */}}
 
-  {{ $originalResource := resources.Get $scssFile }}
+  {{ $initialResourceAttempt := resources.Get $scssPathKey }}
+  {{ $actualResource := "" }} {{/* Initialize */}}
+  {{ $debugInitialType := printf "%T" $initialResourceAttempt }}
 
-  {{/* --- DEBUGGING BLOCK START --- */}}
-  {{ if $originalResource }}
-    {{ warnf "DEBUG head.html: Found $originalResource. Name: %s, Type: %T, MediaType: %s, Content Length: %d" $originalResource.Name (printf "%T" $originalResource) $originalResource.MediaType (len $originalResource.Content) }}
-    {{/* Let's try to see if .RelPermalink exists on $originalResource directly, indicating it's some kind of file */}}
-    {{ warnf "DEBUG head.html: $originalResource.Permalink: %s" $originalResource.Permalink }}
-    {{ warnf "DEBUG head.html: $originalResource.RelPermalink: %s" $originalResource.RelPermalink }}
+  {{ if eq $debugInitialType "string" }}
+    {{ warnf "DEBUG head.html: Initial attempt for '%s' returned a STRING: '%s'. Attempting to re-get using this string as path." $scssPathKey $initialResourceAttempt }}
+    {{ $actualResource = resources.Get $initialResourceAttempt }}
   {{ else }}
-    {{ warnf "DEBUG head.html: $originalResource for %s is NIL." $scssFile }}
+    {{ $actualResource = $initialResourceAttempt }}
+  {{ end }}
+
+  {{/* --- DEBUGGING BLOCK for $actualResource --- */}}
+  {{ if $actualResource }}
+    {{ warnf "DEBUG head.html: $actualResource after re-get logic. Name: %s, Type: %T, MediaType: %s, Content Length: %d" $actualResource.Name (printf "%T" $actualResource) $actualResource.MediaType (len $actualResource.Content) }}
+    {{ warnf "DEBUG head.html: $actualResource.Permalink: %s" $actualResource.Permalink }}
+    {{ warnf "DEBUG head.html: $actualResource.RelPermalink: %s" $actualResource.RelPermalink }}
+  {{ else }}
+    {{ warnf "DEBUG head.html: $actualResource for '%s' is NIL (Initial type was: %s)." $scssPathKey $debugInitialType }}
   {{ end }}
   {{/* --- DEBUGGING BLOCK END --- */}}
 
 
-  {{ if $originalResource }}
-    {{ if ne $originalResource.Content "" }} {{/* Check if content is not empty */}}
-      {{ $processedStyles := resources.Sass $originalResource $scssOptions }}
-      {{ $stylesheet = $processedStyles }} {{/* Temporarily skip Minify */}}
-      <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" media="screen">
+  {{ if $actualResource }}
+    {{ if ne $actualResource.Content "" }}
+      {{/* Ensure $actualResource is truly a resource object that resources.Sass can handle */}}
+      {{ if not (eq (printf "%T" $actualResource) "string") }}
+        {{ $processedStyles := resources.Sass $actualResource $scssOptions }}
+        {{ $stylesheet = $processedStyles }}
+        <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" media="screen">
+      {{ else }}
+        {{ warnf "ERROR head.html: $actualResource is STILL a string ('%s') after re-get logic. Cannot process with resources.Sass." $actualResource }}
+      {{ end }}
     {{ else }}
-      {{ warnf "SCSS resource assets/scss/style.scss is empty when processed in layouts/partials/head.html. (Content check)" }}
+      {{ warnf "SCSS resource %s is empty. (Content check on $actualResource)" $scssPathKey }}
     {{ end }}
   {{ else }}
-    {{ warnf "SCSS resource assets/scss/style.scss not found when processed in layouts/partials/head.html. (Resource check)" }}
+    {{ warnf "SCSS resource %s not found. (Resource check on $actualResource)" $scssPathKey }}
   {{ end }}
 
   {{ "<!--Favicon-->" | safeHTML }}

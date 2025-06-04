@@ -53,33 +53,48 @@
   {{ template "_internal/google_analytics.html" . }}
 
   {{/* ─────── 3) Chargement des CSS : Vex, Bootstrap, puis ton CSS perso ─────── */}}
-  {{ $scssFile := "scss/style.scss" }}
+  {{ $scssPathKey := "scss/style.scss" }}
   {{ $scssOptions := (dict "outputStyle" "compressed") }}
-  {{ $stylesheet := "" }} {{/* Initialize $stylesheet */}}
+  {{ $stylesheet := "" }} {{/* Initialize */}}
 
-  {{ $originalResource := resources.Get $scssFile }}
+  {{ $initialResourceAttempt := resources.Get $scssPathKey }}
+  {{ $actualResource := "" }} {{/* Initialize */}}
+  {{ $debugInitialType := printf "%T" $initialResourceAttempt }}
 
-  {{/* --- DEBUGGING BLOCK START --- */}}
-  {{ if $originalResource }}
-    {{ warnf "DEBUG products/single.html: Found $originalResource. Name: %s, Type: %T, MediaType: %s, Content Length: %d" $originalResource.Name (printf "%T" $originalResource) $originalResource.MediaType (len $originalResource.Content) }}
-    {{ warnf "DEBUG products/single.html: $originalResource.Permalink: %s" $originalResource.Permalink }}
-    {{ warnf "DEBUG products/single.html: $originalResource.RelPermalink: %s" $originalResource.RelPermalink }}
+  {{ if eq $debugInitialType "string" }}
+    {{ warnf "DEBUG products/single.html: Initial attempt for '%s' returned a STRING: '%s'. Attempting to re-get using this string as path." $scssPathKey $initialResourceAttempt }}
+    {{ $actualResource = resources.Get $initialResourceAttempt }}
   {{ else }}
-    {{ warnf "DEBUG products/single.html: $originalResource for %s is NIL." $scssFile }}
+    {{ $actualResource = $initialResourceAttempt }}
+  {{ end }}
+
+  {{/* --- DEBUGGING BLOCK for $actualResource --- */}}
+  {{ if $actualResource }}
+    {{ warnf "DEBUG products/single.html: $actualResource after re-get logic. Name: %s, Type: %T, MediaType: %s, Content Length: %d" $actualResource.Name (printf "%T" $actualResource) $actualResource.MediaType (len $actualResource.Content) }}
+    {{ warnf "DEBUG products/single.html: $actualResource.Permalink: %s" $actualResource.Permalink }}
+    {{ warnf "DEBUG products/single.html: $actualResource.RelPermalink: %s" $actualResource.RelPermalink }}
+  {{ else }}
+    {{ warnf "DEBUG products/single.html: $actualResource for '%s' is NIL (Initial type was: %s)." $scssPathKey $debugInitialType }}
   {{ end }}
   {{/* --- DEBUGGING BLOCK END --- */}}
 
 
-  {{ if $originalResource }}
-    {{ if ne $originalResource.Content "" }} {{/* Check if content is not empty */}}
-      {{ $processedStyles := resources.Sass $originalResource $scssOptions }}
-      {{ $stylesheet = $processedStyles }} {{/* Temporarily skip Minify and Fingerprint */}}
-      <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" integrity=""> {{/* No integrity without fingerprint */}}
+  {{ if $actualResource }}
+    {{ if ne $actualResource.Content "" }}
+      {{/* Ensure $actualResource is truly a resource object that resources.Sass can handle */}}
+      {{ if not (eq (printf "%T" $actualResource) "string") }}
+        {{ $processedStyles := resources.Sass $actualResource $scssOptions }}
+        {{ $stylesheet = $processedStyles }}
+        {{/* Link for products/single.html (was previously fingerprinted, but simplified for diagnosis) */}}
+        <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" integrity="">
+      {{ else }}
+        {{ warnf "ERROR products/single.html: $actualResource is STILL a string ('%s') after re-get logic. Cannot process with resources.Sass." $actualResource }}
+      {{ end }}
     {{ else }}
-      {{ warnf "SCSS resource assets/scss/style.scss is empty when processed in layouts/products/single.html. (Content check)" }}
+      {{ warnf "SCSS resource %s is empty in products/single.html. (Content check on $actualResource)" $scssPathKey }}
     {{ end }}
   {{ else }}
-    {{ warnf "SCSS resource assets/scss/style.scss not found when processed in layouts/products/single.html. (Resource check)" }}
+    {{ warnf "SCSS resource %s not found in products/single.html. (Resource check on $actualResource)" $scssPathKey }}
   {{ end }}
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
