@@ -128,7 +128,9 @@
 
       // Initialize Supabase Client
       // IMPORTANT: Replace with your actual Supabase URL and Anon Key
-      const supabase = createClient( process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_KEY);
+      const SUPABASE_URL = 'YOUR_SUPABASE_URL_REPLACE_ME';
+      const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_REPLACE_ME';
+
       try {
         if (typeof supabase !== 'undefined') { // Check if supabase CDN object exists
             supabase_client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
