@@ -26,8 +26,7 @@
   {{ if $originalResource }}
     {{ if ne $originalResource.Content "" }} {{/* Check if content is not empty */}}
       {{ $processedStyles := resources.Sass $originalResource $scssOptions }}
-      {{ $minifiedStyles := $processedStyles | resources.Minify }}
-      {{ $stylesheet = $minifiedStyles }}
+      {{ $stylesheet = $processedStyles }} {{/* Temporarily skip Minify */}}
       <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" media="screen">
     {{ else }}
       {{ warnf "SCSS resource assets/scss/style.scss is empty when processed in layouts/partials/head.html." }}
