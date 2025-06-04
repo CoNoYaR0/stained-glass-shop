@@ -24,21 +24,26 @@
   {{ $initialResourceAttempt := resources.Get $scssPathKey }}
   {{ $actualResource := "" }} {{/* Initialize */}}
   {{ $debugInitialType := printf "%T" $initialResourceAttempt }}
+  {{ $debugSourceMethod := "initial resources.Get" }} {{/* For logging */}}
 
   {{ if eq $debugInitialType "string" }}
-    {{ warnf "DEBUG head.html: Initial attempt for '%s' returned a STRING: '%s'. Attempting to re-get using this string as path." $scssPathKey $initialResourceAttempt }}
-    {{ $actualResource = resources.Get $initialResourceAttempt }}
+    {{ warnf "DEBUG head.html: Initial resources.Get for '%s' returned a STRING: '%s'. Attempting resources.Match with this string." $scssPathKey $initialResourceAttempt }}
+    {{ $matchedResources := resources.Match $initialResourceAttempt }}
+    {{ if gt (len $matchedResources) 0 }}
+      {{ $actualResource = index $matchedResources 0 }}
+      {{ $debugSourceMethod = "resources.Match fallback" }}
+    {{ else }}
+      {{ warnf "DEBUG head.html: resources.Match for string '%s' found no resources." $initialResourceAttempt }}
+    {{ end }}
   {{ else }}
     {{ $actualResource = $initialResourceAttempt }}
   {{ end }}
 
   {{/* --- DEBUGGING BLOCK for $actualResource --- */}}
   {{ if $actualResource }}
-    {{ warnf "DEBUG head.html: $actualResource after re-get logic. Name: %s, Type: %T, MediaType: %s, Content Length: %d" $actualResource.Name (printf "%T" $actualResource) $actualResource.MediaType (len $actualResource.Content) }}
-    {{ warnf "DEBUG head.html: $actualResource.Permalink: %s" $actualResource.Permalink }}
-    {{ warnf "DEBUG head.html: $actualResource.RelPermalink: %s" $actualResource.RelPermalink }}
+    {{ warnf "DEBUG head.html: $actualResource (obtained via %s). Name: %s, Type: %T, MediaType: %s, Content Length: %d" $debugSourceMethod $actualResource.Name (printf "%T" $actualResource) $actualResource.MediaType (len $actualResource.Content) }}
   {{ else }}
-    {{ warnf "DEBUG head.html: $actualResource for '%s' is NIL (Initial type was: %s)." $scssPathKey $debugInitialType }}
+    {{ warnf "DEBUG head.html: $actualResource for '%s' is NIL (Initial type was: %s, Source method: %s)." $scssPathKey $debugInitialType $debugSourceMethod }}
   {{ end }}
   {{/* --- DEBUGGING BLOCK END --- */}}
 
@@ -51,13 +56,13 @@
         {{ $stylesheet = $processedStyles }}
         <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" media="screen">
       {{ else }}
-        {{ warnf "ERROR head.html: $actualResource is STILL a string ('%s') after re-get logic. Cannot process with resources.Sass." $actualResource }}
+        {{ warnf "ERROR head.html: $actualResource is STILL a string ('%s') even after fallback logic. Cannot process with resources.Sass. Source: %s" $actualResource $debugSourceMethod }}
       {{ end }}
     {{ else }}
-      {{ warnf "SCSS resource %s is empty. (Content check on $actualResource)" $scssPathKey }}
+      {{ warnf "SCSS resource %s (%s) is empty. (Content check on $actualResource)" $scssPathKey $debugSourceMethod }}
     {{ end }}
   {{ else }}
-    {{ warnf "SCSS resource %s not found. (Resource check on $actualResource)" $scssPathKey }}
+    {{ warnf "SCSS resource %s (%s) not found. (Resource check on $actualResource)" $scssPathKey $debugSourceMethod }}
   {{ end }}
 
   {{ "<!--Favicon-->" | safeHTML }}
