@@ -60,21 +60,26 @@
   {{ $initialResourceAttempt := resources.Get $scssPathKey }}
   {{ $actualResource := "" }} {{/* Initialize */}}
   {{ $debugInitialType := printf "%T" $initialResourceAttempt }}
+  {{ $debugSourceMethod := "initial resources.Get" }} {{/* For logging */}}
 
   {{ if eq $debugInitialType "string" }}
-    {{ warnf "DEBUG products/single.html: Initial attempt for '%s' returned a STRING: '%s'. Attempting to re-get using this string as path." $scssPathKey $initialResourceAttempt }}
-    {{ $actualResource = resources.Get $initialResourceAttempt }}
+    {{ warnf "DEBUG products/single.html: Initial resources.Get for '%s' returned a STRING: '%s'. Attempting resources.Match with this string." $scssPathKey $initialResourceAttempt }}
+    {{ $matchedResources := resources.Match $initialResourceAttempt }}
+    {{ if gt (len $matchedResources) 0 }}
+      {{ $actualResource = index $matchedResources 0 }}
+      {{ $debugSourceMethod = "resources.Match fallback" }}
+    {{ else }}
+      {{ warnf "DEBUG products/single.html: resources.Match for string '%s' found no resources." $initialResourceAttempt }}
+    {{ end }}
   {{ else }}
     {{ $actualResource = $initialResourceAttempt }}
   {{ end }}
 
   {{/* --- DEBUGGING BLOCK for $actualResource --- */}}
   {{ if $actualResource }}
-    {{ warnf "DEBUG products/single.html: $actualResource after re-get logic. Name: %s, Type: %T, MediaType: %s, Content Length: %d" $actualResource.Name (printf "%T" $actualResource) $actualResource.MediaType (len $actualResource.Content) }}
-    {{ warnf "DEBUG products/single.html: $actualResource.Permalink: %s" $actualResource.Permalink }}
-    {{ warnf "DEBUG products/single.html: $actualResource.RelPermalink: %s" $actualResource.RelPermalink }}
+    {{ warnf "DEBUG products/single.html: $actualResource (obtained via %s). Name: %s, Type: %T, MediaType: %s, Content Length: %d" $debugSourceMethod $actualResource.Name (printf "%T" $actualResource) $actualResource.MediaType (len $actualResource.Content) }}
   {{ else }}
-    {{ warnf "DEBUG products/single.html: $actualResource for '%s' is NIL (Initial type was: %s)." $scssPathKey $debugInitialType }}
+    {{ warnf "DEBUG products/single.html: $actualResource for '%s' is NIL (Initial type was: %s, Source method: %s)." $scssPathKey $debugInitialType $debugSourceMethod }}
   {{ end }}
   {{/* --- DEBUGGING BLOCK END --- */}}
 
@@ -85,16 +90,16 @@
       {{ if not (eq (printf "%T" $actualResource) "string") }}
         {{ $processedStyles := resources.Sass $actualResource $scssOptions }}
         {{ $stylesheet = $processedStyles }}
-        {{/* Link for products/single.html (was previously fingerprinted, but simplified for diagnosis) */}}
+        {{/* Link for products/single.html (integrity attribute is empty as Minify/Fingerprint are still out for diagnosis) */}}
         <link rel="stylesheet" href="{{ $stylesheet.Permalink }}" integrity="">
       {{ else }}
-        {{ warnf "ERROR products/single.html: $actualResource is STILL a string ('%s') after re-get logic. Cannot process with resources.Sass." $actualResource }}
+        {{ warnf "ERROR products/single.html: $actualResource is STILL a string ('%s') even after fallback logic. Cannot process with resources.Sass. Source: %s" $actualResource $debugSourceMethod }}
       {{ end }}
     {{ else }}
-      {{ warnf "SCSS resource %s is empty in products/single.html. (Content check on $actualResource)" $scssPathKey }}
+      {{ warnf "SCSS resource %s (%s) is empty in products/single.html. (Content check on $actualResource)" $scssPathKey $debugSourceMethod }}
     {{ end }}
   {{ else }}
-    {{ warnf "SCSS resource %s not found in products/single.html. (Resource check on $actualResource)" $scssPathKey }}
+    {{ warnf "SCSS resource %s (%s) not found in products/single.html. (Resource check on $actualResource)" $scssPathKey $debugSourceMethod }}
   {{ end }}
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
