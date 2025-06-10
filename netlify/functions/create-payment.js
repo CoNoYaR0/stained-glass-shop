@@ -1,5 +1,10 @@
-
 const axios = require("axios");
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
@@ -19,46 +24,69 @@ exports.handler = async function (event) {
     const PAYMEE_VENDOR = process.env.PAYMEE_VENDOR;
 
     const note = `SG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    const return_url = "https://stainedglass.tn/merci-cb";
 
+    const return_url = "https://stainedglass.tn/merci";
+    const webhook_url = "https://stainedglass.tn/.netlify/functions/webhook";
+    
     const payload = {
-      vendor: PAYMEE_VENDOR,
-      amount: amount,
-      note: note,
-      first_name: nom,
-      last_name: prenom,
-      phone_number: tel,
-      email: email,
-      success_url: return_url,
-      fail_url: return_url
-    };
+  vendor: PAYMEE_VENDOR,
+  amount: amount,
+  note: note,
+  first_name: nom,
+  last_name: prenom,
+  phone_number: tel,
+  email: email,
+  success_url: return_url,
+  fail_url: return_url,
+  webhook_url: webhook_url,
+  redirect_url: return_url  // 🛠️ clé manquante pour forcer la redirection
+};
+
 
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Token ${PAYMEE_TOKEN}`
+      Authorization: `Token ${PAYMEE_TOKEN}`
     };
 
-    const response = await axios.post("https://app.paymee.tn/api/v2/payments/create", payload, { headers });
+    const response = await axios.post(
+      "https://app.paymee.tn/api/v2/payments/create",
+      payload,
+      { headers }
+    );
 
-    console.info("✅ Lien Paymee généré :", response.data?.data?.payment_url);
+    // Enregistrement dans Supabase
+    const { error } = await supabase.from("pending_orders").insert({
+      note: note,
+      data: {
+        customer: { nom, prenom, email, tel, adresse },
+        cart: cart.map((p) => ({
+          id: p.id,
+          qty: p.quantity,
+          price_ht: p.price,
+          tva: 20
+        })),
+        totalTTC: amount,
+        paiement: "cb"
+      }
+    });
+
+    if (error) {
+      console.error("❌ Erreur insertion Supabase :", error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Erreur Supabase" })
+      };
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        data: {
-          payment_url: response.data?.data?.payment_url,
-          note: note
-        }
-      })
+      body: JSON.stringify(response.data)
     };
-  } catch (error) {
-    console.error("💥 Erreur Paymee :", error.response?.data || error.message);
+  } catch (err) {
+    console.error("💥 Erreur create-payment:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: "Erreur lors de la création du paiement",
-        details: error.response?.data || error.message
-      })
+      body: JSON.stringify({ error: "Erreur interne" })
     };
   }
 };

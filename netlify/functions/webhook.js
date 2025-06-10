@@ -1,10 +1,12 @@
-// ✅ Webhook Paymee → création de commande Dolibarr
-const fs = require("fs");
-const path = require("path");
-const axios = require("axios");
+const { createClient } = require("@supabase/supabase-js");
+const { handleCreateOrder } = require("./create-order");
 
-const API_BASE = process.env.URL || "https://stainedglass.tn"; // pour appel interne
 const SECRET_KEY = process.env.ORDER_SECRET;
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
@@ -15,70 +17,52 @@ exports.handler = async function (event) {
   }
 
   try {
-    const payload = JSON.parse(event.body);
-    console.log("📩 Webhook reçu de Paymee:", payload);
+    const payload = Object.fromEntries(new URLSearchParams(event.body));
+    console.log("🛰️ Webhook reçu", payload);
 
-    // Vérification basique que le paiement est bien validé
-    if (!payload.status || payload.status !== "success") {
-      console.warn("❌ Paiement non confirmé, ignoré");
+    const note = payload.note;
+    const payment_status = payload.payment_status;
+
+    if (!note || payment_status !== "True") {
       return {
         statusCode: 200,
-        body: JSON.stringify({ message: "Ignored non-success status" })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "ignored" })
       };
     }
 
-    // Utilisation d'une note comme token pour retrouver la commande en cache
-    const token = payload.note;
-    const filePath = path.join("/tmp/pending-orders", `${token}.json`);
+    const { data: record, error } = await supabase
+      .from("pending_orders")
+      .select("data")
+      .eq("note", note)
+      .single();
 
-    if (!fs.existsSync(filePath)) {
-      console.error("❌ Commande en cache introuvable pour token:", token);
+    if (error || !record) {
+      console.error("❌ Commande introuvable dans Supabase pour note:", note);
       return {
         statusCode: 404,
-        body: JSON.stringify({ error: "Commande introuvable" })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "not_found" })
       };
     }
 
-    const data = JSON.parse(fs.readFileSync(filePath));
+    const data = record.data;
 
-    console.log("🧾 Commande à rejouer:", data);
-
-    const res = await axios.post(`${API_BASE}/.netlify/functions/create-order`, data, {
-      headers: {
-        "x-secret-key": SECRET_KEY,
-        "Content-Type": "application/json"
-      }
-    });
-
-    console.log("✅ Commande créée via webhook. Résultat:", res.data);
-
-    // 💳 Marquer la facture comme payée (après retour webhook Paymee)
-    const factureId = res.data?.facture?.id;
-    if (factureId) {
-      await axios.post(`${process.env.DOLIBARR_API}/payments`, {
-        facid: factureId,
-        datepaye: new Date().toISOString().split("T")[0],
-        amount: data.totalTTC,
-        paymenttype: 2,
-        closepaidinvoices: 1
-      }, {
-        headers: {
-          DOLAPIKEY: process.env.DOLIBARR_TOKEN,
-          "Content-Type": "application/json"
-        }
-      });
-      console.log("💰 Facture", factureId, "marquée comme payée (CB via webhook)");
-    }
+    await handleCreateOrder(data);
+    console.log("✅ Commande traitée");
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true, from: "webhook", result: res.data })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "success" })
     };
+
   } catch (err) {
-    console.error("💥 Erreur traitement webhook:", err);
+    console.error("💥 Erreur Webhook :", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Erreur serveur webhook" })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "server_error" })
     };
   }
 };
