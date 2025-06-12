@@ -6,6 +6,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") {
     return {
@@ -54,27 +56,55 @@ exports.handler = async function (event) {
       { headers }
     );
 
-    // Enregistrement dans Supabase
-    const { error } = await supabase.from("pending_orders").insert({
-      note: note,
-      data: {
-        customer: { nom, prenom, email, tel, adresse },
-        cart: cart.map((p) => ({
-          id: p.id,
-          qty: p.quantity,
-          price_ht: p.price,
-          tva: 20
-        })),
-        totalTTC: amount,
-        paiement: "cb"
-      }
-    });
+    // Enregistrement dans Supabase avec tentatives
+    const MAX_RETRIES = 3;
+    let lastSupabaseError = null;
 
-    if (error) {
-      console.error("❌ Erreur insertion Supabase :", error);
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.info(`ℹ️ Tentative ${attempt}/${MAX_RETRIES} d'insertion Supabase pour la note: ${note}`);
+        const { error: supabaseError } = await supabase.from("pending_orders").insert({
+          note: note,
+          data: {
+            customer: { nom, prenom, email, tel, adresse },
+            cart: cart.map((p) => ({
+              id: p.id,
+              qty: p.quantity,
+              price_ht: p.price,
+              tva: 20
+            })),
+            totalTTC: amount,
+            paiement: "cb"
+          }
+        });
+
+        if (supabaseError) {
+          lastSupabaseError = supabaseError;
+          console.error(`❌ Erreur insertion Supabase (tentative ${attempt}/${MAX_RETRIES}):`, lastSupabaseError);
+          if (attempt < MAX_RETRIES) {
+            console.info(`ℹ️ Attente de 1 seconde avant la prochaine tentative...`);
+            await delay(1000);
+          }
+        } else {
+          console.info(`✅ Insertion Supabase réussie (tentative ${attempt}/${MAX_RETRIES}) pour la note: ${note}`);
+          lastSupabaseError = null; // Réinitialiser l'erreur en cas de succès
+          break; // Sortir de la boucle si l'insertion réussit
+        }
+      } catch (e) {
+        lastSupabaseError = e; // Attribuer l'exception à lastSupabaseError
+        console.error(`💥 Exception lors de l'insertion Supabase (tentative ${attempt}/${MAX_RETRIES}):`, lastSupabaseError);
+        if (attempt < MAX_RETRIES) {
+          console.info(`ℹ️ Attente de 1 seconde avant la prochaine tentative...`);
+          await delay(1000);
+        }
+      }
+    }
+
+    if (lastSupabaseError) {
+      console.error(`❌ Échec de toutes les tentatives d'insertion Supabase pour la note: ${note}. Dernière erreur:`, lastSupabaseError);
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Erreur Supabase" })
+        body: JSON.stringify({ error: "Erreur Supabase après plusieurs tentatives", details: lastSupabaseError })
       };
     }
 
