@@ -6,6 +6,7 @@
 [build.environment]
   HUGO_VERSION = "0.145.0"
   HUGO_BASEURL = "/"
+  MISE_PYTHON_COMPILE = "0"
 
 [[headers]]
   for = "/*"
