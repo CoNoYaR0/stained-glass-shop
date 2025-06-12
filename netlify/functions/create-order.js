@@ -81,21 +81,41 @@ async function handleCreateOrder(body) {
   }
 
   // 📣 Notification Discord enrichie
-  const webhookUrl = paiement.toLowerCase() === "cb"
-    ? "https://discord.com/api/webhooks/1378708363784753182/uuslOYq8kSHPdhSS60M_j3Y6LFWrfLOfICNGC_3eV1I9xG0t9eSN43OlY7AdDr_Jq1P6"
-    : "https://discord.com/api/webhooks/1378711499035644066/3oGD57D7mDBt_MW2h6x18WJbcr_LKyX4xlCOgW2yQpkmWDk57DwesOAC8cZ17uFnWogt";
+  let webhookUrl;
+  const paymentType = paiement.toLowerCase();
+  let missingEnvVarName = null;
 
-  const message = {
-    content: `📦 Nouvelle commande **${paiement.toUpperCase()}**
+  if (paymentType === "cb") {
+    webhookUrl = process.env.DISCORD_WEBHOOK_CB;
+    if (!webhookUrl) missingEnvVarName = "DISCORD_WEBHOOK_CB";
+  } else {
+    webhookUrl = process.env.DISCORD_WEBHOOK_LIVRAISON;
+    if (!webhookUrl) missingEnvVarName = "DISCORD_WEBHOOK_LIVRAISON";
+  }
+
+  if (!webhookUrl) {
+    console.warn(`⚠️ URL du webhook Discord pour les paiements '${paymentType}' (${missingEnvVarName}) n'est pas configurée. Notification Discord ignorée.`);
+  } else {
+    const message = {
+      content: `📦 Nouvelle commande **${paiement.toUpperCase()}**
 👤 ${customer.prenom} ${customer.nom}
 📧 ${customer.email}
 📱 ${customer.tel}
 💰 Montant : ${totalTTC} DT
 🧾 Facture ID : ${invoiceId}`
-  };
+    };
 
-  await axios.post(webhookUrl, message);
-  console.info("📣 Notification Discord envoyée");
+    try {
+      await axios.post(webhookUrl, message);
+      console.info("📣 Notification Discord envoyée avec succès.");
+    } catch (discordError) {
+      let errorMessage = `⚠️ Erreur (non critique) lors de l'envoi de la notification Discord: ${discordError.message}.`;
+      if (discordError.response) {
+        errorMessage += ` Réponse de Discord: ${JSON.stringify(discordError.response.data)}.`;
+      }
+      console.warn(errorMessage); // Use console.warn for non-critical operational warnings
+    }
+  }
 
   return { success: true, invoiceId };
 }
