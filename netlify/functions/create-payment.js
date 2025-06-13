@@ -20,6 +20,17 @@ exports.handler = async function (event) {
     const body = JSON.parse(event.body);
     const { nom, prenom, email, tel, adresse, amount, cart } = body;
 
+    // Vérification des IDs manquants dans le panier d'entrée avant l'insertion Supabase
+    if (cart && Array.isArray(cart)) {
+      for (const item of cart) {
+        if (!item.id) {
+          console.warn(`⚠️ Внимание: входящий элемент корзины не имеет ID. Элемент: ${JSON.stringify(item)}`);
+        }
+      }
+    } else {
+      console.warn("⚠️ Внимание: panier (cart) является либо отсутствующим, либо не массивом в полученных данных.");
+    }
+
     console.info("🎯 Création de paiement Paymee pour:", nom, prenom);
 
     const PAYMEE_TOKEN = process.env.PAYMEE_TOKEN;
