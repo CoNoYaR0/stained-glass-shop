@@ -30,8 +30,8 @@
   {{ template "_internal/opengraph.html" . }}
   {{ template "_internal/google_analytics.html" . }}
 
-  {{ $supabaseUrl := getenv "SUPABASE_URL" }}
-  {{ $supabaseAnonKey := getenv "SUPABASE_ANON_KEY_PUBLIC" }}
+  {{ $supabaseUrl := getenv "HUGO_SUPABASE_URL" }}
+  {{ $supabaseAnonKey := getenv "HUGO_SUPABASE_ANON_KEY_PUBLIC" }}
   {{ if and $supabaseUrl $supabaseAnonKey }}
   <script>
     window.APP_CONFIG = {
@@ -41,7 +41,7 @@
   </script>
   {{ else }}
   <script>
-    console.warn("Supabase environment variables not found or not passed to Hugo. Live chat replies from Discord may not work.");
+    console.warn("Supabase HUGO_ prefixed environment variables (HUGO_SUPABASE_URL, HUGO_SUPABASE_ANON_KEY_PUBLIC) not found or not passed to Hugo. Live chat replies from Discord may not work.");
     window.APP_CONFIG = {}; // Initialize to prevent errors
   </script>
   {{ end }}
