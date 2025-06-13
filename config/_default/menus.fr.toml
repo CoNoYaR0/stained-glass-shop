@@ -22,21 +22,11 @@ pre = "#"
 url = "testimonial"
 weight = 4
 
-[[main]]
-name = "Contact"
-url = "contact/"
-weight = 5
-
 # footer menu
 [[footer]]
 name = "Media"
 url = "blog/"
 weight = 1
-
-[[footer]]
-name = "Contact"
-url = "contact/"
-weight = 2
 
 [[footer]]
 name = "Terme & Conditions"
