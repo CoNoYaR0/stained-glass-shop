@@ -41,6 +41,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
 
       button.addEventListener("click", (e) => {
         e.preventDefault();
+        e.stopPropagation(); // Empêche la propagation au lien parent <a>
 
         const product = {
           id: button.dataset.id,

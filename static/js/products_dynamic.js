@@ -104,32 +104,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 5) On branche les événements “Ajouter au panier”
   attachAddToCartButtons(); // fonction que tu avais déjà
 
-  // 6) Pour éviter que le clic sur le bouton add-to-cart suive le lien,
-  //    on empêche la propagation de l’événement click du bouton vers son parent <a>
-  document.querySelectorAll(".add-to-cart").forEach(button => {
-    button.addEventListener("click", event => {
-      event.preventDefault();    // annule la navigation du lien parent
-      event.stopPropagation();   // empêche la propagation sur l'<a>
-      // Puis on appelle la logique existante d'ajout au panier
-      const ref   = button.getAttribute("data-name");
-      const price = parseFloat(button.getAttribute("data-price")) || 0;
-      const image = button.getAttribute("data-image");
-      const id    = button.getAttribute("data-id");
-
-      // Exemple simplifié d’ajout au panier (puisque tu avais déjà attachAddToCartButtons)
-      let cart = JSON.parse(localStorage.getItem("customCart") || "[]");
-      const exist = cart.find(item => item.ref === ref);
-      if (exist) {
-        exist.quantity++;
-      } else {
-        cart.push({ ref, name: ref.replace(/_/g, " "), price, quantity: 1, image });
-      }
-      localStorage.setItem("customCart", JSON.stringify(cart));
-      alert("Produit ajouté au panier !");
-    });
-  });
-
   // 7) Initialisation Swiper (slider) après un petit délai
+  // Note: Le point 6) a été supprimé car il dupliquait la logique d'attachement des événements.
   setTimeout(() => {
     document.querySelectorAll('.swiper').forEach(el => {
       new Swiper(el, {
