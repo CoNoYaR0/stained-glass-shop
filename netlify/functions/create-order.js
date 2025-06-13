@@ -51,6 +51,10 @@ async function handleCreateOrder(body) {
   const invoiceLines = [];
 
   for (const product of cart) {
+    if (!product.id) {
+      console.error(`❌ критическая ошибка: ID продукта отсутствует в элементе корзины. Невозможно получить информацию о продукте из Dolibarr. Элемент корзины: ${JSON.stringify(product)}`);
+      // Laisser la fonction continuer ; l'appel axios suivant échouera probablement et sera géré par le try-catch global.
+    }
     const res = await axios.get(`${dolibarrAPI}/products/${product.id}`, { headers });
     const prodData = res.data;
 
