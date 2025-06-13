@@ -6,6 +6,10 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
 
   function addToCart(product) {
     const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+    // Trim product.id before comparison or storage
+    if (product.id && typeof product.id === 'string') {
+      product.id = product.id.trim();
+    }
     const existing = cart.find(item => item.id === product.id);
 
     if (existing) {
@@ -44,7 +48,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
         e.stopPropagation(); // Empêche la propagation au lien parent <a>
 
         const product = {
-          id: button.dataset.id,
+          id: button.dataset.id ? button.dataset.id.trim() : '',
           name: button.dataset.name,
           price: parseFloat(button.dataset.price),
           image: button.dataset.image || "",
@@ -116,7 +120,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
         if (button.dataset.listenerAttached === 'true') return;
         button.dataset.listenerAttached = 'true';
         button.addEventListener("click", () => {
-          const id = button.dataset.id;
+          const id = button.dataset.id ? button.dataset.id.trim() : '';
           const cart = JSON.parse(localStorage.getItem(CART_KEY));
           const item = cart.find(p => p.id === id);
           if (item) item.quantity += 1;
@@ -130,7 +134,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
         if (button.dataset.listenerAttached === 'true') return;
         button.dataset.listenerAttached = 'true';
         button.addEventListener("click", () => {
-          const id = button.dataset.id;
+          const id = button.dataset.id ? button.dataset.id.trim() : '';
           let cart = JSON.parse(localStorage.getItem(CART_KEY));
           const item = cart.find(p => p.id === id);
           if (item && item.quantity > 1) {
@@ -148,7 +152,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
         if (button.dataset.listenerAttached === 'true') return;
         button.dataset.listenerAttached = 'true';
         button.addEventListener("click", () => {
-          const id = button.dataset.id;
+          const id = button.dataset.id ? button.dataset.id.trim() : '';
           let cart = JSON.parse(localStorage.getItem(CART_KEY));
           cart = cart.filter(p => p.id !== id);
           localStorage.setItem(CART_KEY, JSON.stringify(cart));
