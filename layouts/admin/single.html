@@ -36,5 +36,12 @@
 </div>
 
 <!-- Include admin-specific JavaScript -->
-<script src="/js/admin-chat.js"></script>
+{{ $adminJS := resources.Get "js/admin-chat.js" }}
+{{ if $adminJS }}
+  {{ $builtAdminJS := $adminJS | js.Build }}
+  <script src="{{ $builtAdminJS.RelPermalink }}"></script>
+{{ else }}
+  <!-- Optional: Log an error or warning if the resource is not found during build -->
+  {{ warnf "admin-chat.js not found in assets/js/" }}
+{{ end }}
 {{ end }}
