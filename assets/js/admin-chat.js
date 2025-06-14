@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendReplyBtn = document.getElementById('sendReplyBtn');
     const replyStatusDiv = document.getElementById('replyStatus');
 
+    console.log('Admin Chat DOM Elements Check:', { userIdInput, loadConversationBtn, chatMessagesDiv, currentChatUserIdSpan, replySection, replyMessageInput, sendReplyBtn, replyStatusDiv });
+
     let currentLoadedUserId = null;
 
     // Function to display messages in the chat area
@@ -103,8 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
     sendReplyBtn.addEventListener('click', async () => {
         const replyText = replyMessageInput.value.trim();
         if (!currentLoadedUserId) {
-            replyStatusDiv.textContent = 'Error: No user conversation loaded.';
-            replyStatusDiv.className = 'mt-2 text-danger';
+            if (replyStatusDiv) {
+                replyStatusDiv.textContent = 'Error: No user conversation loaded.';
+                replyStatusDiv.className = 'mt-2 text-danger';
+            } else {
+                console.error('replyStatusDiv is null when trying to report no user loaded.');
+                // Optionally, alert('Error: No user conversation loaded. Status display element missing.');
+            }
             return;
         }
         if (!replyText) {
