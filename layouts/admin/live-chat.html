@@ -1,0 +1,40 @@
+{{ define "main" }}
+<div class="container admin-chat-container py-5">
+  <h1 class="mb-4">{{ .Title }}</h1>
+  <p>{{ .Content }}</p>
+
+  <div class="row">
+    <div class="col-md-4">
+      <h3>Select Conversation</h3>
+      <div class="form-group mb-3">
+        <label for="userIdInput">Enter User ID:</label>
+        <input type="text" id="userIdInput" class="form-control" placeholder="e.g., user-abcdef123">
+        <button id="loadConversationBtn" class="btn btn-primary mt-2">Load Conversation</button>
+      </div>
+      <div id="userList" class="mt-3">
+        <!-- Active conversations or user list could be populated here in a future enhancement -->
+        <p><em>(User list/search will be added later)</em></p>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <h3>Conversation with <span id="currentChatUserId">-</span></h3>
+      <div id="chatMessages" class="chat-messages-area mb-3 p-3 border rounded" style="height: 400px; overflow-y: auto;">
+        <p class="text-muted">Select a User ID to view messages.</p>
+        <!-- Messages will be appended here -->
+      </div>
+      <div id="replySection" style="display: none;">
+        <h4>Send Reply</h4>
+        <div class="form-group mb-2">
+          <textarea id="replyMessageInput" class="form-control" rows="3" placeholder="Type your reply..."></textarea>
+        </div>
+        <button id="sendReplyBtn" class="btn btn-success">Send Reply</button>
+        <div id="replyStatus" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include admin-specific JavaScript -->
+<script src="/js/admin-chat.js"></script>
+{{ end }}
