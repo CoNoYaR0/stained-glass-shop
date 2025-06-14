@@ -7,7 +7,7 @@ weight: 10
 
 ## Using the Admin Live Chat Panel
 
-**Last Updated:** {{< current_date >}} <!-- Placeholder for current date, Hugo can do this if configured -->
+**Last Updated:** June 14, 2024 <!-- Update manually as needed -->
 
 ### 1. Overview
 
