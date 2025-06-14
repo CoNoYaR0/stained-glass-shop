@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to display messages in the chat area
     function displayMessages(messages) {
+        if (!chatMessagesDiv) {
+            console.error("chatMessagesDiv is null. Cannot display messages.");
+            return;
+        }
         chatMessagesDiv.innerHTML = ''; // Clear previous messages
         if (!messages || messages.length === 0) {
             chatMessagesDiv.innerHTML = '<p class="text-muted">No messages found for this user or conversation not loaded.</p>';
@@ -48,7 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             chatMessagesDiv.appendChild(messageEl);
         });
-        chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; // Scroll to bottom
+        if (chatMessagesDiv) { // Check before using scrollHeight
+            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight; // Scroll to bottom
+        }
     }
 
     function escapeHTML(str) {
@@ -72,10 +78,25 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        currentChatUserIdSpan.textContent = userIdToLoad.substring(0,15) + "...";
-        chatMessagesDiv.innerHTML = '<p class="text-muted">Loading messages...</p>';
-        replyStatusDiv.textContent = '';
-        replySection.style.display = 'none';
+        if (currentChatUserIdSpan) {
+            currentChatUserIdSpan.textContent = userIdToLoad.substring(0,15) + "...";
+        } else {
+            console.error('currentChatUserIdSpan is null, cannot set User ID text.');
+        }
+
+        if (chatMessagesDiv) {
+            chatMessagesDiv.innerHTML = '<p class="text-muted">Loading messages...</p>';
+        } else {
+            console.error('chatMessagesDiv is null. Cannot show "Loading messages..."');
+        }
+
+        if (replyStatusDiv) {
+            replyStatusDiv.textContent = '';
+        }
+
+        if(replySection) { // Also check replySection before modifying its style
+            replySection.style.display = 'none';
+        }
 
         try {
             // Netlify Identity token is automatically sent by the browser if user is logged in.
@@ -90,13 +111,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const messages = await response.json();
             displayMessages(messages);
             currentLoadedUserId = userIdToLoad;
-            replySection.style.display = 'block'; // Show reply section
-            replyMessageInput.value = ''; // Clear previous reply
+            if(replySection) { // Check replySection
+                replySection.style.display = 'block'; // Show reply section
+            }
+            if(replyMessageInput) { // Check replyMessageInput
+                replyMessageInput.value = ''; // Clear previous reply
+            }
 
         } catch (error) {
             console.error('Error loading conversation:', error);
-            chatMessagesDiv.innerHTML = `<p class="text-danger">Error: ${escapeHTML(error.message)}</p>`;
-            currentChatUserIdSpan.textContent = '-';
+            if (chatMessagesDiv) {
+                chatMessagesDiv.innerHTML = `<p class="text-danger">Error: ${escapeHTML(error.message)}</p>`;
+            } else {
+                console.error('chatMessagesDiv is null. Cannot display error message in chat area.');
+            }
+            if (currentChatUserIdSpan) {
+                currentChatUserIdSpan.textContent = '-';
+            } else {
+                console.error('currentChatUserIdSpan is null, cannot reset User ID text in error handler.');
+            }
             currentLoadedUserId = null;
         }
     });
@@ -115,13 +148,22 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if (!replyText) {
-            replyStatusDiv.textContent = 'Error: Reply message cannot be empty.';
-            replyStatusDiv.className = 'mt-2 text-danger';
+            if (replyStatusDiv) {
+                replyStatusDiv.textContent = 'Error: Reply message cannot be empty.';
+                replyStatusDiv.className = 'mt-2 text-danger';
+            } else {
+                console.error('replyStatusDiv is null when trying to report reply empty.');
+                alert('Error: Reply message cannot be empty. (UI status element not found)');
+            }
             return;
         }
 
-        replyStatusDiv.textContent = 'Sending reply...';
-        replyStatusDiv.className = 'mt-2 text-info';
+        if (replyStatusDiv) {
+            replyStatusDiv.textContent = 'Sending reply...';
+            replyStatusDiv.className = 'mt-2 text-info';
+        } else {
+            console.error('replyStatusDiv is null. Cannot show "Sending reply..." status.');
+        }
         sendReplyBtn.disabled = true;
 
         try {
@@ -145,9 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const responseData = await response.json();
-            replyStatusDiv.textContent = `Reply sent successfully! (${responseData.message})`;
-            replyStatusDiv.className = 'mt-2 text-success';
-            replyMessageInput.value = ''; // Clear reply input
+            if (replyStatusDiv) {
+                replyStatusDiv.textContent = `Reply sent successfully! (${responseData.message})`;
+                replyStatusDiv.className = 'mt-2 text-success';
+            }
+            if(replyMessageInput) { // Check replyMessageInput
+                replyMessageInput.value = ''; // Clear reply input
+            }
 
             // Optimistically add sent message to UI - this part doesn't fetch new history
             // A more robust solution would re-fetch or wait for Supabase RT update if admin panel also listens
@@ -178,14 +224,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 <small class="text-muted">${new Date(newMessage.timestamp).toLocaleString()}</small><br>
                 <strong>${newMessage.staff_name}:</strong> ${escapeHTML(newMessage.message_content)}
             `;
-            chatMessagesDiv.appendChild(messageEl);
-            chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+            if (chatMessagesDiv) { // Check chatMessagesDiv too
+                chatMessagesDiv.appendChild(messageEl);
+                chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+            } else {
+                console.error("chatMessagesDiv is null, cannot append sent message optimistically.");
+            }
 
 
         } catch (error) {
             console.error('Error sending reply:', error);
-            replyStatusDiv.textContent = `Error: ${escapeHTML(error.message)}`;
-            replyStatusDiv.className = 'mt-2 text-danger';
+            if (replyStatusDiv) {
+                replyStatusDiv.textContent = `Error: ${escapeHTML(error.message)}`;
+                replyStatusDiv.className = 'mt-2 text-danger';
+            } else {
+                alert(`Error sending reply: ${escapeHTML(error.message)} (UI status element not found)`);
+            }
         } finally {
             sendReplyBtn.disabled = false;
         }
