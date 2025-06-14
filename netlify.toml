@@ -23,3 +23,9 @@
   status = 200
   force = true
   conditions = {Role = ["admin"]}
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/.netlify/identity/login?redirect=/admin/live-chat"
+  status = 302
+  force = true
