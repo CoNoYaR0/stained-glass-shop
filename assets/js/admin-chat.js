@@ -2,12 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const userIdInput = document.getElementById('userIdInput');
     const loadConversationBtn = document.getElementById('loadConversationBtn');
     const chatMessagesDiv = document.getElementById('chatMessages');
-    const currentChatUserIdSpan = document.getElementById('currentChatUserIdSpan');
+    const currentChatUserIdSpan = document.getElementById('currentChatUserId_elem');
     const replySection = document.getElementById('replySection');
     const replyMessageInput = document.getElementById('replyMessageInput');
     const sendReplyBtn = document.getElementById('sendReplyBtn');
     const replyStatusDiv = document.getElementById('replyStatus');
 
+    // The variable name currentChatUserIdSpan is kept, but it now points to getElementById('currentChatUserId_elem')
+    // The log object below will correctly show the variable currentChatUserIdSpan and its resolved value.
     console.log('Admin Chat DOM Elements Check:', { userIdInput, loadConversationBtn, chatMessagesDiv, currentChatUserIdSpan, replySection, replyMessageInput, sendReplyBtn, replyStatusDiv });
 
     let currentLoadedUserId = null;
