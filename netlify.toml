@@ -16,3 +16,18 @@
   X-XSS-Protection = "1; mode=block"
   Referrer-Policy = "same-origin"
   Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+# START: Added Netlify Identity Redirect Rules
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/:splat" # Allow access if role matches
+  status = 200
+  force = true
+  conditions = {Role = ["admin"]} # Ensure "admin" is the role you assigned to your Identity user
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/.netlify/identity/login?redirect=/admin/live-chat" # Redirect others to login
+  status = 302
+  force = true
+# END: Added Netlify Identity Redirect Rules
