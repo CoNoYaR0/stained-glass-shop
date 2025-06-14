@@ -16,3 +16,10 @@
   X-XSS-Protection = "1; mode=block"
   Referrer-Policy = "same-origin"
   Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/:splat"
+  status = 200
+  force = true
+  conditions = {Role = ["admin"]}
