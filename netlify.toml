@@ -17,17 +17,20 @@
   Referrer-Policy = "same-origin"
   Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
-# START: Added Netlify Identity Redirect Rules
+# START: Netlify Identity Redirect Rules for /admin/*
+# Rule 1: If a user has the 'admin' role, allow them to access /admin/* pages.
 [[redirects]]
   from = "/admin/*"
-  to = "/admin/:splat" # Allow access if role matches
+  to = "/admin/:splat"
   status = 200
   force = true
-  conditions = {Role = ["admin"]} # Ensure "admin" is the role you assigned to your Identity user
+  conditions = {Role = ["admin"]}
 
+# Rule 2: If the first rule's conditions are not met (user not admin or not logged in),
+# redirect them to the homepage.
 [[redirects]]
   from = "/admin/*"
-  to = "/.netlify/identity/login?redirect=/admin/live-chat" # Redirect others to login
+  to = "/" # Redirect to homepage
   status = 302
   force = true
-# END: Added Netlify Identity Redirect Rules
+# END: Netlify Identity Redirect Rules for /admin/*
