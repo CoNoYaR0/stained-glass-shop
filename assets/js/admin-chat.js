@@ -101,9 +101,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Netlify Identity token is automatically sent by the browser if user is logged in.
-            // The get-chat-history function will verify it.
-            const response = await fetch(`/.netlify/functions/get-chat-history?userId=${encodeURIComponent(userIdToLoad)}`);
+            const currentUser = window.netlifyIdentity && window.netlifyIdentity.currentUser();
+            let headers = { 'Content-Type': 'application/json' }; // Though GET usually doesn't need Content-Type for body
+            if (currentUser && currentUser.token && currentUser.token.access_token) {
+                headers['Authorization'] = `Bearer ${currentUser.token.access_token}`;
+            } else {
+                console.warn('User not logged in or token not available for get-chat-history call.');
+                // Optionally, redirect to login or show a more explicit login message
+                // For now, the function call will likely fail with 401 if token is missing and function expects it.
+            }
+
+            const response = await fetch(`/.netlify/functions/get-chat-history?userId=${encodeURIComponent(userIdToLoad)}`, {
+                method: 'GET', // Explicitly GET
+                headers: headers
+            });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: 'Failed to load messages. Please ensure you are logged in as an admin and the User ID is correct.' }));
@@ -169,17 +180,24 @@ document.addEventListener('DOMContentLoaded', () => {
         sendReplyBtn.disabled = true;
 
         try {
-            // Again, Netlify Identity token is auto-sent.
-            // The discord-bot-relay function doesn't strictly need to verify it if we assume
-            // only admins can access this page, but it could be an added layer.
-            // For now, discord-bot-relay primarily cares about userId and message.
+            const currentUser = window.netlifyIdentity && window.netlifyIdentity.currentUser();
+            let headers = { 'Content-Type': 'application/json' };
+            if (currentUser && currentUser.token && currentUser.token.access_token) {
+                headers['Authorization'] = `Bearer ${currentUser.token.access_token}`;
+            } else {
+                console.warn('User not logged in or token not available for discord-bot-relay call.');
+                // Handle appropriately - perhaps prevent sending or show error
+                // For now, let the function call proceed; if it needs auth and doesn't get it, it will fail.
+                // The discord-bot-relay function doesn't currently check Identity context but could be enhanced.
+            }
+
             const response = await fetch('/.netlify/functions/discord-bot-relay', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: headers,
                 body: JSON.stringify({
                     userId: currentLoadedUserId,
                     message: replyText,
-                    senderName: 'Staff Admin' // Or get logged-in admin name if available via Netlify Identity JS API
+                    senderName: 'Staff Admin'
                 }),
             });
 
