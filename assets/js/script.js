@@ -22,47 +22,53 @@ $(window).on('load', function () {
   } else {
     console.warn('Supabase URL or Anon Key is not available. Realtime chat from Discord will not work.');
   }
-  
-  // product Slider
-  $('.product-image-slider').slick({
-    autoplay: false,
-    infinite: true,
-    arrows: false,
-    dots: true,
-    customPaging: function (slider, i) {
-      var image = $(slider.$slides[i]).data('image');
-      return '<img class="img-fluid" src="' + image + '" alt="products-image">';
-    }
-  });
 
-  // Product slider
-  $('.products-slider').slick({
-    infinite: true,
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    autoplay: true,
-    dots: false,
-    arrows: false,
-    responsive: [{
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 3
+  $(document).ready(function() {
+    // product Slider
+    if ($('.product-image-slider').length > 0) {
+      $('.product-image-slider').slick({
+        autoplay: false,
+        infinite: true,
+        arrows: false,
+        dots: true,
+        customPaging: function (slider, i) {
+          var image = $(slider.$slides[i]).data('image');
+          return '<img class="img-fluid" src="' + image + '" alt="products-image">';
         }
-      },
-      {
-        breakpoint: 600,
-        settings: {
-          slidesToShow: 2
-        }
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1
-        }
-      }
-    ]
-  });
+      });
+    }
+
+    // Product slider
+    if ($('.products-slider').length > 0) {
+      $('.products-slider').slick({
+        infinite: true,
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        autoplay: true,
+        dots: false,
+        arrows: false,
+        responsive: [{
+            breakpoint: 1024,
+            settings: {
+              slidesToShow: 3
+            }
+          },
+          {
+            breakpoint: 600,
+            settings: {
+              slidesToShow: 2
+            }
+          },
+          {
+            breakpoint: 480,
+            settings: {
+              slidesToShow: 1
+            }
+          }
+        ]
+      });
+    }
+  }); // End of $(document).ready()
 
   // Floating Contact Button Logic
   const contactUsButton = $('#contact-us-button');
