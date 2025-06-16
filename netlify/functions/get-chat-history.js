@@ -13,21 +13,44 @@ if (supabaseUrl && supabaseServiceKey) {
 
 exports.handler = async (event, context) => {
   if (!supabase) {
+    // This check should ideally use the supabase client defined in the outer scope
+    // For robustness, ensure `supabase` is accessible or passed if initialized outside.
+    // Assuming `supabase` is correctly initialized in the outer scope of this file.
+    console.error('get-chat-history: Supabase client not initialized at function start.');
     return { statusCode: 500, body: JSON.stringify({ message: 'Supabase client not initialized.' }) };
   }
 
-  // Security: Ensure this function is only callable by authenticated Netlify Identity users (admins)
-  // The `context.clientContext.user` object contains information about the calling user.
-  // If this is null or lacks an admin role, deny access.
-  // You'll need to configure Netlify Identity and role-based function access.
-  // For now, we'll check if there's a user context. A more robust check would involve roles.
-  if (!context.clientContext || !context.clientContext.user) {
-    console.warn('get-chat-history: Unauthenticated access attempt.');
-    return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: Admin access required.' }) };
-  }
-  // You might want to log context.clientContext.user to see its structure
-  // console.log('Client context user:', context.clientContext.user);
+  console.log('get-chat-history: Function invoked.');
+  console.log('get-chat-history: Event query string params:', JSON.stringify(event.queryStringParameters, null, 2));
 
+  // Detailed logging of clientContext
+  if (context.clientContext) {
+    console.log('get-chat-history: Client context object:', JSON.stringify(context.clientContext, null, 2));
+    if (context.clientContext.user) {
+      console.log('get-chat-history: User object from clientContext:', JSON.stringify(context.clientContext.user, null, 2));
+      console.log('get-chat-history: User email:', context.clientContext.user.email);
+      console.log('get-chat-history: User app_metadata:', JSON.stringify(context.clientContext.user.app_metadata, null, 2));
+      console.log('get-chat-history: User roles from app_metadata:', JSON.stringify(context.clientContext.user.app_metadata && context.clientContext.user.app_metadata.roles, null, 2));
+    } else {
+      console.warn('get-chat-history: context.clientContext.user is null or undefined.');
+    }
+  } else {
+    console.warn('get-chat-history: context.clientContext is null or undefined.');
+  }
+
+  const user = context.clientContext && context.clientContext.user;
+
+  if (!user) {
+    console.warn('get-chat-history: No user in clientContext. Responding 401 Unauthorized.');
+    return { statusCode: 401, body: JSON.stringify({ message: 'Unauthorized: Login required.' }) };
+  }
+
+  const roles = user.app_metadata && user.app_metadata.roles;
+  // Ensure 'admin' matches the role name you use in Netlify Identity
+  if (!roles || !roles.includes('admin')) {
+    console.warn(`get-chat-history: Forbidden. User ${user.email} does not have 'admin' role. Detected roles: ${JSON.stringify(roles)}`);
+    return { statusCode: 403, body: JSON.stringify({ message: 'Forbidden: Admin role required for this operation.' }) };
+  }
 
   if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: JSON.stringify({ message: 'Method Not Allowed' }) };
