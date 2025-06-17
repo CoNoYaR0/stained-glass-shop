@@ -6,6 +6,18 @@ $(window).on('load', function () {
 (function ($) {
   'use strict';
 
+  function escapeHTML(str) {
+    return str.replace(/[&<>"']/g, function (match) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[match];
+    });
+  }
+
   // THESE VALUES SHOULD BE POPULATED BY HUGO TEMPLATE / NETLIFY ENV VARS
   const SUPABASE_URL = window.APP_CONFIG && window.APP_CONFIG.SUPABASE_URL;
   const SUPABASE_ANON_KEY = window.APP_CONFIG && window.APP_CONFIG.SUPABASE_ANON_KEY;
@@ -125,7 +137,7 @@ $(window).on('load', function () {
               // Display received message (style differently from user's sent messages)
               const messageElement = $('<div class="message received"><small class="sender-name"></small><p></p></div>');
               messageElement.find('small.sender-name').text(messageSender + ':');
-              messageElement.find('p').text(message.text);
+              messageElement.find('p').text(escapeHTML(message.text)); // Use escapeHTML here
               liveChatMessages.append(messageElement);
               liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight); // Scroll to bottom
             }
@@ -161,7 +173,7 @@ $(window).on('load', function () {
       if (messageText) {
         // Display sent message
         const messageElement = $('<div class="message sent"><p></p></div>');
-        messageElement.find('p').text(messageText);
+        messageElement.find('p').text(escapeHTML(messageText)); // Use escapeHTML here
         liveChatMessages.append(messageElement);
         liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight); // Scroll to bottom
 
