@@ -236,15 +236,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const currentUser = window.netlifyIdentity && window.netlifyIdentity.currentUser();
-            let headers = { 'Content-Type': 'application/json' }; // Though GET usually doesn't need Content-Type for body
-            if (currentUser && currentUser.token && currentUser.token.access_token) {
-                headers['Authorization'] = `Bearer ${currentUser.token.access_token}`;
-            } else {
-                console.warn('User not logged in or token not available for get-chat-history call.');
-                // Optionally, redirect to login or show a more explicit login message
-                // For now, the function call will likely fail with 401 if token is missing and function expects it.
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError || !session) {
+                console.error('Error getting Supabase session or no session found:', sessionError);
+                chatMessagesDiv.innerHTML = '<p class="text-danger">Error: You are not logged in or session expired. Please log in again.</p>';
+                if (currentChatUserIdSpan) {
+                    currentChatUserIdSpan.textContent = '-';
+                }
+                return;
             }
+            const token = session.access_token;
+            let headers = { 'Authorization': `Bearer ${token}` };
 
             const response = await fetch(`/.netlify/functions/get-chat-history?userId=${encodeURIComponent(userIdToLoad)}`, {
                 method: 'GET', // Explicitly GET
