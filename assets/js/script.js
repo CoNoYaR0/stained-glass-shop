@@ -138,6 +138,7 @@ $(window).on('load', function () {
 
             if (response.ok) {
               const historyMessages = await response.json();
+              window.debugHistoryMessages = historyMessages; // For debugging
               liveChatMessages.empty(); // Clear "Loading history..."
               if (historyMessages && historyMessages.length > 0) {
                 historyMessages.forEach(msg => {
