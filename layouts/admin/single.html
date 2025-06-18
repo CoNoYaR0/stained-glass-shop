@@ -1,12 +1,35 @@
 {{ define "main" }}
 <div class="container admin-chat-container py-5">
   <h1 class="mb-4">{{ .Title }}</h1>
-  <p>{{ .Content }}</p>
 
-  <div class="row">
-    <div class="col-md-4">
-      <h3>Select Conversation</h3>
-      <div class="form-group mb-3">
+  <!-- Admin Login Section -->
+  <div id="admin-login-section">
+    <h2>Staff Login</h2>
+    <form id="admin-login-form">
+      <div class="form-group mb-2">
+        <label for="admin-email-input">Email:</label>
+        <input type="email" id="admin-email-input" class="form-control" required>
+      </div>
+      <div class="form-group mb-2">
+        <label for="admin-password-input">Password:</label>
+        <input type="password" id="admin-password-input" class="form-control" required>
+      </div>
+      <button type="submit" id="admin-login-button" class="btn btn-primary">Login</button>
+      <div id="admin-login-error" class="mt-2 text-danger"></div>
+    </form>
+  </div>
+
+  <button id="admin-logout-button" class="btn btn-secondary my-3" style="display: none;">Logout</button>
+
+  <hr id="admin-section-divider" style="display: none;">
+
+  <!-- Main Admin Chat Interface - Hidden by default -->
+  <div id="admin-chat-interface" style="display: none;">
+    <p>{{ .Content }}</p> <!-- Original content paragraph moved here -->
+    <div class="row">
+      <div class="col-md-4">
+        <h3>Select Conversation</h3>
+        <div class="form-group mb-3">
         <label for="userIdInput">Enter User ID:</label>
         <input type="text" id="userIdInput" class="form-control" placeholder="e.g., user-abcdef123">
         <button id="loadConversationBtn" class="btn btn-primary mt-2">Load Conversation</button>
@@ -34,6 +57,24 @@
     </div>
   </div>
 </div>
+
+<!-- Supabase JS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Supabase Client Initialization -->
+<script>
+  if (window.APP_CONFIG && window.APP_CONFIG.SUPABASE_URL && window.APP_CONFIG.SUPABASE_ANON_KEY) {
+    window.supabaseClient = supabase.createClient(window.APP_CONFIG.SUPABASE_URL, window.APP_CONFIG.SUPABASE_ANON_KEY);
+    console.log("Supabase client initialized for admin area.");
+  } else {
+    console.error("Supabase config (APP_CONFIG) not found. Supabase client for admin cannot be initialized.");
+    // Optionally, disable login form or show a more prominent error on the page
+    const loginSection = document.getElementById('admin-login-section');
+    if (loginSection) {
+        loginSection.innerHTML = '<p class="text-danger">Critical Error: Application configuration for Supabase is missing. Admin login is unavailable.</p>';
+    }
+  }
+</script>
 
 <!-- Include admin-specific JavaScript -->
 {{ $adminJS := resources.Get "js/admin-chat.js" }}

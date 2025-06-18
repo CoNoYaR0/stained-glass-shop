@@ -216,4 +216,186 @@ $(window).on('load', function () {
       }
     });
   }
+
+  // --- Supabase Auth ---
+
+  function updateChatAvailability(isLoggedIn) {
+    const liveChatOption = $('#live-chat-option'); // Ensure this selector is correct
+    const liveChatBox = $('#live-chat-box');
+    const liveChatMessages = $('#live-chat-messages');
+
+    if (isLoggedIn) {
+      if (liveChatOption.length) {
+        liveChatOption.show().css('opacity', 1).prop('disabled', false);
+        // Consider adding a visual cue or re-enabling a previously disabled state
+        // For example, if it was greyed out, remove that style.
+        // If a message was shown about needing to log in, clear it.
+      }
+      console.log("Chat is available.");
+    } else {
+      if (liveChatOption.length) {
+        liveChatOption.hide().css('opacity', 0.5).prop('disabled', true); // Hide or disable
+        console.log("Chat is unavailable. User needs to log in.");
+      }
+      if (liveChatBox.length && liveChatBox.is(':visible')) {
+        // If chat box is open, close it or display a message
+        if (realtimeChannel) {
+          supabaseClient.removeChannel(realtimeChannel).catch(console.error);
+          realtimeChannel = null;
+        }
+        liveChatBox.hide();
+        // Optionally, show a message in a different part of the UI
+        // or within the chat button's parent.
+        alert("Please log in to use the Live Chat feature.");
+      }
+       if (liveChatMessages.length && liveChatBox.is(':visible')) {
+        liveChatMessages.html('<p>Please log in to continue chatting.</p>');
+      }
+    }
+  }
+
+  function updateUIAfterLogin(user) {
+    const facebookLoginButton = $('#facebook-login-button');
+    const logoutButton = $('#logout-button');
+    const userInfoDisplay = $('#user-info');
+
+    if (user) {
+      // User is logged in
+      if (facebookLoginButton.length) facebookLoginButton.hide();
+      if (logoutButton.length) {
+        logoutButton.show();
+        logoutButton.off('click').on('click', async () => {
+          if (supabaseClient) {
+            try {
+              const { error } = await supabaseClient.auth.signOut();
+              if (error) {
+                console.error("Error during sign out:", error.message);
+                alert("Error signing out: " + error.message);
+              } else {
+                console.log("User signed out successfully.");
+                // onAuthStateChange will handle UI updates
+              }
+            } catch (e) {
+              console.error("Exception during sign out:", e);
+              alert("An unexpected error occurred during sign out.");
+            }
+          }
+        });
+      }
+      if (userInfoDisplay.length) {
+        // Display user's name or email. Prefer name from metadata if available.
+        const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
+        userInfoDisplay.text(`Logged in as: ${escapeHTML(displayName)}`).show();
+      }
+    } else {
+      // User is logged out
+      if (facebookLoginButton.length) facebookLoginButton.show();
+      if (logoutButton.length) logoutButton.hide();
+      if (userInfoDisplay.length) userInfoDisplay.empty().hide();
+    }
+  }
+
+  // Handle Facebook Login
+  async function handleFacebookLogin() {
+    if (!supabaseClient) {
+      console.error("Supabase client is not initialized. Cannot log in.");
+      return;
+    }
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithOAuth({
+        provider: 'facebook'
+      });
+      if (error) {
+        console.error("Error during Facebook login:", error.message);
+        alert("Error during Facebook login: " + error.message); // Or display error in a more user-friendly way
+      } else {
+        // The user will be redirected to Facebook and then back to the app.
+        // onAuthStateChange will handle the session.
+        console.log("Redirecting to Facebook for login...", data);
+      }
+    } catch (e) {
+      console.error("Exception during Facebook login:", e);
+      alert("An unexpected error occurred during Facebook login.");
+    }
+  }
+
+  if (supabaseClient) {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      console.log("Auth event:", event, session);
+      if (event === 'SIGNED_IN' && session) {
+        console.log('User signed in:', session.user);
+        // Prefer Facebook's username if available
+        window.liveChatUserId = session.user.user_metadata?.user_name || session.user.id;
+        console.log('liveChatUserId set to:', window.liveChatUserId);
+        updateUIAfterLogin(session.user);
+        updateChatAvailability(true);
+
+        // Re-initialize or update chat channel if user logs in after page load
+        if (liveChatOption.length && liveChatBox.is(':visible')) {
+            // If chat box is already open, re-initiate channel connection
+            if (realtimeChannel) {
+                supabaseClient.removeChannel(realtimeChannel).catch(console.error);
+                realtimeChannel = null;
+            }
+            liveChatOption.trigger('click'); // Simulate click to re-open and subscribe
+        }
+
+      } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out.');
+        window.liveChatUserId = null;
+        updateUIAfterLogin(null);
+        updateChatAvailability(false);
+        // Clean up chat channel on logout
+        if (realtimeChannel) {
+          supabaseClient.removeChannel(realtimeChannel)
+            .then(() => {
+              console.log('Unsubscribed from Supabase channel on logout.');
+              realtimeChannel = null;
+            })
+            .catch(err => {
+              console.error('Error unsubscribing from Supabase channel on logout:', err);
+            });
+        }
+        // Clear messages and show login prompt if chatbox is open
+        if (liveChatBox.is(':visible')) {
+            liveChatMessages.html('<p>Please log in to use the chat.</p>');
+        }
+      }
+    });
+  } else {
+    // If Supabase is not available, ensure chat is not available
+    updateChatAvailability(false);
+  }
+
+  // Event listener for a Facebook login button
+  $(document).ready(function() {
+    const facebookLoginButton = $('#facebook-login-button');
+    if (facebookLoginButton.length) {
+      facebookLoginButton.on('click', function(e) {
+        e.preventDefault();
+        handleFacebookLogin();
+      });
+    }
+
+    // Initialize chat availability based on initial auth state (e.g. if user is already logged in)
+    if (supabaseClient && supabaseClient.auth.getSession()) {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                console.log('User already signed in on page load:', session.user);
+                window.liveChatUserId = session.user.user_metadata?.user_name || session.user.id;
+                console.log('liveChatUserId set from existing session:', window.liveChatUserId);
+                updateUIAfterLogin(session.user);
+                updateChatAvailability(true);
+            } else {
+                updateChatAvailability(false);
+            }
+        }).catch(error => {
+            console.error("Error getting session on page load:", error);
+            updateChatAvailability(false);
+        });
+    } else {
+        updateChatAvailability(false);
+    }
+  });
+
 })(jQuery);
