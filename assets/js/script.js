@@ -342,7 +342,7 @@ $(window).on('load', function () {
               } catch (e) {
                   console.log('[CUSTOM LOG] User from INITIAL_SESSION: (Could not stringify)', session.user);
               }
-              window.liveChatUserId = session.user.user_metadata?.user_name || session.user.id;
+              window.liveChatUserId = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || session.user.id;
               console.log('[CUSTOM LOG] liveChatUserId set from INITIAL_SESSION:', window.liveChatUserId);
               updateUIAfterLogin(session.user);
               updateChatAvailability(true);
@@ -358,7 +358,7 @@ $(window).on('load', function () {
           } catch (e) {
               console.log('[CUSTOM LOG] User from SIGNED_IN session: (Could not stringify)', session.user);
           }
-          window.liveChatUserId = session.user.user_metadata?.user_name || session.user.id;
+          window.liveChatUserId = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || session.user.id;
           console.log('[CUSTOM LOG] liveChatUserId set from SIGNED_IN:', window.liveChatUserId);
         updateUIAfterLogin(session.user);
         updateChatAvailability(true);
