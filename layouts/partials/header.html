@@ -43,8 +43,15 @@
           {{ end }}
         </select>
         {{ end }}
+
+        <!-- User Authentication Elements -->
+        <div id="user-info" class="nav-item" style="display: none; margin-left: 10px;"></div>
+        <button id="facebook-login-button" class="btn btn-primary btn-sm" style="margin-left: 10px;">Login with Facebook</button>
+        <button id="logout-button" class="btn btn-secondary btn-sm" style="display: none; margin-left: 10px;">Logout</button>
+        <!-- End User Authentication Elements -->
+
       </div>
-      <button id="open-cart" class="cart">
+      <button id="open-cart" class="cart" style="margin-left: 10px;">
         <i class="tf-ion-android-cart"></i>
         <span id="cart-count" class="badge badge-primary">0</span>
       </button> 
