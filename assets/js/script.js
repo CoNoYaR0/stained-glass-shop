@@ -321,45 +321,77 @@ $(window).on('load', function () {
 
   if (supabaseClient) {
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      console.log("Auth event:", event, session);
-      if (event === 'SIGNED_IN' && session) {
-        console.log('User signed in:', session.user);
-        // Prefer Facebook's username if available
-        window.liveChatUserId = session.user.user_metadata?.user_name || session.user.id;
-        console.log('liveChatUserId set to:', window.liveChatUserId);
+      // --- Start of Custom Logging ---
+      console.log('[CUSTOM LOG] Auth Event Fired. Current URL:', window.location.href);
+      console.log('[CUSTOM LOG] URL Hash:', window.location.hash);
+      console.log('[CUSTOM LOG] Auth Event Type:', event);
+      try {
+          console.log('[CUSTOM LOG] Session Object:', JSON.stringify(session, null, 2));
+      } catch (e) {
+          console.log('[CUSTOM LOG] Session Object: (Could not stringify - possibly null or circular)', session);
+      }
+      console.log('[CUSTOM LOG] document.readyState:', document.readyState);
+      // --- End of Custom Logging ---
+
+      if (event === 'INITIAL_SESSION') {
+          console.log('[CUSTOM LOG] Processing INITIAL_SESSION event.');
+          if (session) {
+              console.log('[CUSTOM LOG] INITIAL_SESSION: Session found.');
+              try {
+                  console.log('[CUSTOM LOG] User from INITIAL_SESSION:', JSON.stringify(session.user, null, 2));
+              } catch (e) {
+                  console.log('[CUSTOM LOG] User from INITIAL_SESSION: (Could not stringify)', session.user);
+              }
+              window.liveChatUserId = session.user.user_metadata?.user_name || session.user.id;
+              console.log('[CUSTOM LOG] liveChatUserId set from INITIAL_SESSION:', window.liveChatUserId);
+              updateUIAfterLogin(session.user);
+              updateChatAvailability(true);
+          } else {
+              console.log('[CUSTOM LOG] INITIAL_SESSION: No session found.');
+              updateUIAfterLogin(null); // Ensure UI reflects no user
+              updateChatAvailability(false);
+          }
+      } else if (event === 'SIGNED_IN' && session) { // Ensure session is checked here
+          console.log('[CUSTOM LOG] Processing SIGNED_IN event.');
+          try {
+              console.log('[CUSTOM LOG] User from SIGNED_IN session:', JSON.stringify(session.user, null, 2));
+          } catch (e) {
+              console.log('[CUSTOM LOG] User from SIGNED_IN session: (Could not stringify)', session.user);
+          }
+          window.liveChatUserId = session.user.user_metadata?.user_name || session.user.id;
+          console.log('[CUSTOM LOG] liveChatUserId set from SIGNED_IN:', window.liveChatUserId);
         updateUIAfterLogin(session.user);
         updateChatAvailability(true);
 
-        // Re-initialize or update chat channel if user logs in after page load
-        if (liveChatOption.length && liveChatBox.is(':visible')) {
-            // If chat box is already open, re-initiate channel connection
-            if (realtimeChannel) {
-                supabaseClient.removeChannel(realtimeChannel).catch(console.error);
-                realtimeChannel = null;
-            }
-            liveChatOption.trigger('click'); // Simulate click to re-open and subscribe
-        }
+          updateUIAfterLogin(session.user);
+          updateChatAvailability(true);
 
+          if (liveChatOption && liveChatBox && liveChatBox.is(':visible')) {
+              console.log('[CUSTOM LOG] Chat box open, attempting to re-init channel for SIGNED_IN.');
+              if (realtimeChannel) {
+                  supabaseClient.removeChannel(realtimeChannel).catch(console.error);
+                  realtimeChannel = null;
+              }
+              // liveChatOption.trigger('click'); // This might be problematic, ensure liveChatOption is defined
+          }
       } else if (event === 'SIGNED_OUT') {
-        console.log('User signed out.');
-        window.liveChatUserId = null;
-        updateUIAfterLogin(null);
-        updateChatAvailability(false);
-        // Clean up chat channel on logout
-        if (realtimeChannel) {
-          supabaseClient.removeChannel(realtimeChannel)
-            .then(() => {
-              console.log('Unsubscribed from Supabase channel on logout.');
-              realtimeChannel = null;
-            })
-            .catch(err => {
-              console.error('Error unsubscribing from Supabase channel on logout:', err);
-            });
-        }
-        // Clear messages and show login prompt if chatbox is open
-        if (liveChatBox.is(':visible')) {
-            liveChatMessages.html('<p>Please log in to use the chat.</p>');
-        }
+          console.log('[CUSTOM LOG] Processing SIGNED_OUT event.');
+          window.liveChatUserId = null;
+          updateUIAfterLogin(null);
+          updateChatAvailability(false);
+          if (realtimeChannel) {
+              supabaseClient.removeChannel(realtimeChannel)
+                  .then(() => {
+                      console.log('[CUSTOM LOG] Unsubscribed from Supabase channel on logout.');
+                      realtimeChannel = null;
+                  })
+                  .catch(err => {
+                      console.error('[CUSTOM LOG] Error unsubscribing on logout:', err);
+                  });
+          }
+          if (liveChatBox && liveChatMessages && liveChatBox.is(':visible')) { // Check liveChatBox and liveChatMessages
+              liveChatMessages.html('<p>Please log in to use the chat.</p>');
+          }
       }
     });
   } else {
@@ -377,25 +409,8 @@ $(window).on('load', function () {
       });
     }
 
-    // Initialize chat availability based on initial auth state (e.g. if user is already logged in)
-    if (supabaseClient && supabaseClient.auth.getSession()) {
-        supabaseClient.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                console.log('User already signed in on page load:', session.user);
-                window.liveChatUserId = session.user.user_metadata?.user_name || session.user.id;
-                console.log('liveChatUserId set from existing session:', window.liveChatUserId);
-                updateUIAfterLogin(session.user);
-                updateChatAvailability(true);
-            } else {
-                updateChatAvailability(false);
-            }
-        }).catch(error => {
-            console.error("Error getting session on page load:", error);
-            updateChatAvailability(false);
-        });
-    } else {
-        updateChatAvailability(false);
-    }
+    // Ensure old getSession call is removed.
+    // Initial session check is now primarily handled by onAuthStateChange with INITIAL_SESSION event.
   });
 
 })(jQuery);
