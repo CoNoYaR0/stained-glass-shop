@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const supabase = window.supabaseClient; // Shortcut
     let currentLoadedUserId = null;
+    let currentRealtimeChannel = null;
 
     // Function to update UI based on auth state
     function updateAdminUI(isLoggedIn, user = null) {
@@ -96,6 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             try {
+                if (currentRealtimeChannel) {
+                    supabase.removeChannel(currentRealtimeChannel)
+                      .then(() => console.log('Admin unsubscribed on logout from:', currentRealtimeChannel.topic))
+                      .catch(err => console.error('Error unsubscribing admin channel on logout:', err));
+                    currentRealtimeChannel = null;
+                }
                 const { error } = await supabase.auth.signOut();
                 if (error) {
                     console.error('Logout error:', error.message);
@@ -267,6 +274,60 @@ document.addEventListener('DOMContentLoaded', () => {
             if(replyMessageInput) { // Check replyMessageInput
                 replyMessageInput.value = ''; // Clear previous reply
             }
+
+            // Subscribe to realtime updates for this user
+            if (currentRealtimeChannel) {
+                supabase.removeChannel(currentRealtimeChannel)
+                  .then(() => console.log('Unsubscribed from old admin channel:', currentRealtimeChannel.topic))
+                  .catch(err => console.error('Error unsubscribing from old admin channel:', err));
+                currentRealtimeChannel = null;
+            }
+
+            const newChannelName = 'chat-' + currentLoadedUserId;
+            currentRealtimeChannel = supabase.channel(newChannelName, {
+                config: { broadcast: { self: false } }
+            });
+
+            currentRealtimeChannel.on('broadcast', { event: 'new_message' }, (response) => {
+                console.log('Admin received broadcast:', response);
+                const message = response.payload;
+
+                if (message && message.user_id === currentLoadedUserId && chatMessagesDiv) {
+                    const messageEl = document.createElement('div');
+                    messageEl.classList.add('mb-2', 'p-2', 'rounded');
+
+                    const senderDisplayName = message.sender_type === 'user' ? `User (${message.user_id.substring(0, 8)}...)` : (message.sender || 'Staff');
+
+                    messageEl.innerHTML = `
+                        <small class="text-muted">${new Date(message.created_at || Date.now()).toLocaleString()}</small><br>
+                        <strong>${escapeHTML(senderDisplayName)}:</strong> ${escapeHTML(message.text)}
+                    `;
+
+                    if (message.sender_type === 'user') {
+                        messageEl.classList.add('bg-light', 'text-dark');
+                        messageEl.style.textAlign = 'left';
+                        messageEl.style.marginLeft = '0';
+                        messageEl.style.marginRight = 'auto';
+                    } else { // staff
+                        messageEl.classList.add('bg-primary', 'text-white');
+                        messageEl.style.textAlign = 'right';
+                        messageEl.style.marginLeft = 'auto';
+                        messageEl.style.marginRight = '0';
+                    }
+                    messageEl.style.maxWidth = '80%';
+                    messageEl.style.display = 'block';
+                    chatMessagesDiv.appendChild(messageEl);
+                    chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+                }
+            });
+
+            currentRealtimeChannel.subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Admin subscribed to Supabase channel:', newChannelName);
+                } else if (err) {
+                    console.error(`Admin Supabase channel (${newChannelName}) subscription error:`, err);
+                }
+            });
 
         } catch (error) {
             console.error('Error loading conversation:', error);
