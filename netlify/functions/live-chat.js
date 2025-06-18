@@ -101,6 +101,31 @@ exports.handler = async (event) => {
       } else {
         dbWriteSuccess = true;
         console.log('Message successfully written to Supabase:', data);
+
+        // 3. Broadcast message to Supabase Realtime channel for the user
+        const clientChannelName = `chat-${userId}`;
+        const broadcastPayload = {
+            type: 'broadcast',
+            event: 'new_message', // Match client and admin listeners
+            payload: {
+                text: message, // The user's message content
+                sender: userId, // Client/admin can format this
+                user_id: userId, // Explicitly include userId
+                sender_type: 'user', // Indicate it's a user message
+                created_at: new Date().toISOString() // Add timestamp for the broadcast
+            }
+        };
+        try {
+            const { error: broadcastError } = await supabase.channel(clientChannelName).send(broadcastPayload);
+            if (broadcastError) {
+                console.error(`Error broadcasting user message to channel ${clientChannelName}:`, broadcastError);
+                // Non-critical, don't fail the function if DB write and Discord hook succeeded.
+            } else {
+                console.log(`User message broadcasted to channel ${clientChannelName}`);
+            }
+        } catch (e) {
+            console.error(`Exception broadcasting user message to channel ${clientChannelName}:`, e);
+        }
       }
     } catch (dbError) {
       console.error('Exception writing to Supabase:', dbError);

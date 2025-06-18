@@ -113,12 +113,57 @@ $(window).on('load', function () {
 
 
   if (liveChatOption.length && liveChatBox.length && closeChatBoxButton.length && liveChatMessages.length && liveChatInputField.length && liveChatSendButton.length && contactOptionsModalForChat.length) {
-    liveChatOption.on('click', function(e) {
+    liveChatOption.on('click', async function(e) { // Made async
       e.preventDefault();
       liveChatBox.show();
       contactOptionsModalForChat.hide(); // Hide the general contact options modal
 
+      // Clear previous messages and show loading indicator
+      liveChatMessages.html('<p class="text-muted">Loading history...</p>');
+
       if (supabaseClient && window.liveChatUserId) {
+        try {
+          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+          if (sessionError || !session) {
+            console.error('Error getting Supabase session or no session found for history:', sessionError);
+            liveChatMessages.html('<p class="text-danger">Could not authenticate to load history.</p>');
+            // Proceed to connect to realtime channel anyway, or decide not to.
+            // For now, let's allow realtime connection even if history fails.
+          } else {
+            const token = session.access_token;
+            const response = await fetch('/.netlify/functions/get-my-chat-history', {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+              const historyMessages = await response.json();
+              liveChatMessages.empty(); // Clear "Loading history..."
+              if (historyMessages && historyMessages.length > 0) {
+                historyMessages.forEach(msg => {
+                  let messageElement;
+                  if (msg.sender_type === 'user') {
+                    messageElement = $(`<div class="message sent"><p>${escapeHTML(msg.message_content)}</p></div>`);
+                  } else { // staff or system
+                    messageElement = $(`<div class="message received"><small class="sender-name">${escapeHTML(msg.staff_name || 'Staff')}:</small><p>${escapeHTML(msg.message_content)}</p></div>`);
+                  }
+                  liveChatMessages.append(messageElement);
+                });
+              } else {
+                liveChatMessages.html('<p class="text-muted">No chat history found.</p>');
+              }
+              liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight);
+            } else {
+              console.error('Error fetching chat history:', response.status, await response.text());
+              liveChatMessages.html('<p class="text-danger">Could not load chat history.</p>');
+            }
+          }
+        } catch (fetchError) {
+          console.error('Exception fetching chat history:', fetchError);
+          liveChatMessages.html('<p class="text-danger">Error loading history.</p>');
+        }
+
+        // Setup realtime channel (moved after history load attempt)
         const channelName = 'chat-' + window.liveChatUserId;
         realtimeChannel = supabaseClient.channel(channelName, {
           config: {
