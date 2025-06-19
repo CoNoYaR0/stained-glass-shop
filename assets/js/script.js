@@ -177,15 +177,25 @@ $(window).on('load', function () {
         realtimeChannel
           .on('broadcast', { event: 'new_message' }, (payload) => {
             console.log('Received new_message broadcast:', payload);
-            const message = payload.payload; // The actual message object
-            if (message && message.text) {
-              const messageSender = message.sender || 'Staff';
-              // Display received message (style differently from user's sent messages)
-              const messageElement = $('<div class="message received"><small class="sender-name"></small><p></p></div>');
-              messageElement.find('small.sender-name').text(messageSender + ':');
-              messageElement.find('p').text(escapeHTML(message.text)); // Use escapeHTML here
-              liveChatMessages.append(messageElement);
-              liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight); // Scroll to bottom
+            const message = payload.payload; // The actual message object from broadcast
+            if (message && message.text && message.sender_type) { // Ensure sender_type exists
+                let messageElement;
+                if (message.sender_type === 'user') {
+                    // User's own message broadcasted back (though self:false should prevent this for the sender)
+                    // This handles if another session of the same user gets the message.
+                    messageElement = $(`<div class="message sent"><p>${escapeHTML(message.text)}</p></div>`);
+                } else if (message.sender_type === 'staff') {
+                    const staffDisplayName = message.sender || 'Staff'; // 'sender' field from broadcast payload is staff_name
+                    messageElement = $(`<div class="message received"><small class="sender-name">${escapeHTML(staffDisplayName)}:</small><p>${escapeHTML(message.text)}</p></div>`);
+                } else {
+                    // Fallback for unknown sender_type, though ideally all messages have it
+                    console.warn('Unknown sender_type in broadcast message:', message.sender_type);
+                    messageElement = $(`<div><p>${escapeHTML(message.text)}</p></div>`); // Generic display
+                }
+                liveChatMessages.append(messageElement);
+                liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight);
+            } else {
+                console.warn('Received broadcast message without text or sender_type:', message);
             }
           })
           .subscribe((status, err) => {
@@ -217,19 +227,8 @@ $(window).on('load', function () {
     liveChatSendButton.on('click', function() {
       const messageText = liveChatInputField.val().trim();
       if (messageText) {
-        // Display sent message
-        const messageElement = $('<div class="message sent"><p></p></div>');
-        messageElement.find('p').text(escapeHTML(messageText)); // Use escapeHTML here
-        liveChatMessages.append(messageElement);
-        liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight); // Scroll to bottom
-
         // Clear input field
         liveChatInputField.val('');
-
-        // Generate a simple userId if not already present (for session)
-        if (!window.liveChatUserId) {
-          window.liveChatUserId = 'user-' + Math.random().toString(36).substr(2, 9);
-        }
 
         $.ajax({
           url: '/.netlify/functions/live-chat', // Endpoint for the new Netlify function
@@ -388,8 +387,8 @@ $(window).on('load', function () {
               } catch (e) {
                   console.log('[CUSTOM LOG] User from INITIAL_SESSION: (Could not stringify)', session.user);
               }
-              window.liveChatUserId = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || session.user.id;
-              console.log('[CUSTOM LOG] liveChatUserId set from INITIAL_SESSION:', window.liveChatUserId);
+              window.liveChatUserId = session.user.id;
+              console.log('[CUSTOM LOG] liveChatUserId (Supabase User ID) set from INITIAL_SESSION:', window.liveChatUserId);
               updateUIAfterLogin(session.user);
               updateChatAvailability(true);
           } else {
@@ -404,8 +403,8 @@ $(window).on('load', function () {
           } catch (e) {
               console.log('[CUSTOM LOG] User from SIGNED_IN session: (Could not stringify)', session.user);
           }
-          window.liveChatUserId = session.user.user_metadata?.full_name || session.user.user_metadata?.name || session.user.user_metadata?.user_name || session.user.id;
-          console.log('[CUSTOM LOG] liveChatUserId set from SIGNED_IN:', window.liveChatUserId);
+          window.liveChatUserId = session.user.id;
+          console.log('[CUSTOM LOG] liveChatUserId (Supabase User ID) set from SIGNED_IN:', window.liveChatUserId);
         updateUIAfterLogin(session.user);
         updateChatAvailability(true);
 
