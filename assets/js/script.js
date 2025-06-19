@@ -308,33 +308,48 @@ $(window).on('load', function () {
 
   // Send button click
   if (liveChatSendButton.length) {
-    liveChatSendButton.on('click', function() {
+    liveChatSendButton.on('click', async function() { // Made async
       const messageText = liveChatInputField.val().trim();
       if (messageText && currentConversationId && currentUserId && selectedChatCategory) {
         liveChatInputField.val(''); // Clear input field
 
         // Optimistic rendering removed, server will broadcast back.
 
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError || !session) {
+            console.error('Error getting session for sending message:', sessionError);
+            alert('Authentication error. Please try logging out and back in.');
+            liveChatMessages.append($('<div class="message received"><p style="color: red;">Error: Authentication issue. Cannot send message.</p></div>'));
+            liveChatMessages.scrollTop(liveChatMessages[0]?.scrollHeight || 0);
+            liveChatInputField.val(messageText); // Re-add text to input
+            return;
+        }
+        const token = session.access_token;
+
         $.ajax({
           url: '/.netlify/functions/send-support-message', // NEW ENDPOINT
           type: 'POST',
           contentType: 'application/json',
+          beforeSend: function(xhr) {
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+          },
           data: JSON.stringify({
-            userId: currentUserId,
+            // userId is derived from token on backend, but can be sent for logging/consistency if desired.
+            // For now, relying on backend to use authenticated user from token.
             category: selectedChatCategory,
-            message: messageText,
+            message_content: messageText, // Corrected field name
             conversationId: currentConversationId
           }),
           success: function(response) {
             console.log('Message sent to new backend:', response);
           },
           error: function(jqXHR, textStatus, errorThrown) {
-            console.error('Error sending message to new backend:', textStatus, errorThrown);
+            console.error('Error sending message to new backend:', textStatus, errorThrown, jqXHR.responseText);
             // Re-add message to input or show error. For now, just log.
-            // liveChatInputField.val(messageText); // Optional: re-add if send fails
-            const errorElement = $('<div class="message received"><p style="color: red;">Error: Could not send message.</p></div>');
+            liveChatInputField.val(messageText); // Optional: re-add if send fails
+            const errorElement = $('<div class="message received"><p style="color: red;">Error: Could not send message. Server said: ' + (jqXHR.responseJSON?.message || jqXHR.responseText || 'Unknown error') + '</p></div>');
             liveChatMessages.append(errorElement);
-            liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight);
+            liveChatMessages.scrollTop(liveChatMessages[0]?.scrollHeight || 0);
           }
         });
       } else if (!currentConversationId) {
