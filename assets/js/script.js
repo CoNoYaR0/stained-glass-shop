@@ -6,6 +6,19 @@ $(window).on('load', function () {
 (function ($) {
   'use strict';
 
+  function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  let currentUser = null;
+  let currentUserId = null;
+  let selectedChatCategory = null;
+  let currentConversationId = null;
+  // window.liveChatUserId will be removed by removing its assignments.
+
   function escapeHTML(str) {
     return str.replace(/[&<>"']/g, function (match) {
         return {
@@ -105,242 +118,249 @@ $(window).on('load', function () {
   const liveChatOption = $('#live-chat-option');
   const liveChatBox = $('#live-chat-box');
   const closeChatBoxButton = $('#close-chat-box');
-  const liveChatMessages = $('#live-chat-messages');
+
+  // New UI elements for chat stages
+  const chatLoginPrompt = $('#chat-login-prompt');
+  const chatFacebookLoginButton = $('#chat-facebook-login-button');
+  const chatTopicSelection = $('#chat-topic-selection');
+  const chatTopicDropdown = $('#chat-topic-dropdown');
+  const startChatButton = $('#start-chat-button');
+  const liveChatMessages = $('#live-chat-messages'); // Existing, but usage changes
+  const liveChatInputArea = $('#live-chat-input-area'); // Existing, but usage changes
   const liveChatInputField = $('#live-chat-input-field');
   const liveChatSendButton = $('#live-chat-send-button');
-  // Also need the contact options modal to close it
   const contactOptionsModalForChat = $('#contact-options');
 
 
-  if (liveChatOption.length && liveChatBox.length && closeChatBoxButton.length && liveChatMessages.length && liveChatInputField.length && liveChatSendButton.length && contactOptionsModalForChat.length) {
-    liveChatOption.on('click', async function(e) { // Made async
+  // Main click handler for "Live Chat" option from contact bubble
+  if (liveChatOption.length) {
+    liveChatOption.on('click', async function(e) {
       e.preventDefault();
       liveChatBox.show();
-      contactOptionsModalForChat.hide(); // Hide the general contact options modal
+      contactOptionsModalForChat.hide();
+      liveChatMessages.empty(); // Clear previous messages
+      $('#chat-topic-dropdown').val(''); // Reset topic dropdown
 
-      // Clear previous messages and show loading indicator
-      liveChatMessages.html('<p class="text-muted">Loading history...</p>');
-
-      if (supabaseClient && window.liveChatUserId) {
-        try {
-          const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-          if (sessionError || !session) {
-            console.error('Error getting Supabase session or no session found for history:', sessionError);
-            liveChatMessages.html('<p class="text-danger">Could not authenticate to load history.</p>');
-            // Proceed to connect to realtime channel anyway, or decide not to.
-            // For now, let's allow realtime connection even if history fails.
-          } else {
-            const token = session.access_token;
-            const response = await fetch('/.netlify/functions/get-my-chat-history', {
-              method: 'GET',
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
-              const historyMessages = await response.json();
-              window.debugHistoryMessages = historyMessages; // For debugging
-              liveChatMessages.empty(); // Clear "Loading history..."
-              if (historyMessages && historyMessages.length > 0) {
-                historyMessages.forEach(msg => {
-                  let messageElement;
-                  if (msg.sender_type === 'user') {
-                    messageElement = $(`<div class="message sent"><p>${escapeHTML(msg.message_content)}</p></div>`);
-                  } else { // staff or system
-                    messageElement = $(`<div class="message received"><small class="sender-name">${escapeHTML(msg.staff_name || 'Staff')}:</small><p>${escapeHTML(msg.message_content)}</p></div>`);
-                  }
-                  liveChatMessages.append(messageElement);
-                });
-              } else {
-                liveChatMessages.html('<p class="text-muted">No chat history found.</p>');
-              }
-              liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight);
-            } else {
-              console.error('Error fetching chat history:', response.status, await response.text());
-              liveChatMessages.html('<p class="text-danger">Could not load chat history.</p>');
-            }
-          }
-        } catch (fetchError) {
-          console.error('Exception fetching chat history:', fetchError);
-          liveChatMessages.html('<p class="text-danger">Error loading history.</p>');
-        }
-
-        // Setup realtime channel (moved after history load attempt)
-        const channelName = 'chat-' + window.liveChatUserId;
-        realtimeChannel = supabaseClient.channel(channelName, {
-          config: {
-            broadcast: {
-              self: false // Don't receive our own broadcasts
-            }
-          }
-        });
-
-        realtimeChannel
-          .on('broadcast', { event: 'new_message' }, (payload) => {
-            console.log('Received new_message broadcast:', payload);
-            const message = payload.payload; // The actual message object from broadcast
-            if (message && message.text && message.sender_type) { // Ensure sender_type exists
-                let messageElement;
-                if (message.sender_type === 'user') {
-                    // User's own message broadcasted back (though self:false should prevent this for the sender)
-                    // This handles if another session of the same user gets the message.
-                    messageElement = $(`<div class="message sent"><p>${escapeHTML(message.text)}</p></div>`);
-                } else if (message.sender_type === 'staff') {
-                    const staffDisplayName = message.sender || 'Staff'; // 'sender' field from broadcast payload is staff_name
-                    messageElement = $(`<div class="message received"><small class="sender-name">${escapeHTML(staffDisplayName)}:</small><p>${escapeHTML(message.text)}</p></div>`);
-                } else {
-                    // Fallback for unknown sender_type, though ideally all messages have it
-                    console.warn('Unknown sender_type in broadcast message:', message.sender_type);
-                    messageElement = $(`<div><p>${escapeHTML(message.text)}</p></div>`); // Generic display
-                }
-                liveChatMessages.append(messageElement);
-                liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight);
-            } else {
-                console.warn('Received broadcast message without text or sender_type:', message);
-            }
-          })
-          .subscribe((status, err) => {
-            if (status === 'SUBSCRIBED') {
-              console.log('Subscribed to Supabase channel:', channelName);
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('Supabase channel error:', err);
-            } else if (status === 'TIMED_OUT') {
-              console.error('Supabase subscription timed out.');
-            }
-          });
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        currentUser = null;
+        currentUserId = null;
+        selectedChatCategory = null;
+        currentConversationId = null;
+        chatLoginPrompt.show();
+        chatTopicSelection.hide();
+        liveChatMessages.hide();
+        liveChatInputArea.hide();
+      } else {
+        currentUser = session.user;
+        currentUserId = session.user.id;
+        // Don't reset selectedChatCategory or currentConversationId here,
+        // user might be reopening the chat.
+        // History loading will need to be re-evaluated based on these.
+        chatLoginPrompt.hide();
+        chatTopicSelection.show();
+        liveChatMessages.hide(); // Hide until topic is selected and chat started
+        liveChatInputArea.hide();
       }
     });
+  }
 
-    closeChatBoxButton.on('click', function() {
+  // Facebook login button inside chat widget
+  if (chatFacebookLoginButton.length) {
+    chatFacebookLoginButton.on('click', function() {
+      handleFacebookLogin(); // Assumes handleFacebookLogin is defined elsewhere and works
+    });
+  }
+
+  async function loadChatHistory(userId, category, conversationId) {
+    if (!liveChatMessages.length) return;
+    liveChatMessages.html('<p class="text-muted">Loading history...</p>');
+
+    if (!userId || !category || !conversationId) {
+        liveChatMessages.html('<p class="text-danger">Could not load history: Missing user, category or conversation ID.</p>');
+        return;
+    }
+
+    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+    if (sessionError || !session) {
+      console.error('Error getting Supabase session for history:', sessionError);
+      liveChatMessages.html('<p class="text-danger">Authentication error. Could not load history.</p>');
+      return;
+    }
+    const token = session.access_token;
+
+    try {
+      const queryParams = new URLSearchParams({ userId, category, conversationId });
+      const response = await fetch(`/.netlify/functions/get-support-messages?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const history = await response.json();
+        liveChatMessages.empty();
+        if (history && history.length > 0) {
+          history.forEach(msg => {
+            let messageElement;
+            // Ensure msg.message_content and msg.sender_type are the correct fields from your DB
+            if (msg.sender_type === 'user') {
+              messageElement = $(`<div class="message sent"><p>${escapeHTML(msg.message_content)}</p></div>`);
+            } else if (msg.sender_type === 'admin' || msg.sender_type === 'staff') {
+              messageElement = $(`<div class="message received"><small class="sender-name">${escapeHTML(msg.staff_name || 'Support')}:</small><p>${escapeHTML(msg.message_content)}</p></div>`);
+            } else {
+              console.warn("Unknown sender_type in history message:", msg.sender_type);
+              messageElement = $(`<div><p>${escapeHTML(msg.message_content || 'Message content missing')}</p></div>`);
+            }
+            liveChatMessages.append(messageElement);
+          });
+        } else {
+          liveChatMessages.html('<p class="text-muted">No previous messages for this topic.</p>');
+        }
+      } else {
+        console.error('Error fetching chat history:', response.status, await response.text());
+        liveChatMessages.html('<p class="text-danger">Could not load chat history.</p>');
+      }
+    } catch (err) {
+      console.error('Exception fetching chat history:', err);
+      liveChatMessages.html('<p class="text-danger">Error loading history.</p>');
+    }
+    liveChatMessages.scrollTop(liveChatMessages[0]?.scrollHeight || 0);
+  }
+
+  // Start Chat button after selecting topic
+  if (startChatButton.length) {
+    startChatButton.on('click', async function() {
+      selectedChatCategory = chatTopicDropdown.val();
+      if (!selectedChatCategory) {
+        alert('Please select a topic to start the chat.');
+        return;
+      }
+      currentConversationId = uuidv4(); // Generate a new conversation ID
+
+      chatTopicSelection.hide();
+      liveChatMessages.empty().show(); // Clear and show messages area
+      liveChatInputArea.show();
+
+      await loadChatHistory(currentUserId, selectedChatCategory, currentConversationId);
+
+      // Setup Realtime Subscription
       if (realtimeChannel) {
         supabaseClient.removeChannel(realtimeChannel)
-          .then(() => {
-            console.log('Unsubscribed from Supabase channel.');
-            realtimeChannel = null;
-          })
-          .catch(err => {
-            console.error('Error unsubscribing from Supabase channel:', err);
-          });
+          .then(() => console.log('Unsubscribed from old realtime channel:', realtimeChannel.topic))
+          .catch(err => console.error('Error unsubscribing from old realtime channel:', err));
+        realtimeChannel = null;
       }
-      liveChatBox.hide();
-    });
 
+      const channelName = `conversation-${currentConversationId}`;
+      realtimeChannel = supabaseClient.channel(channelName);
+
+      realtimeChannel.on('broadcast', { event: 'new_support_message' }, (response) => {
+        console.log('Received new_support_message broadcast:', response);
+        const msg = response.payload;
+        if (msg && msg.message && msg.sender_type) {
+            let messageElement;
+            // Note: message field from 'new_support_message' is assumed to be msg.message
+            if (msg.sender_type === 'user') {
+                messageElement = $(`<div class="message sent"><p>${escapeHTML(msg.message)}</p></div>`);
+            } else if (msg.sender_type === 'admin' || msg.sender_type === 'staff') {
+                const displayName = msg.staff_name || 'Support';
+                messageElement = $(`<div class="message received"><small class="sender-name">${escapeHTML(displayName)}:</small><p>${escapeHTML(msg.message)}</p></div>`);
+            } else {
+                console.warn('Unknown sender_type in broadcast message:', msg.sender_type);
+                messageElement = $(`<div><p>${escapeHTML(msg.message)}</p></div>`);
+            }
+            liveChatMessages.append(messageElement);
+            liveChatMessages.scrollTop(liveChatMessages[0]?.scrollHeight || 0);
+        } else {
+            console.warn('Received broadcast message without text or sender_type:', msg);
+        }
+      })
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Subscribed to Supabase Realtime channel:', channelName);
+        } else if (err) {
+          console.error(`Supabase Realtime channel (${channelName}) subscription error:`, err);
+        } else {
+          console.log('Supabase Realtime channel status:', status);
+        }
+      });
+
+      console.log(`Chat started & subscribed: UserID: ${currentUserId}, Category: ${selectedChatCategory}, ConvID: ${currentConversationId}, Channel: ${channelName}`);
+    });
+  }
+
+  // Close chat button
+  if (closeChatBoxButton.length) {
+    closeChatBoxButton.on('click', function() {
+      liveChatBox.hide();
+      // Consider unsubscribing from realtime channel if a conversation was active
+      if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel)
+          .then(() => console.log('Unsubscribed from chat channel on close:', realtimeChannel.topic))
+          .catch(err => console.error('Error unsubscribing from chat channel on close:', err));
+        realtimeChannel = null;
+      }
+      // Reset state variables if needed, or leave them for reopening
+      // selectedChatCategory = null; // Optional: reset topic
+      // currentConversationId = null; // Optional: reset conversation
+    });
+  }
+
+  // Send button click
+  if (liveChatSendButton.length) {
     liveChatSendButton.on('click', function() {
       const messageText = liveChatInputField.val().trim();
-      if (messageText) {
-        // Clear input field
-        liveChatInputField.val('');
+      if (messageText && currentConversationId && currentUserId && selectedChatCategory) {
+        liveChatInputField.val(''); // Clear input field
+
+        // Optimistic rendering removed, server will broadcast back.
 
         $.ajax({
-          url: '/.netlify/functions/live-chat', // Endpoint for the new Netlify function
+          url: '/.netlify/functions/send-support-message', // NEW ENDPOINT
           type: 'POST',
           contentType: 'application/json',
           data: JSON.stringify({
+            userId: currentUserId,
+            category: selectedChatCategory,
             message: messageText,
-            userId: window.liveChatUserId
+            conversationId: currentConversationId
           }),
           success: function(response) {
-            console.log('Message sent to backend:', response);
-            // Optionally, display a success indicator or handle backend response
+            console.log('Message sent to new backend:', response);
           },
           error: function(jqXHR, textStatus, errorThrown) {
-            console.error('Error sending message:', textStatus, errorThrown);
-            // Display an error message in the chat or UI
+            console.error('Error sending message to new backend:', textStatus, errorThrown);
+            // Re-add message to input or show error. For now, just log.
+            // liveChatInputField.val(messageText); // Optional: re-add if send fails
             const errorElement = $('<div class="message received"><p style="color: red;">Error: Could not send message.</p></div>');
             liveChatMessages.append(errorElement);
             liveChatMessages.scrollTop(liveChatMessages[0].scrollHeight);
           }
         });
-      }
-    });
-
-    // Optional: Allow sending with Enter key
-    liveChatInputField.on('keypress', function(e) {
-      if (e.which === 13 && !e.shiftKey) { // Enter key pressed without Shift
-        e.preventDefault();
-        liveChatSendButton.click();
+      } else if (!currentConversationId) {
+          alert("Please start a new chat session by selecting a topic.");
+      } else if (!messageText) {
+          // User tried to send empty message, do nothing or give subtle feedback
       }
     });
   }
+
+  // Optional: Allow sending with Enter key (ensure it only works when chat is active)
+  if (liveChatInputField.length) {
+    liveChatInputField.on('keypress', function(e) {
+      if (e.which === 13 && !e.shiftKey) {
+        e.preventDefault();
+        if (currentConversationId && currentUserId && selectedChatCategory) { // Check if chat is active
+            liveChatSendButton.click();
+        }
+      }
+    });
+  }
+
 
   // --- Supabase Auth ---
 
-  function updateChatAvailability(isLoggedIn) {
-    const liveChatOption = $('#live-chat-option'); // Ensure this selector is correct
-    const liveChatBox = $('#live-chat-box');
-    const liveChatMessages = $('#live-chat-messages');
-
-    if (isLoggedIn) {
-      if (liveChatOption.length) {
-        liveChatOption.show().css('opacity', 1).prop('disabled', false);
-        // Consider adding a visual cue or re-enabling a previously disabled state
-        // For example, if it was greyed out, remove that style.
-        // If a message was shown about needing to log in, clear it.
-      }
-      console.log("Chat is available.");
-    } else {
-      if (liveChatOption.length) {
-        liveChatOption.hide().css('opacity', 0.5).prop('disabled', true); // Hide or disable
-        console.log("Chat is unavailable. User needs to log in.");
-      }
-      if (liveChatBox.length && liveChatBox.is(':visible')) {
-        // If chat box is open, close it or display a message
-        if (realtimeChannel) {
-          supabaseClient.removeChannel(realtimeChannel).catch(console.error);
-          realtimeChannel = null;
-        }
-        liveChatBox.hide();
-        // Optionally, show a message in a different part of the UI
-        // or within the chat button's parent.
-        alert("Please log in to use the Live Chat feature.");
-      }
-       if (liveChatMessages.length && liveChatBox.is(':visible')) {
-        liveChatMessages.html('<p>Please log in to continue chatting.</p>');
-      }
-    }
-  }
-
-  function updateUIAfterLogin(user) {
-    const facebookLoginButton = $('#facebook-login-button');
-    const logoutButton = $('#logout-button');
-    const userInfoDisplay = $('#user-info');
-
-    if (user) {
-      // User is logged in
-      if (facebookLoginButton.length) facebookLoginButton.hide();
-      if (logoutButton.length) {
-        logoutButton.show();
-        logoutButton.off('click').on('click', async () => {
-          if (supabaseClient) {
-            try {
-              const { error } = await supabaseClient.auth.signOut();
-              if (error) {
-                console.error("Error during sign out:", error.message);
-                alert("Error signing out: " + error.message);
-              } else {
-                console.log("User signed out successfully.");
-                // onAuthStateChange will handle UI updates
-              }
-            } catch (e) {
-              console.error("Exception during sign out:", e);
-              alert("An unexpected error occurred during sign out.");
-            }
-          }
-        });
-      }
-      if (userInfoDisplay.length) {
-        // Display user's name or email. Prefer name from metadata if available.
-        const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email;
-        userInfoDisplay.text(`Logged in as: ${escapeHTML(displayName)}`).show();
-      }
-    } else {
-      // User is logged out
-      if (facebookLoginButton.length) facebookLoginButton.show();
-      if (logoutButton.length) logoutButton.hide();
-      if (userInfoDisplay.length) userInfoDisplay.empty().hide();
-    }
-  }
-
-  // Handle Facebook Login
+  // Handle Facebook Login (assuming this function exists and works)
   async function handleFacebookLogin() {
     if (!supabaseClient) {
       console.error("Supabase client is not initialized. Cannot log in.");
@@ -348,14 +368,12 @@ $(window).on('load', function () {
     }
     try {
       const { data, error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'facebook'
+        provider: 'facebook' // This should match your Supabase provider key
       });
       if (error) {
         console.error("Error during Facebook login:", error.message);
-        alert("Error during Facebook login: " + error.message); // Or display error in a more user-friendly way
+        alert("Error during Facebook login: " + error.message);
       } else {
-        // The user will be redirected to Facebook and then back to the app.
-        // onAuthStateChange will handle the session.
         console.log("Redirecting to Facebook for login...", data);
       }
     } catch (e) {
@@ -366,96 +384,89 @@ $(window).on('load', function () {
 
   if (supabaseClient) {
     supabaseClient.auth.onAuthStateChange((event, session) => {
-      // --- Start of Custom Logging ---
-      console.log('[CUSTOM LOG] Auth Event Fired. Current URL:', window.location.href);
-      console.log('[CUSTOM LOG] URL Hash:', window.location.hash);
-      console.log('[CUSTOM LOG] Auth Event Type:', event);
-      try {
-          console.log('[CUSTOM LOG] Session Object:', JSON.stringify(session, null, 2));
-      } catch (e) {
-          console.log('[CUSTOM LOG] Session Object: (Could not stringify - possibly null or circular)', session);
-      }
-      console.log('[CUSTOM LOG] document.readyState:', document.readyState);
-      // --- End of Custom Logging ---
+      console.log('Auth event:', event, session);
+      const chatBoxIsVisible = liveChatBox && liveChatBox.is(':visible');
 
-      if (event === 'INITIAL_SESSION') {
-          console.log('[CUSTOM LOG] Processing INITIAL_SESSION event.');
-          if (session) {
-              console.log('[CUSTOM LOG] INITIAL_SESSION: Session found.');
-              try {
-                  console.log('[CUSTOM LOG] User from INITIAL_SESSION:', JSON.stringify(session.user, null, 2));
-              } catch (e) {
-                  console.log('[CUSTOM LOG] User from INITIAL_SESSION: (Could not stringify)', session.user);
-              }
-              window.liveChatUserId = session.user.id;
-              console.log('[CUSTOM LOG] liveChatUserId (Supabase User ID) set from INITIAL_SESSION:', window.liveChatUserId);
-              updateUIAfterLogin(session.user);
-              updateChatAvailability(true);
-          } else {
-              console.log('[CUSTOM LOG] INITIAL_SESSION: No session found.');
-              updateUIAfterLogin(null); // Ensure UI reflects no user
-              updateChatAvailability(false);
-          }
-      } else if (event === 'SIGNED_IN' && session) { // Ensure session is checked here
-          console.log('[CUSTOM LOG] Processing SIGNED_IN event.');
-          try {
-              console.log('[CUSTOM LOG] User from SIGNED_IN session:', JSON.stringify(session.user, null, 2));
-          } catch (e) {
-              console.log('[CUSTOM LOG] User from SIGNED_IN session: (Could not stringify)', session.user);
-          }
-          window.liveChatUserId = session.user.id;
-          console.log('[CUSTOM LOG] liveChatUserId (Supabase User ID) set from SIGNED_IN:', window.liveChatUserId);
-        updateUIAfterLogin(session.user);
-        updateChatAvailability(true);
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        currentUser = session ? session.user : null;
+        currentUserId = session ? session.user.id : null;
 
-          updateUIAfterLogin(session.user);
-          updateChatAvailability(true);
-
-          if (liveChatOption && liveChatBox && liveChatBox.is(':visible')) {
-              console.log('[CUSTOM LOG] Chat box open, attempting to re-init channel for SIGNED_IN.');
-              if (realtimeChannel) {
-                  supabaseClient.removeChannel(realtimeChannel).catch(console.error);
-                  realtimeChannel = null;
-              }
-              // liveChatOption.trigger('click'); // This might be problematic, ensure liveChatOption is defined
+        if (chatBoxIsVisible) {
+          if (currentUser) {
+            chatLoginPrompt.hide();
+            chatTopicSelection.show();
+            // Reset other elements as user might be re-logging or session refreshed
+            liveChatMessages.empty().hide();
+            liveChatInputArea.hide();
+            chatTopicDropdown.val(''); // Reset topic dropdown
+            selectedChatCategory = null;
+            currentConversationId = null;
+            if (realtimeChannel) { // Unsubscribe from any old channel
+                supabaseClient.removeChannel(realtimeChannel).catch(console.error);
+                realtimeChannel = null;
+            }
+          } else { // Should not happen if event is SIGNED_IN but good practice
+            chatLoginPrompt.show();
+            chatTopicSelection.hide();
+            liveChatMessages.hide();
+            liveChatInputArea.hide();
           }
+        }
       } else if (event === 'SIGNED_OUT') {
-          console.log('[CUSTOM LOG] Processing SIGNED_OUT event.');
-          window.liveChatUserId = null;
-          updateUIAfterLogin(null);
-          updateChatAvailability(false);
-          if (realtimeChannel) {
-              supabaseClient.removeChannel(realtimeChannel)
-                  .then(() => {
-                      console.log('[CUSTOM LOG] Unsubscribed from Supabase channel on logout.');
-                      realtimeChannel = null;
-                  })
-                  .catch(err => {
-                      console.error('[CUSTOM LOG] Error unsubscribing on logout:', err);
-                  });
-          }
-          if (liveChatBox && liveChatMessages && liveChatBox.is(':visible')) { // Check liveChatBox and liveChatMessages
-              liveChatMessages.html('<p>Please log in to use the chat.</p>');
-          }
+        currentUser = null;
+        currentUserId = null;
+        selectedChatCategory = null;
+        currentConversationId = null;
+
+        if (chatBoxIsVisible) {
+          chatLoginPrompt.show();
+          chatTopicSelection.hide();
+          liveChatMessages.hide().empty();
+          liveChatInputArea.hide();
+          chatTopicDropdown.val('');
+        }
+        if (realtimeChannel) {
+          supabaseClient.removeChannel(realtimeChannel)
+            .then(() => console.log('Unsubscribed from channel on logout:', realtimeChannel.topic))
+            .catch(err => console.error('Error unsubscribing from channel on logout:', err));
+          realtimeChannel = null;
+        }
+      }
+      // Update general UI (like main login/logout buttons outside chat)
+      const mainFacebookLoginButton = $('#facebook-login-button'); // Assuming this is the ID of the main page login
+      const mainLogoutButton = $('#logout-button'); // Assuming this is the ID of the main page logout
+      const userInfoDisplay = $('#user-info'); // Assuming this is the ID for user info display
+
+      if (currentUser) {
+        if (mainFacebookLoginButton.length) mainFacebookLoginButton.hide();
+        if (mainLogoutButton.length) {
+          mainLogoutButton.show();
+          mainLogoutButton.off('click').on('click', async () => { // Ensure event handler is not duplicated
+            if (supabaseClient) await supabaseClient.auth.signOut();
+          });
+        }
+        if (userInfoDisplay.length) {
+          const displayName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email;
+          userInfoDisplay.text(`Logged in as: ${escapeHTML(displayName)}`).show();
+        }
+      } else {
+        if (mainFacebookLoginButton.length) mainFacebookLoginButton.show();
+        if (mainLogoutButton.length) mainLogoutButton.hide();
+        if (userInfoDisplay.length) userInfoDisplay.empty().hide();
       }
     });
-  } else {
-    // If Supabase is not available, ensure chat is not available
-    updateChatAvailability(false);
   }
 
-  // Event listener for a Facebook login button
-  $(document).ready(function() {
-    const facebookLoginButton = $('#facebook-login-button');
-    if (facebookLoginButton.length) {
-      facebookLoginButton.on('click', function(e) {
-        e.preventDefault();
-        handleFacebookLogin();
-      });
-    }
+  // Initial check for session to set general UI state (main login/logout buttons)
+  // This is implicitly handled by onAuthStateChange's INITIAL_SESSION event.
+  // However, if there are UI elements outside the chatbox that depend on auth state
+  // and need immediate update on page load, an explicit getSession() might be needed here.
+  // For now, we rely on onAuthStateChange.
 
-    // Ensure old getSession call is removed.
-    // Initial session check is now primarily handled by onAuthStateChange with INITIAL_SESSION event.
-  });
+  // Ensure #live-chat-option is available for users not logged in initially
+  // The old updateChatAvailability logic is now integrated into onAuthStateChange
+  // and the liveChatOption click handler.
+  // The chat option itself (#live-chat-option) should always be visible.
+  // Its behavior (what it shows inside the chatbox) is controlled by auth state.
 
 })(jQuery);
