@@ -24,58 +24,6 @@
   </div>
 </footer>
 
-<!-- Floating Contact Button -->
-<div class="floating-contact">
-  <button id="contact-us-button" class="btn btn-primary rounded-circle">
-    <i class="tf-ion-android-chat"></i> <!-- Or a more suitable icon -->
-  </button>
-  <div id="contact-options" class="contact-options-modal" style="display: none;">
-    <h5>Contact Us</h5>
-    <ul>
-      <li><a href="mailto:contact@example.com" id="email-option"><i class="tf-ion-email"></i> Email Us</a></li>
-      <li><a href="tel:+1234567890" id="phone-option"><i class="tf-ion-ios-telephone"></i> Call Us</a></li>
-      <li><a href="#" id="live-chat-option"><i class="tf-ion-chatbubbles"></i> Live Chat</a></li>
-    </ul>
-  </div>
-</div>
-
-<!-- Live Chat Box -->
-<div id="live-chat-box" class="live-chat-box" style="display: none;">
-  <div class="live-chat-header">
-    <h5>Live Chat</h5>
-    <button id="close-chat-box" class="btn btn-sm btn-light">&times;</button>
-  </div>
-  <div id="chat-login-prompt" style="padding: 15px; text-align: center; display: none;">
-    <p>Please log in to continue.</p>
-    <button id="chat-facebook-login-button" class="btn btn-primary">Login with Facebook</button>
-  </div>
-  <div id="chat-topic-selection" style="padding: 15px; display: none;">
-    <div class="form-group">
-      <label for="chat-topic-dropdown">Please select a topic:</label>
-      <select id="chat-topic-dropdown" class="form-control">
-        <option value="" disabled selected>Choose a topic...</option>
-        <option value="order_problem">Order problem</option>
-        <option value="delivery_status">Delivery status</option>
-        <option value="payment_issue">Payment issue</option>
-        <option value="product_defect">Product defect</option>
-        <option value="general_inquiry">General inquiry</option>
-      </select>
-    </div>
-    <button id="start-chat-button" class="btn btn-primary mt-2">Start Chat</button>
-  </div>
-  <div id="live-chat-messages" class="live-chat-messages" style="display: none;">
-    <!-- Messages will appear here -->
-  </div>
-  <div id="live-chat-input-area" class="live-chat-input" style="display: none;">
-    <input type="text" id="live-chat-input-field" class="form-control" placeholder="Type your message...">
-    <button id="live-chat-send-button" class="btn btn-primary">Send</button>
-  </div>
-  <div class="chat-info-message" style="padding: 5px 15px; font-size: 0.8em; text-align: center; background-color: #f8f9fa;">
-    Messages are stored for up to 30 days for support purposes before being archived.
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- JS Plugins -->
 {{ range site.Params.plugins.js }}
 <script src="{{ .link | absURL }}"></script>
