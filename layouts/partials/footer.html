@@ -24,6 +24,14 @@
   </div>
 </footer>
 
+<!-- Floating Chat on Messenger Button -->
+<a href="#" id="messenger-chat-button" class="floating-messenger-button" title="Chat on Messenger">
+  <!-- Using an Ionicons icon if available from theme, otherwise placeholder text/SVG -->
+  <i class="tf-ion-social-facebook-outline"></i> <!-- Or your preferred Messenger icon -->
+  <!-- Fallback text if icon doesn't load or for accessibility -->
+  <!-- <span class="button-text">Chat</span> -->
+</a>
+
 <!-- JS Plugins -->
 {{ range site.Params.plugins.js }}
 <script src="{{ .link | absURL }}"></script>

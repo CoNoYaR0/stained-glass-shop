@@ -113,6 +113,44 @@ a {
   }
 }
 
+.floating-messenger-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px; // Adjust size as needed
+  height: 60px; // Adjust size as needed
+  background-color: #0078FF; // Facebook Messenger blue, or theme's primary color
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px; // Adjust icon size
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  z-index: 1000; // Ensure it's above other content
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #0056b3; // Darker shade on hover
+    color: #fff;
+    text-decoration: none;
+  }
+
+  i { // Style for the icon if using one like Ionicons
+    line-height: 1; // Helps center icon if it has unusual line-height
+  }
+
+  // Basic responsiveness: adjust position or size on smaller screens if needed
+  @media (max-width: 768px) {
+    bottom: 15px;
+    right: 15px;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+  }
+}
+
 .live-chat-box {
   position: fixed;
   bottom: 20px;

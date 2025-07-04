@@ -85,4 +85,13 @@ $(window).on('load', function () {
   // Event listener for a Facebook login button (REMOVED - was part of onAuthStateChange)
   // $(document).ready(function() { ... }); // This specific one, not the main one for sliders
 
+  // Messenger Chat Button Logic
+  const messengerButton = $('#messenger-chat-button');
+  if (messengerButton.length) {
+    messengerButton.on('click', function(e) {
+      e.preventDefault(); // Prevent default anchor action
+      const messengerLink = 'https://m.me/612498025280654'; // User-provided link
+      window.open(messengerLink, '_blank');
+    });
+  }
 })(jQuery);
