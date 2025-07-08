@@ -3,7 +3,26 @@
 
 require_once __DIR__ . '/config.php';
 
+// --- Set HTTP Headers ---
+// CORS Headers
+header("Access-Control-Allow-Origin: https://stainedglass.tn");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); // POST for potential future use
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+// Security Headers
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: SAMEORIGIN");
+
+// Content Type
 header('Content-Type: application/json');
+
+// Handle OPTIONS request for CORS preflight
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    // Optionally, you could also check the Origin here against a whitelist
+    // if Access-Control-Allow-Origin was more dynamic.
+    http_response_code(204); // No Content
+    exit;
+}
 
 // --- Cache Configuration ---
 // Ensure PROXY_CACHE_DIR and PROXY_CACHE_EXPIRATION are defined (they should be in config.php)

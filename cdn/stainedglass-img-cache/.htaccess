@@ -1,14 +1,9 @@
 <IfModule mod_headers.c>
-  # CORS Headers
-  Header set Access-Control-Allow-Origin "https://stainedglass.tn"
-  Header set Access-Control-Allow-Methods "GET, OPTIONS" # Images are typically fetched via GET
-  Header set Access-Control-Allow-Headers "Content-Type"
-
-  # Security Headers
-  Header set X-Content-Type-Options "nosniff"
-  Header set X-Frame-Options "SAMEORIGIN" # Or DENY if images are never framed
-  # Consider adding a Content-Security-Policy header here
-  # Example for images: Header set Content-Security-Policy "default-src 'self'; img-src 'self' data:; script-src 'none'; object-src 'none';"
+  # Header directives removed due to mod_headers unavailability on the server.
+  # For static image files, if CORS is needed and mod_headers is unavailable,
+  # alternative server configurations (e.g., at a higher level if on dedicated/VPS)
+  # or a PHP script to serve images would be required to set these headers.
+  # However, images are often less strict about CORS for direct embedding via <img> tags.
 </IfModule>
 
 # Disable directory listing
