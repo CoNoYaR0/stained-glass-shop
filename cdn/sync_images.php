@@ -27,14 +27,24 @@ if ($providedToken !== SYNC_IMAGES_TOKEN) {
 // Autoriser CORS - useful if this script is ever called from a browser admin panel
 // For a cron job or direct CLI execution, this might not be strictly necessary
 // but doesn't harm.
-header("Access-Control-Allow-Origin: *"); // Consider restricting this in production
+
+// --- Set HTTP Headers ---
+// CORS Headers
+header("Access-Control-Allow-Origin: https://stainedglass.tn"); // Restricted to specific origin
 header("Access-Control-Allow-Methods: GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Authorization for token, Content-Type for any potential POST body if extended
+
+// Security Headers
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: DENY"); // This script should not be framed
+
+// Content Type
 header("Content-Type: application/json");
 
 // Handle OPTIONS request for CORS preflight
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    exit(0);
+    http_response_code(204); // No Content
+    exit;
 }
 
 function sync_images($productId = null) {

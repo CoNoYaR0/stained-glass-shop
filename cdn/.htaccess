@@ -1,15 +1,4 @@
 <IfModule mod_headers.c>
-  # CORS Headers
-  Header set Access-Control-Allow-Origin "https://stainedglass.tn"
-  Header set Access-Control-Allow-Methods "GET, POST, OPTIONS" # POST might not be used by all scripts but is safe
-  Header set Access-Control-Allow-Headers "Content-Type, Authorization" # Added Authorization for potential future use
-
-  # Security Headers
-  Header set X-Content-Type-Options "nosniff"
-  Header set X-Frame-Options "SAMEORIGIN"
-  # Consider adding a Content-Security-Policy header here if specific policies are known
-  # Example: Header set Content-Security-Policy "default-src 'self'; script-src 'none'; object-src 'none';"
+  # This block is intentionally left empty.
+  # Header directives are handled by PHP scripts due to server environment limitations.
 </IfModule>
-
-# Disable directory listing
-Options -Indexes
