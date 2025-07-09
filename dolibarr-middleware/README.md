@@ -2,14 +2,14 @@
 
 ## Overview
 
-This project is a Node.js (Fastify) middleware application designed to synchronize data (products, categories, variants, images, stock levels) from a Dolibarr ERP instance into an optimized PostgreSQL database. It then exposes this synchronized data via a RESTful API for consumption by frontend applications or other services.
+This project is a Node.js (Fastify) middleware application designed to synchronize data (products, categories, variants, image metadata, stock levels) from a Dolibarr ERP instance into an optimized PostgreSQL database. It then exposes this synchronized data via a RESTful API for consumption by frontend applications or other services.
 
 The primary goals are:
 -   Decouple frontend applications from direct Dolibarr API calls, improving frontend performance and resilience.
 -   Reduce direct load on the Dolibarr instance.
 -   Provide a more flexible and potentially enriched data source than the raw Dolibarr API.
 -   Enable real-time (or near real-time) updates through webhooks and a polling fallback mechanism.
--   Serve product images via a CDN (AWS S3 + CloudFront).
+-   Store metadata for product images, with actual image files served from your own CDN (e.g., OVH hosting at `https://cdn.stainedglass.tn/`) managed by an external script.
 
 ## Features (Planned & Implemented)
 
@@ -17,7 +17,7 @@ The primary goals are:
     -   [x] Categories
     -   [x] Products
     -   [x] Product Variants
-    -   [x] Product Images (with S3 upload & CDN URL generation)
+    -   [x] Product Image Metadata (constructs CDN URLs pointing to your OVH CDN; actual file placement is external)
     -   [x] Stock Levels
 -   **Synchronization Mechanisms:**
     -   [x] Initial full data sync (manually triggerable - *CLI/endpoint for this TBD*)
@@ -26,15 +26,14 @@ The primary goals are:
 -   **API:**
     -   [x] `GET /api/v1/categories` - List all categories.
     -   [x] `GET /api/v1/products` - List products with pagination, basic filtering by category, and sorting.
-    -   [x] `GET /api/v1/products/:slug` - Get a single product by slug, including its variants, images, and stock.
+    -   [x] `GET /api/v1/products/:slug` - Get a single product by slug, including its variants, images (URLs), and stock.
     -   [x] API Documentation via Swagger/OpenAPI available at `/documentation`.
 -   **Tech Stack:**
     -   Node.js
     -   Fastify (web framework)
     -   PostgreSQL (database)
-    -   AWS S3 (for image storage)
-    -   AWS CloudFront (as CDN for images - *manual setup required*)
-    -   Docker & Docker Compose (for development and deployment)
+    -   Image hosting on your own CDN (e.g., OVH, configured via `CDN_BASE_URL`). Requires an external script (e.g., PHP) on that CDN server to place images.
+    -   Docker & Docker Compose (for development and deployment of this middleware)
     -   Vitest (for testing)
 
 ## Prerequisites
@@ -44,159 +43,97 @@ The primary goals are:
 -   Docker & Docker Compose
 -   A running PostgreSQL instance (Docker Compose provides one for development)
 -   A running Dolibarr instance with API access enabled.
--   AWS Account with S3 bucket and (optionally) CloudFront distribution configured. IAM user with S3 permissions.
+-   Your own CDN hosting (e.g., an OVH web server) accessible via a public URL (e.g., `https://cdn.stainedglass.tn/`) where product images will be placed.
+-   An external script (e.g., PHP, like the `sync_images.php` from the initial CDN task) running on your CDN server, responsible for fetching original images from Dolibarr and placing them into the correct public directory on your CDN server. This middleware will only store the expected URLs.
 
 ## Project Structure
 
 ```
 dolibarr-middleware/
 ├── migrations/                 # SQL database migration files
-│   └── 001_initial_schema.sql
+│   ├── 001_initial_schema.sql
+│   └── 002_update_product_images_for_ovh_cdn.sql
 ├── src/                        # Source code
 │   ├── config/                 # Configuration management (index.js)
-│   ├── controllers/            # API route handlers (categoryController.js, productController.js)
-│   ├── models/                 # (Currently unused, could hold DB interaction logic/ORM models later)
-│   ├── routes/                 # API and webhook route definitions (apiRoutes.js, webhookRoutes.js)
+│   ├── controllers/            # API route handlers
+│   ├── routes/                 # API and webhook route definitions
 │   ├── services/               # Business logic and external service integrations
-│   │   ├── __tests__/          # Unit/integration tests for services (syncService.test.js)
-│   │   ├── dbService.js        # PostgreSQL connection and query helper
-│   │   ├── dolibarrApiService.js # Client for Dolibarr API
-│   │   ├── pollingService.js   # Cron-based polling tasks
-│   │   ├── s3Service.js        # AWS S3 integration for file uploads
-│   │   └── syncService.js      # Data synchronization logic
-│   ├── utils/                  # Utility functions (logger.js)
-│   └── server.js               # Fastify server setup and entry point
+│   │   ├── __tests__/          # Unit/integration tests
+│   │   ├── dbService.js
+│   │   ├── dolibarrApiService.js
+│   │   ├── pollingService.js
+│   │   └── syncService.js      # (s3Service.js has been removed)
+│   ├── utils/                  # Utility functions
+│   └── server.js               # Fastify server setup
 ├── .env.example                # Example environment variables file
-├── .eslintrc.json              # ESLint configuration
-├── .gitignore                  # Git ignore file
-├── .prettierrc.json            # Prettier configuration
-├── Dockerfile                  # Dockerfile for building the application image
-├── docker-compose.yml          # Docker Compose for local development environment
+├── .eslintrc.json
+├── .gitignore
+├── .prettierrc.json
+├── Dockerfile
+├── docker-compose.yml
 ├── package-lock.json
 ├── package.json
 ├── README.md                   # This file
-└── vitest.config.js            # Vitest configuration
+└── vitest.config.js
 ```
 
 ## Configuration
 
-Create a `.env` file in the root of the `dolibarr-middleware` project. You can copy `.env.example` (which you'll need to create or I will create next) as a template.
+Create a `.env` file in the root of the `dolibarr-middleware` project using `.env.example` as a template.
 
-**Required Environment Variables:**
+**Key Environment Variables:**
 
--   `NODE_ENV`: `development`, `production`, or `test`.
--   `PORT`: Port for the middleware server (e.g., `3000`).
--   `LOG_LEVEL`: Logging level (e.g., `info`, `debug`, `warn`, `error`).
+-   `NODE_ENV`, `PORT`, `LOG_LEVEL`
+-   `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL_MODE`
+-   `DOLIBARR_API_URL`, `DOLIBARR_API_KEY`, `DOLIBARR_WEBHOOK_SECRET`
+-   `CDN_BASE_URL`: The base public URL for your images on your OVH CDN (e.g., `https://cdn.stainedglass.tn/your-image-folder/`). **Ensure this ends with a trailing slash.**
+-   `POLLING_ENABLED`, `POLLING_STOCK_SYNC_INTERVAL`
 
--   `DB_HOST`: Database host (e.g., `db` when using Docker Compose, `localhost` otherwise).
--   `DB_PORT`: Database port (e.g., `5432`).
--   `DB_USER`: Database user.
--   `DB_PASSWORD`: Database password.
--   `DB_NAME`: Database name.
--   `DB_SSL_MODE`: (Optional) e.g., `require` for SSL connections.
-
--   `DOLIBARR_API_URL`: Full base URL of your Dolibarr API (e.g., `https://your.dolibarr.site/api/index.php`).
--   `DOLIBARR_API_KEY`: Your Dolibarr API key.
--   `DOLIBARR_WEBHOOK_SECRET`: A strong secret string for validating incoming webhooks from Dolibarr.
-
--   `AWS_ACCESS_KEY_ID`: AWS IAM user access key ID.
--   `AWS_SECRET_ACCESS_KEY`: AWS IAM user secret access key.
--   `AWS_S3_BUCKET_NAME`: Name of the S3 bucket for image storage.
--   `AWS_REGION`: AWS region for the S3 bucket (e.g., `us-east-1`).
--   `AWS_CLOUDFRONT_DISTRIBUTION_ID`: (Optional) ID of your CloudFront distribution for serving images.
-
--   `POLLING_ENABLED`: `true` or `false` to enable/disable the polling service.
--   `POLLING_STOCK_SYNC_INTERVAL`: Cron string for stock sync polling (e.g., `0 */1 * * *` for hourly).
-
-*(I will create an `.env.example` file next.)*
+*(AWS variables like `AWS_ACCESS_KEY_ID`, etc., are no longer required for this middleware).*
 
 ## Installation
 
-1.  Clone the repository (if applicable).
-2.  Navigate to the `dolibarr-middleware` directory.
-3.  Create and populate your `.env` file as described above.
-4.  Install dependencies:
-    ```bash
-    npm install
-    ```
+1.  Clone repository.
+2.  Navigate to `dolibarr-middleware`.
+3.  Create and configure `.env`.
+4.  Run `npm install`.
 
 ## Running the Application
 
 ### Development (with Docker Compose)
 
-This is the recommended way for local development as it includes a PostgreSQL database.
+1.  Ensure Docker & Docker Compose are running.
+2.  Have `.env` configured (especially `DB_HOST=db`).
+3.  Run `docker-compose up --build`.
+4.  App at `http://localhost:PORT`, API docs at `/documentation`.
+5.  PostgreSQL on host at `DB_EXTERNAL_PORT` (default 5433).
 
-1.  Ensure Docker and Docker Compose are installed and running.
-2.  Make sure you have a `.env` file configured in the `dolibarr-middleware` root. **Important:** For Docker Compose, `DB_HOST` in your `.env` file should typically be set to the service name of the database in `docker-compose.yml` (which is `db`).
-3.  Build and start the services:
-    ```bash
-    docker-compose up --build
-    ```
-    (Use `docker-compose up -d` to run in detached mode).
-4.  The application will be available at `http://localhost:PORT` (e.g., `http://localhost:3000`).
-5.  The API documentation will be at `http://localhost:PORT/documentation`.
-6.  The PostgreSQL database will be accessible from your host machine on the port specified by `DB_EXTERNAL_PORT` in your `.env` or `docker-compose.yml` (defaults to `5433` mapping to container's `5432`).
+### Applying Database Migrations
 
-### Applying Database Migrations (Development with Docker)
+1.  Connect to the PostgreSQL DB (details in README for manual psql).
+2.  Run SQL from `migrations/001_initial_schema.sql`.
+3.  Then run SQL from `migrations/002_update_product_images_for_ovh_cdn.sql`.
 
-After the database container is up and running for the first time (or after schema changes):
-1.  You need to execute the SQL migration file(s) located in the `migrations/` directory against your database.
-2.  For now, this is a manual step. Connect to the PostgreSQL database (e.g., using `psql` CLI, pgAdmin, DBeaver, or your IDE's database tools) using the credentials from your `.env` file and the external port (e.g., 5433).
-3.  Run the SQL commands from `migrations/001_initial_schema.sql` (and any subsequent migration files).
-    *Example using psql (if you have psql client installed and db is exposed on port 5433):*
-    ```bash
-    psql -h localhost -p 5433 -U YOUR_DB_USER -d YOUR_DB_NAME -f migrations/001_initial_schema.sql
-    ```
-*(Later, a proper migration tool like `node-pg-migrate` or `Knex.js` would be integrated to manage this with `npm run db:migrate` commands executed inside the container).*
+*(A proper migration tool is a future improvement).*
 
-### Production
+## Image Handling Workflow (OVH CDN)
 
-Deployment strategies for production will vary (e.g., deploying the Docker container to a cloud provider like AWS ECS, Google Cloud Run, DigitalOcean App Platform, or a VPS). Ensure all environment variables are securely managed in the production environment.
+1.  This Node.js middleware fetches product data from Dolibarr, including metadata about images (e.g., filename, Dolibarr's internal path/ID for the image).
+2.  The `syncProductImageMetadata` function in this middleware constructs an expected public URL for each image (e.g., `CDN_BASE_URL` + `filename`). This URL and other metadata (alt text, display order) are stored in the `product_images` table in the PostgreSQL database.
+3.  **Crucially, an external script (e.g., a PHP script like `sync_images.php` from the original `cdn/` task, running on your OVH server) is responsible for:**
+    *   Actually fetching the original image file from Dolibarr (using the `original_dolibarr_path` or `original_dolibarr_filename` stored by this middleware, or by directly querying Dolibarr's API/document store).
+    *   Saving/copying this image file to the correct public directory on your OVH server so that it's accessible via the constructed `cdn_url`.
+    *   This external script needs to be triggered (e.g., via cron job on OVH, or perhaps a webhook call from this middleware if your OVH server can receive it). The details of this external script are outside the scope of this Node.js middleware project but are essential for images to appear.
 
-## Running Tests
+## Running Tests, Triggering Sync, Webhook Setup
 
-```bash
-npm test
-```
-To run tests in watch mode:
-```bash
-npm run test:watch
-```
-To generate a coverage report (in `./coverage/`):
-```bash
-npm run coverage
-```
-
-## Triggering Initial Data Sync
-
-Currently, the `runInitialSync()` function in `syncService.js` needs to be triggered manually.
-Future improvements:
--   Add a CLI command (e.g., `npm run sync:initial`).
--   Create a secure, admin-only API endpoint to trigger it.
-
-For now, you could temporarily add a route in `apiRoutes.js` or call it from `server.js` on startup (for the very first run).
-
-## Webhook Setup in Dolibarr
-
-1.  In your Dolibarr instance, navigate to the Webhooks module configuration.
-2.  Create webhooks for the events you want to synchronize (e.g., Product Create, Product Update, Category Create, Category Update, Stock changes/Order validation).
-3.  **Target URL:** `YOUR_MIDDLEWARE_APP_URL/webhooks/dolibarr` (e.g., `https://your-deployed-middleware.com/webhooks/dolibarr`).
-4.  **Secret Key:** Configure Dolibarr to send a secret key with the webhook. This is often done via a custom HTTP Header (e.g., `X-Dolibarr-Webhook-Secret: YOUR_STRONG_SECRET`). The value `YOUR_STRONG_SECRET` must match the `DOLIBARR_WEBHOOK_SECRET` in your middleware's `.env` file.
-5.  **Payload Structure:** You **MUST** inspect the actual JSON payload Dolibarr sends for each webhook event. The parsing logic in `dolibarr-middleware/src/routes/webhookRoutes.js` (for `entity`, `action`, `entityId`) needs to be adapted to match this structure precisely.
+(These sections remain largely the same as before, but remember image sync now only handles metadata).
 
 ## Further Development & TODOs
 
--   Implement full CRUD operations for webhook handlers (e.g., product deletion).
--   Refine webhook payload parsing in `webhookRoutes.js`.
--   Adapt all transformation functions (`transformProduct`, `transformVariant`, etc.) in `syncService.js` based on actual Dolibarr API response fields for your specific Dolibarr version and modules.
--   Implement more robust error handling and retry mechanisms, especially for sync operations and API calls.
--   Add more comprehensive integration and end-to-end tests.
--   Integrate a database migration tool (e.g., `node-pg-migrate`, `Knex.js`).
--   Add more detailed response schemas to API routes for better Swagger documentation.
--   Secure sensitive endpoints if any are added (e.g., an endpoint to trigger sync).
--   Optimize database queries and add more indexes as needed based on usage patterns.
--   Implement image handling for product variants in `syncProductImages` and webhook handlers.
--   Refine stock update logic in webhook handlers based on actual Dolibarr stock webhook payloads.
+-   (Existing TODOs...)
+-   **Develop/Refine the external PHP script on OVH for actual image file synchronization.** Ensure its logic for determining source (from Dolibarr) and destination filenames/paths on OVH matches what this middleware stores in `cdn_url` and `original_dolibarr_filename/path`.
+-   Consider how the external OVH image sync script will be triggered.
 
 ---
 

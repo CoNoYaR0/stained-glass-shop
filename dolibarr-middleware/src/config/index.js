@@ -55,13 +55,16 @@ const config = {
     timeout: parseInt(process.env.DOLIBARR_API_TIMEOUT_MS, 10) || 10000, // Default 10s timeout
     webhookSecret: process.env.DOLIBARR_WEBHOOK_SECRET, // Added for webhook validation
   },
-  aws: { // Placeholders for when we integrate AWS S3/CloudFront
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    s3BucketName: process.env.AWS_S3_BUCKET_NAME,
-    region: process.env.AWS_REGION || 'us-east-1', // Default region if not specified
-    cloudfrontDistributionId: process.env.AWS_CLOUDFRONT_DISTRIBUTION_ID,
+  cdn: {
+    baseUrl: process.env.CDN_BASE_URL || 'https://cdn.stainedglass.tn/image-cache/', // Example
   },
+  // aws: { // AWS configuration removed as per new strategy
+  //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  //   s3BucketName: process.env.AWS_S3_BUCKET_NAME,
+  //   region: process.env.AWS_REGION || 'us-east-1',
+  //   cloudfrontDistributionId: process.env.AWS_CLOUDFRONT_DISTRIBUTION_ID,
+  // },
   polling: {
     enabled: process.env.POLLING_ENABLED === 'true' || false, // Default to false unless explicitly true
     stockSyncInterval: process.env.POLLING_STOCK_SYNC_INTERVAL || '0 */1 * * *', // Default: every hour for stock
@@ -72,4 +75,8 @@ const config = {
 };
 
 // Make the config object immutable
+// Adding a check for CDN_BASE_URL trailing slash
+if (config.cdn.baseUrl && !config.cdn.baseUrl.endsWith('/')) {
+  config.cdn.baseUrl += '/';
+}
 export default Object.freeze(config);

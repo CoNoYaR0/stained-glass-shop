@@ -1,8 +1,8 @@
 import dolibarrApi from './dolibarrApiService.js';
 import db from './dbService.js';
 import config from '../config/index.js';
-import s3Service from './s3Service.js';
-import path from 'path';
+// import s3Service from './s3Service.js'; // No longer needed for OVH strategy
+import path from 'path'; // Still useful for filename extraction
 import logger from '../utils/logger.js';
 
 // --- Transformation Functions ---
@@ -57,24 +57,30 @@ function transformVariant(dolibarrVariant, localProductId) {
     dolibarr_variant_id: dolibarrVariant.id,
     product_id: localProductId,
     sku_variant: dolibarrVariant.ref || `${dolibarrVariant.parent_ref}-var-${dolibarrVariant.id}`,
-    price_modifier: parseFloat(dolibarrVariant.price_var) || 0, // Placeholder: VERIFY THIS FIELD
+    price_modifier: parseFloat(dolibarrVariant.price_var) || 0,
     attributes: attributesJson,
     dolibarr_created_at: dolibarrVariant.date_creation || null,
     dolibarr_updated_at: dolibarrVariant.tms || null,
   };
 }
 
-function transformProductImage(dolibarrImageInfo, localProductId, localVariantId, cdnUrl, s3Key, s3Bucket) {
+function transformProductImage(dolibarrImageInfo, localProductId, localVariantId, filenameFromDolibarr) {
+  const sanitizedFilename = (filenameFromDolibarr || `placeholder_image_${Date.now()}.jpg`).replace(/[^a-zA-Z0-9._-]/g, '_');
+  const cdnUrl = `${config.cdn.baseUrl}${sanitizedFilename}`; // config.cdn.baseUrl should end with a '/'
+
   return {
     product_id: localProductId,
     variant_id: localVariantId,
-    s3_bucket: s3Bucket,
-    s3_key: s3Key,
+    s3_bucket: null, // Not used
+    s3_key: null,    // Not used
     cdn_url: cdnUrl,
-    alt_text: dolibarrImageInfo.alt || dolibarrImageInfo.label || path.basename(s3Key),
+    alt_text: dolibarrImageInfo.alt || dolibarrImageInfo.label || sanitizedFilename,
     display_order: parseInt(dolibarrImageInfo.position, 10) || 0,
     is_thumbnail: dolibarrImageInfo.is_thumbnail || false,
-    dolibarr_image_id: dolibarrImageInfo.id || dolibarrImageInfo.ref,
+    dolibarr_image_id: dolibarrImageInfo.id || dolibarrImageInfo.ref, // Dolibarr's image ID
+    // Store original filename/path from Dolibarr if useful for the external PHP sync script
+    original_dolibarr_filename: filenameFromDolibarr,
+    original_dolibarr_path: dolibarrImageInfo.path || dolibarrImageInfo.filepath || dolibarrImageInfo.url_photo_absolute || dolibarrImageInfo.url,
   };
 }
 
@@ -92,8 +98,6 @@ function transformStockLevel(dolibarrStockEntry, localProductId, localVariantId)
 
 async function syncCategories() {
   logger.info('Starting category synchronization...');
-  // ... (full implementation as previously generated) ...
-  // (Code for syncCategories as previously defined)
   let allCategories = [];
   let currentPage = 0;
   const limit = 100;
@@ -126,8 +130,6 @@ async function syncCategories() {
 
 async function syncProducts() {
   logger.info('Starting product synchronization...');
-  // ... (full implementation as previously generated) ...
-  // (Code for syncProducts as previously defined)
   const catMapRes = await db.query('SELECT dolibarr_category_id, id FROM categories WHERE dolibarr_category_id IS NOT NULL;');
   const catMap = new Map(catMapRes.rows.map(r => [r.dolibarr_category_id, r.id]));
   let allProducts = [];
@@ -164,10 +166,8 @@ async function syncProducts() {
 
 async function syncProductVariants() {
   logger.info('Starting product variant synchronization...');
-  // ... (full implementation as previously generated) ...
-  // (Code for syncProductVariants as previously defined)
   const prodsRes = await db.query('SELECT id, dolibarr_product_id FROM products WHERE dolibarr_product_id IS NOT NULL;');
-  if (prodsRes.rows.length === 0) return;
+  if (prodsRes.rows.length === 0) { logger.info('No products to sync variants for.'); return; }
   for (const p of prodsRes.rows) {
     try {
       const variants = await dolibarrApi.getProductVariants(p.dolibarr_product_id);
@@ -192,53 +192,102 @@ async function syncProductVariants() {
   logger.info('Product variant synchronization finished.');
 }
 
-async function syncProductImages() {
-  logger.info('Starting product image synchronization...');
-  // ... (full implementation as previously generated) ...
-  // (Code for syncProductImages as previously defined)
-  const prodsRes = await db.query('SELECT id, dolibarr_product_id FROM products WHERE dolibarr_product_id IS NOT NULL;');
-  if (prodsRes.rows.length === 0) return;
-  for (const p of prodsRes.rows) {
+async function syncProductImageMetadata() { // Renamed from syncProductImages
+  logger.info('Starting product image metadata synchronization (OVH CDN strategy)...');
+  const productsResult = await db.query('SELECT id, dolibarr_product_id FROM products WHERE dolibarr_product_id IS NOT NULL;');
+  if (productsResult.rows.length === 0) {
+    logger.info('No products found to sync image metadata for.');
+    return;
+  }
+
+  for (const product of productsResult.rows) {
+    logger.info(`Fetching image metadata for Dolibarr product ID: ${product.dolibarr_product_id} (Local ID: ${product.id})`);
     try {
-      const prodData = await dolibarrApi.getProductById(p.dolibarr_product_id);
-      const images = prodData.photos || prodData.images || [];
-      if (images.length === 0) continue;
-      for (const imgInfo of images) {
-        const imgUrl = imgInfo.url_photo_absolute || imgInfo.url || imgInfo.path || imgInfo.filepath || (imgInfo.filename ? `${config.dolibarr.apiUrl}/documents/products/${p.dolibarr_product_id}/${imgInfo.filename}` : null);
-        const origFilename = imgInfo.filename || (imgUrl ? path.basename(new URL(imgUrl, config.dolibarr.apiUrl).pathname) : `image_${Date.now()}`);
-        if (!imgUrl) continue;
+      const dolibarrProductData = await dolibarrApi.getProductById(product.dolibarr_product_id);
+      const imagesToProcess = dolibarrProductData.photos || dolibarrProductData.images || [];
+
+      if (!imagesToProcess || imagesToProcess.length === 0) {
+        logger.info(`No image metadata found in Dolibarr data for product ID: ${product.dolibarr_product_id}`);
+        continue;
+      }
+      logger.info(`Found ${imagesToProcess.length} potential image entries for product ID: ${product.dolibarr_product_id}`);
+
+      for (const dolibarrImageInfo of imagesToProcess) {
+        let filenameFromDolibarr = dolibarrImageInfo.filename;
+        if (!filenameFromDolibarr) {
+            const imageUrl = dolibarrImageInfo.url_photo_absolute || dolibarrImageInfo.url || dolibarrImageInfo.path || dolibarrImageInfo.filepath;
+            if (imageUrl) {
+                try {
+                    filenameFromDolibarr = path.basename(new URL(imageUrl, config.dolibarr.apiUrl).pathname);
+                } catch (e) {
+                    logger.warn({ err: e, imageUrl, productId: product.dolibarr_product_id }, `Could not parse filename from URL for image.`);
+                    filenameFromDolibarr = `image_${dolibarrImageInfo.id || Date.now()}${path.extname(imageUrl) || '.jpg'}`;
+                }
+            }
+        }
+
+        if (!filenameFromDolibarr) {
+          logger.warn({ dolibarrImageInfo, productId: product.dolibarr_product_id }, `Skipping image due to missing filename in metadata`);
+          continue;
+        }
+
         try {
-          const { buffer, contentType } = await dolibarrApi.getFileFromUrl(imgUrl);
-          const saniFilename = origFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const s3Key = `products/d${p.dolibarr_product_id}/${Date.now()}_${saniFilename}`;
-          await s3Service.uploadFile(buffer, config.aws.s3BucketName, s3Key, contentType);
-          const cdnUrl = s3Service.getPublicUrl(s3Key, config.aws.s3BucketName);
-          const dbData = transformProductImage(imgInfo, p.id, null, cdnUrl, s3Key, config.aws.s3BucketName);
-          await db.query(
-            `INSERT INTO product_images (product_id, variant_id, s3_bucket, s3_key, cdn_url, alt_text, display_order, is_thumbnail, dolibarr_image_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-             ON CONFLICT (s3_key) DO UPDATE SET
-               cdn_url = EXCLUDED.cdn_url, alt_text = EXCLUDED.alt_text, display_order = EXCLUDED.display_order,
-               is_thumbnail = EXCLUDED.is_thumbnail, updated_at = NOW()`,
-            [dbData.product_id, dbData.variant_id, dbData.s3_bucket, dbData.s3_key, dbData.cdn_url, dbData.alt_text, dbData.display_order, dbData.is_thumbnail, dbData.dolibarr_image_id]
+          const imageDataForDb = transformProductImage(
+            dolibarrImageInfo, product.id, null, /* localVariantId if applicable */
+            filenameFromDolibarr
           );
-        } catch (imgErr) {
-          logger.error({ err: imgErr, imageUrl: imgUrl }, `Error processing image`);
+
+          // Using (product_id, dolibarr_image_id) as conflict target.
+          // Ensure dolibarr_image_id is reliable and unique per product in your Dolibarr setup.
+          // If not, (product_id, cdn_url) might be an alternative if cdn_urls are unique.
+          const imageQueryText = `
+            INSERT INTO product_images (
+              product_id, variant_id, cdn_url, alt_text, display_order, is_thumbnail,
+              dolibarr_image_id, original_dolibarr_filename, original_dolibarr_path,
+              s3_bucket, s3_key
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL)
+            ON CONFLICT (product_id, dolibarr_image_id)
+            DO UPDATE SET
+              cdn_url = EXCLUDED.cdn_url,
+              alt_text = EXCLUDED.alt_text,
+              display_order = EXCLUDED.display_order,
+              is_thumbnail = EXCLUDED.is_thumbnail,
+              original_dolibarr_filename = EXCLUDED.original_dolibarr_filename,
+              original_dolibarr_path = EXCLUDED.original_dolibarr_path,
+              updated_at = NOW()
+            RETURNING id;
+          `;
+
+          if (!imageDataForDb.dolibarr_image_id) {
+            logger.warn({imageDataForDb, productId: product.dolibarr_product_id}, "Attempting to insert image metadata without a dolibarr_image_id. Conflict resolution might not work as expected.");
+            // Fallback: insert without conflict or use different conflict target like cdn_url if dolibarr_image_id is missing
+            // For now, this will fail if dolibarr_image_id is null and product_id already has an image with null dolibarr_image_id
+            // and your DB has a unique constraint like that (which it doesn't by default on (product_id, null)).
+            // Best to ensure dolibarr_image_id is always populated.
+          }
+
+          await db.query(imageQueryText, [
+            imageDataForDb.product_id, imageDataForDb.variant_id, imageDataForDb.cdn_url,
+            imageDataForDb.alt_text, imageDataForDb.display_order, imageDataForDb.is_thumbnail,
+            imageDataForDb.dolibarr_image_id, imageDataForDb.original_dolibarr_filename, imageDataForDb.original_dolibarr_path,
+          ]);
+          logger.info({ cdnUrl: imageDataForDb.cdn_url, productId: product.dolibarr_product_id }, `Upserted image metadata`);
+        } catch (dbUpsertError) {
+          logger.error({ err: dbUpsertError, filenameFromDolibarr, productId: product.dolibarr_product_id }, `Error upserting image metadata`);
         }
       }
     } catch (error) {
-      logger.error({ err: error, productId: p.dolibarr_product_id }, `Error syncing images`);
+      logger.error({ err: error, productId: product.dolibarr_product_id }, `Error fetching image metadata`);
     }
   }
-  logger.info('Product image synchronization finished.');
+  logger.info('Product image metadata synchronization finished.');
 }
+
 
 async function syncStockLevels() {
   logger.info('Starting stock level synchronization...');
-  // ... (full implementation as previously generated) ...
-  // (Code for syncStockLevels as previously defined)
   const prodsRes = await db.query('SELECT p.id as local_product_id, p.dolibarr_product_id, pv.id as local_variant_id, pv.dolibarr_variant_id FROM products p LEFT JOIN product_variants pv ON p.id = pv.product_id WHERE p.dolibarr_product_id IS NOT NULL;');
-  if (prodsRes.rows.length === 0) return;
+  if (prodsRes.rows.length === 0) { logger.info('No products/variants to sync stock for.'); return; }
   const varMap = new Map(prodsRes.rows.filter(r => r.dolibarr_variant_id).map(r => [r.dolibarr_variant_id, r.local_variant_id]));
   const uniqProdIds = [...new Set(prodsRes.rows.map(r => r.dolibarr_product_id))];
   for (const dlbProdId of uniqProdIds) {
@@ -251,14 +300,14 @@ async function syncStockLevels() {
         if (entry.fk_product_fils || entry.variant_id) {
           const dlbVarId = parseInt(entry.fk_product_fils || entry.variant_id, 10);
           locVarId = varMap.get(dlbVarId);
-          if (!locVarId) continue;
+          if (!locVarId) { logger.warn({dlbVarId}, "Local variant ID not found for Dolibarr variant ID in stock entry. Skipping."); continue; }
           const pRow = prodsRes.rows.find(r => r.local_variant_id === locVarId);
-          if (pRow) locProdId = pRow.local_product_id;
+          if (pRow) locProdId = pRow.local_product_id; // product_id in stock_levels can be null if variant_id is set
         } else {
           const pRow = prodsRes.rows.find(r => r.dolibarr_product_id === dlbProdId && !r.dolibarr_variant_id);
-          if (pRow) locProdId = pRow.local_product_id; else continue;
+          if (pRow) locProdId = pRow.local_product_id; else { logger.warn({dlbProdId}, "Base product not found for stock entry. Skipping."); continue; }
         }
-        if (!locProdId && !locVarId) continue;
+        if (!locProdId && !locVarId) { logger.warn({entry}, "Could not determine local product/variant for stock. Skipping."); continue; }
         const data = transformStockLevel(entry, locProdId, locVarId);
         await db.query(
           `INSERT INTO stock_levels (product_id, variant_id, quantity, warehouse_id, dolibarr_updated_at, last_checked_at)
@@ -283,7 +332,7 @@ async function runInitialSync() {
   await syncCategories();
   await syncProducts();
   await syncProductVariants();
-  await syncProductImages();
+  await syncProductImageMetadata(); // Renamed
   await syncStockLevels();
   logger.info('=== Full Initial Data Synchronization Finished ===');
 }
@@ -293,7 +342,7 @@ export default {
   syncCategories,
   syncProducts,
   syncProductVariants,
-  syncProductImages,
+  syncProductImageMetadata, // Renamed
   syncStockLevels,
   // Exporting transform functions for testing or other potential uses
   transformCategory,
