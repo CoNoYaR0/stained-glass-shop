@@ -1,4 +1,0 @@
-<IfModule mod_headers.c>
-  # This block is intentionally left empty.
-  # Header directives are handled by PHP scripts due to server environment limitations.
-</IfModule>
