@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { id, name, slug, price, thumbnail_url } = prod;
     const stock = "N/A"; // Stock information is not available in the new API
 
-    const imageUrl = thumbnail_url || '/img/fallback.jpg';
+    const imageUrl = thumbnail_url || '/images/fallback.jpg';
 
     // Slider HTML for the product image
     const sliderHTML = `
