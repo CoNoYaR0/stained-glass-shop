@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+</head>
+<body>
+    <div class="container mt-5">
+        <div id="product-details">
+            <!-- Product details will be injected here -->
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const slug = window.location.pathname.split('/').pop();
+            const container = document.getElementById("product-details");
+
+            try {
+                const res = await fetch(`https://dolibarr-middleware.onrender.com/api/v1/products/${slug}`);
+                const product = await res.json();
+
+                if (product) {
+                    const { name, description, price, images } = product;
+
+                    const sliderHTML = `
+                        <div class="swiper-container" style="width: 100%; max-width: 600px;">
+                            <div class="swiper-wrapper">
+                                ${images && images.length > 0 ? images.map(img => `
+                                    <div class="swiper-slide">
+                                        <img src="${img.url}" class="d-block w-100" alt="${name}">
+                                    </div>
+                                `).join('') : `
+                                    <div class="swiper-slide">
+                                        <img src="${product.thumbnail_url || '/img/fallback.jpg'}" class="d-block w-100" alt="${name}">
+                                    </div>
+                                `}
+                            </div>
+                            <div class="swiper-pagination"></div>
+                            <div class="swiper-button-next"></div>
+                            <div class="swiper-button-prev"></div>
+                        </div>`;
+
+                    container.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                ${sliderHTML}
+                            </div>
+                            <div class="col-md-6">
+                                <h1>${name}</h1>
+                                <p class="lead">Price: ${parseFloat(price).toFixed(2)} DT HT</p>
+                                <div>${description}</div>
+                                <button class="btn btn-warning mt-3">Add to Cart</button>
+                            </div>
+                        </div>
+                    `;
+
+                    new Swiper('.swiper-container', {
+                        loop: true,
+                        pagination: {
+                            el: '.swiper-pagination',
+                            clickable: true,
+                        },
+                        navigation: {
+                            nextEl: '.swiper-button-next',
+                            prevEl: '.swiper-button-prev',
+                        },
+                    });
+                } else {
+                    container.innerHTML = "<p>Product not found.</p>";
+                }
+            } catch (err) {
+                console.error("Error fetching product details:", err);
+                container.innerHTML = "<p>Error loading product details.</p>";
+            }
+        });
+    </script>
+</body>
+</html>
