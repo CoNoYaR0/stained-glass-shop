@@ -19,47 +19,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 2) Generate HTML for each product
   const htmlPieces = products.map(prod => {
-    const { id, name, slug, price, thumbnail_url } = prod;
-    const stock = "N/A"; // Stock information is not available in the new API
+    const { id, name, slug, price, images, thumbnail_url } = prod;
 
-    const imageUrl = thumbnail_url || '/images/fallback.jpg';
+    const thumbnailUrl =
+      images?.find(img => img.type === 'thumbnail')?.url ||
+      thumbnail_url ||
+      '/images/fallback.jpg';
 
-    // Slider HTML for the product image
-    const sliderHTML = `
-      <div class="swiper swiper-${id}">
-        <div class="swiper-wrapper">
-          <div class="swiper-slide">
-            <img src="${imageUrl}"
-                 alt="${name}"
-                 onerror="this.src='/img/fallback.jpg'"
-                 class="w-100" />
-          </div>
-        </div>
-        <div class="swiper-pagination"></div>
-      </div>`;
-
-    // Product card HTML
     return `
-      <a href="/products/${slug}/"
-         class="product-card-link d-block text-decoration-none mb-4"
-         style="width: 100%; max-width: 360px;">
-        <div class="card h-100 border-warning">
-          ${sliderHTML}
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 product-card">
+          <a href="/products/${slug}/">
+            <img class="card-img-top" src="${thumbnailUrl}" alt="${name}" onerror="this.src='/images/fallback.jpg'">
+          </a>
           <div class="card-body">
-            <h5 class="card-title">${name}</h5>
-            <p class="card-text mb-1">Price: ${parseFloat(price).toFixed(2)} DT HT</p>
-            <p class="card-text mb-2">Stock: ${stock}</p>
-            <button type="button"
-                    class="add-to-cart btn btn-warning mt-3"
-                    data-id="${id}"
-                    data-name="${name}"
-                    data-price="${price}"
-                    data-image="${imageUrl}">
-              Add to cart
+            <h4 class="card-title">
+              <a href="/products/${slug}/">${name}</a>
+            </h4>
+            <h5>${parseFloat(price).toFixed(2)} DT</h5>
+            <p class="card-text">${prod.description || ''}</p>
+          </div>
+          <div class="card-footer">
+            <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${thumbnailUrl}">
+              Add to Cart
             </button>
           </div>
         </div>
-      </a>`;
+      </div>
+    `;
   });
 
   // 3) Inject the HTML into the container
@@ -67,16 +54,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 4) Attach event listeners for the "Add to cart" buttons
   attachAddToCartButtons();
-
-  // 5) Initialize Swiper sliders
-  setTimeout(() => {
-    document.querySelectorAll('.swiper').forEach(el => {
-      new Swiper(el, {
-        pagination: { el: el.querySelector('.swiper-pagination'), clickable: true },
-        loop: false
-      });
-    });
-  }, 100);
 });
 
 function attachAddToCartButtons() {
