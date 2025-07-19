@@ -75,3 +75,65 @@ The Admin Chat Panel allows you to communicate directly with customers.
     *   *Frontend (`window.APP_CONFIG` in HTML layouts): `SUPABASE_URL`, `SUPABASE_ANON_KEY`.*
     *   *Netlify Backend Functions: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `DISCORD_WEBHOOK_URL`.*
 *These are typically set in Netlify's site settings (for backend) and might be injected into Hugo's build process for the frontend.*
+
+---
+
+## Rapport d'Audit Technique (Juillet 2025)
+
+Cette section contient une analyse technique complète du projet, identifiant les failles de sécurité, les problèmes de performance et les opportunités d'amélioration.
+
+### **Synthèse Globale et Feuille de Route**
+
+Ce projet est un site e-commerce JAMstack fonctionnel, mais qui souffre de nombreux problèmes hérités du thème d'origine, d'un manque de rigueur dans le développement et de **failles de sécurité critiques**.
+
+**Actions à mener par ordre de priorité :**
+
+1.  **Phase 1 : Sécurité (IMMEDIAT)**
+    *   [ ] **Corriger la faille de calcul des prix** : Le total des commandes doit être recalculé côté serveur dans `create-payment.js` et `create-order.js` en se basant sur les prix stockés dans Dolibarr. **Ne jamais faire confiance au montant envoyé par le client.**
+    *   [ ] **Sécuriser le webhook de paiement** : Implémenter la vérification de la signature du webhook Paymee dans `webhook.js`.
+    *   [ ] **Désactiver `unsafe = true`** dans `hugo.toml` pour prévenir les attaques XSS.
+
+2.  **Phase 2 : Refactorisation et Nettoyage (Court terme)**
+    *   [ ] **Refactoriser le SCSS** : Diviser `style.scss` en plusieurs fichiers par composant pour améliorer la maintenabilité.
+    *   [ ] **Refactoriser le JS** : Créer des modules ES6, centraliser la logique du panier et supprimer le code dupliqué.
+    *   [ ] **Bundler les assets** : Utiliser Hugo Pipes pour combiner et minifier tous les fichiers CSS et JS en un seul par type afin d'améliorer la performance.
+    *   [ ] **Nettoyer le contenu** : Supprimer toutes les pages et articles de démonstration inutilisés et les pages dupliquées.
+
+3.  **Phase 3 : Améliorations (Moyen terme)**
+    *   [ ] **Créer un proxy Netlify** pour l'appel à l'API Dolibarr afin de ne plus l'exposer côté client.
+    *   [ ] **Mettre en place des tests unitaires** pour les fonctions Netlify.
+    *   [ ] **Optimiser les images** avec Hugo Pipes.
+
+---
+
+### **Détails de l'Audit par Section**
+
+#### **Partie 1 : Fonctions Serverless (`netlify/functions/`)**
+
+*   **`create-order.js` & `create-payment.js`** :
+    *   **Problème Critique** : Ne recalculent pas le total de la commande, faisant confiance au montant envoyé par le client.
+    *   **Problème Mineur** : Injection possible dans le filtre `sqlfilters` de l'API Dolibarr.
+*   **`webhook.js`** :
+    *   **Problème Critique** : Aucune vérification de la signature du webhook. La variable `SECRET_KEY` est définie mais inutilisée.
+*   **Autres fonctions (`check-payment.js`, `submit-review.js`)** :
+    *   Manque d'authentification, pas de validation des entrées, et modération par IA non fonctionnelle (mock).
+
+#### **Partie 2 : Fichiers de Configuration et Structure Hugo**
+
+*   **`hugo.toml`** :
+    *   `unsafe = true` activé (risque XSS).
+    *   Dépendances chargées depuis des CDN (mauvaise performance/sécurité).
+*   **`layouts/` (Templates)** :
+    *   Assets JS/CSS non "bundlés", ce qui génère de multiples requêtes HTTP.
+*   **`content/`** :
+    *   Contenu de démonstration et pages dupliquées (ex: `politique-de-confidentialite.md` et `privacy-policy/`).
+
+#### **Partie 3 : Code Côté Client (JavaScript & SCSS)**
+
+*   **JavaScript (`static/js/`)** :
+    *   Code non modulaire, duplication de code (ex: `attachAddToCartButtons`).
+    *   Calcul du total du panier fait côté client, ce qui est la source de la faille de sécurité.
+    *   Appel à une API externe (`dolibarr-middleware.onrender.com`) directement depuis le client.
+*   **SCSS (`assets/scss/`)** :
+    *   `style.scss` est un fichier monolithique de plus de 800 lignes.
+    *   Styles redéfinis et contradictoires, rendant la maintenance très difficile.
