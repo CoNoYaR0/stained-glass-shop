@@ -1,11 +1,13 @@
-// static/js/products_dynamic.js
-
 document.addEventListener("DOMContentLoaded", async () => {
-  const container = document.getElementById("products-list");
+  const container = document.getElementById("product-details");
   if (!container) {
-    // If the container doesn't exist, do nothing.
+    console.error("Container #product-details not found in DOM");
     return;
   }
+
+  const slug = window.location.pathname.split('/').filter(Boolean).pop();
+  console.log("Parsed slug:", slug);
+
   container.innerHTML = `
     <div class="col-12 text-center">
       <div class="spinner-border" role="status">
@@ -14,69 +16,62 @@ document.addEventListener("DOMContentLoaded", async () => {
     </div>
   `;
 
-  // 1) Fetch all products from the new Dolibarr middleware
-  let products = [];
   try {
-    const res = await fetch("https://dolibarr-middleware.onrender.com/api/v1/products");
-    const data = await res.json();
-    products = data.data; // The products are in the 'data' property
-    if (!Array.isArray(products)) throw new Error("Expected an array of products");
-    console.log("✅ Products loaded:", products);
-  } catch (err) {
-    console.error("❌ Error loading products:", err);
-    container.innerHTML = `<p>Error loading products.</p>`;
-    return;
-  }
+    const res = await fetch(`https://dolibarr-middleware.onrender.com/api/v1/products/${slug}`);
+    const product = await res.json();
+    console.log("API Response:", product);
 
-  // 2) Generate HTML for each product
-  const htmlPieces = products.map(prod => {
-    const { id, name, slug, price, images, thumbnail_url, sku, stock_levels, categories } = prod;
+    if (product && product.id) {
+      const { name, long_description, price, images, sku, stock_levels, categories, meta_title, meta_description } = product;
 
-    const imageUrl = thumbnail_url || images?.[0]?.url || 'https://cdn.stainedglass.tn/placeholder.jpg';
+      // Set SEO meta tags
+      document.title = meta_title || name;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+          metaDesc.setAttribute('content', meta_description || '');
+      }
 
-    const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
-    const displayName = (sku || slug || name).replace(/_/g, ' ');
-    const stockDisplay = stock_levels?.[0] ? `Stock: ${stock_levels[0].quantity}` : 'Stock: N/A';
+      const imageUrl = images?.[0]?.url || 'https://cdn.stainedglass.tn/placeholder.jpg';
+      const categoryName = categories?.[0]?.name || 'Misc';
+      const displayName = sku || name;
+      const totalStock = stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
+      const stockDisplay = totalStock > 0 ? 'Add to cart' : 'Sold Out';
+      const isSoldOut = totalStock === 0;
 
-    return `
-      <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card h-100 product-card">
-          <a href="/products/${slug}/">
-            <img class="card-img-top" src="${imageUrl}" alt="${name}" onerror="this.src='https://cdn.stainedglass.tn/placeholder.jpg'">
-          </a>
-          <div class="card-body">
-            <p class="card-text text-muted">${categoryNames}</p>
-            <h4 class="card-title">
-              <a href="/products/${slug}/">${displayName}</a>
-            </h4>
-            <h5>${parseFloat(price).toFixed(2)} DT</h5>
-            <p class="card-text">${stockDisplay}</p>
-          </div>
-          <div class="card-footer">
-            <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${imageUrl}">
-              Add to Cart
-            </button>
-          </div>
+      container.innerHTML = `
+        <div class="col-md-6">
+          <img src="${imageUrl}" class="img-fluid" alt="${name}">
         </div>
+        <div class="col-md-6">
+          <p class="text-muted">${categoryName}</p>
+          <h1>${displayName}</h1>
+          <h3 class="text-primary">${parseFloat(price).toFixed(2)} DT</h3>
+          <div class="mt-4" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6;">
+            ${long_description || ''}
+          </div>
+          <button class="btn btn-warning btn-lg mt-4" ${isSoldOut ? 'disabled' : ''}>
+            ${stockDisplay}
+          </button>
+        </div>
+      `;
+    } else {
+      console.error("Product not found or API response is empty.");
+      container.innerHTML = `
+        <div class="col-12 text-center">
+          <h2>Product not found</h2>
+          <p>The product you are looking for does not exist.</p>
+          <a href="/products" class="btn btn-primary">Back to Products</a>
+        </div>
+      `;
+    }
+  } catch (err) {
+    console.error("Error fetching product details:", err);
+    container.innerHTML = `
+      <div class="col-12 text-center">
+        <h2>Error</h2>
+        <p>There was an error loading the product details.</p>
+        <a href="/products" class="btn btn-primary">Back to Products</a>
       </div>
     `;
-  });
-
-  // 3) Inject the HTML into the container
-  container.innerHTML = htmlPieces.join("");
-
-  // 4) Attach event listeners for the "Add to cart" buttons
-  attachAddToCartButtons();
+  }
 });
-
-function attachAddToCartButtons() {
-  const buttons = document.querySelectorAll(".add-to-cart");
-  buttons.forEach(button => {
-    button.addEventListener("click", event => {
-      event.preventDefault();
-      event.stopPropagation();
-      // Add to cart logic here
-      console.log("Added to cart:", button.dataset.name);
-    });
-  });
-}
