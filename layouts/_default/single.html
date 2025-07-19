@@ -26,7 +26,7 @@
             metaDesc.setAttribute('content', meta_description || '');
         }
 
-        const fullImages = images?.filter(img => img.type === 'full') || [];
+        const fullImages = images || [];
 
         const imageGalleryHTML = fullImages.length > 0 ? `
           <div class="col-md-6">
