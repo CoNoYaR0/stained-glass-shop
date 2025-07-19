@@ -31,16 +31,23 @@ document.addEventListener("DOMContentLoaded", async () => {
           metaDesc.setAttribute('content', meta_description || '');
       }
 
-      const imageUrl = images?.[0]?.cdn_url || 'https://cdn.stainedglass.tn/placeholder.jpg';
       const categoryName = categories?.[0]?.name || 'Misc';
       const displayName = sku || name;
       const totalStock = stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
       const stockDisplay = totalStock > 0 ? 'Add to cart' : 'Sold Out';
       const isSoldOut = totalStock === 0;
 
+      const imageSlider = images?.map(image => `
+        <div data-image="${image.cdn_url}">
+            <img src="${image.cdn_url}" class="img-fluid w-100" alt="${name}">
+        </div>
+      `).join('');
+
       container.innerHTML = `
         <div class="col-md-6">
-          <img src="${imageUrl}" class="img-fluid" alt="${name}">
+          <div class="product-image-slider">
+            ${imageSlider}
+          </div>
         </div>
         <div class="col-md-6">
           <p class="text-muted">${categoryName}</p>
