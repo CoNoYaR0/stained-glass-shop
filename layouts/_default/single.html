@@ -15,11 +15,13 @@
 <script>
   document.addEventListener("DOMContentLoaded", async () => {
     const slug = window.location.pathname.split('/').filter(Boolean).pop();
+    console.log("Parsed slug:", slug);
     const container = document.getElementById("product-details");
 
     try {
       const res = await fetch(`https://dolibarr-middleware.onrender.com/api/v1/products/${slug}`);
       const product = await res.json();
+      console.log("API Response:", product);
 
       if (product && product.id) {
         const { name, long_description, price, images, sku, stock_levels, categories, meta_title, meta_description } = product;
@@ -55,6 +57,7 @@
           </div>
         `;
       } else {
+        console.error("Product not found or API response is empty.");
         container.innerHTML = `
           <div class="col-12 text-center">
             <h2>Product not found</h2>
