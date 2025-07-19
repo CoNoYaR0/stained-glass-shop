@@ -2,6 +2,13 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("products-list");
+  container.innerHTML = `
+    <div class="col-12 text-center">
+      <div class="spinner-border" role="status">
+        <span class="sr-only">Loading...</span>
+      </div>
+    </div>
+  `;
 
   // 1) Fetch all products from the new Dolibarr middleware
   let products = [];
