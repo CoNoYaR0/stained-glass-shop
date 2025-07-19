@@ -32,14 +32,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 2) Generate HTML for each product
   const htmlPieces = products.map(prod => {
-    const { id, name, slug, price, images, thumbnail_url, category_id } = prod;
+    const { id, name, slug, price, images, thumbnail_url, category_id, sku } = prod;
 
     const thumbnailUrl =
       images?.find(img => img.type === 'thumbnail')?.url ||
       thumbnail_url ||
       '/images/fallback.jpg';
 
-    const categoryName = categoryMap.get(category_id) || 'Uncategorized';
+    const categoryName = categoryMap.get(category_id) || 'Misc';
+    const displayName = sku || slug;
 
     return `
       <div class="col-lg-4 col-md-6 mb-4">
@@ -50,7 +51,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="card-body">
             <p class="card-text text-muted">${categoryName}</p>
             <h4 class="card-title">
-              <a href="/products/${slug}/">${name}</a>
+              <a href="/products/${slug}/">${displayName}</a>
             </h4>
             <h5>${parseFloat(price).toFixed(2)} DT</h5>
           </div>
