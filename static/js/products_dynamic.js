@@ -2,6 +2,10 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("products-list");
+  if (!container) {
+    // If the container doesn't exist, do nothing.
+    return;
+  }
   container.innerHTML = `
     <div class="col-12 text-center">
       <div class="spinner-border" role="status">
