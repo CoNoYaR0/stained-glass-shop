@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 2) Generate HTML for each product
   const htmlPieces = products.map(prod => {
-    const { id, name, slug, price, images, thumbnail_url, sku, stock, categories } = prod;
+    const { id, name, slug, price, images, thumbnail_url, sku, quantity, categories } = prod;
 
     const thumbnailUrl =
       images?.find(img => img.type === 'thumbnail')?.url ||
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
     const displayName = (sku || slug || name).replace(/_/g, ' ');
-    const stockDisplay = stock === 0 ? '<span class="badge badge-danger">Sold Out</span>' : `Stock: ${stock}`;
+    const stockDisplay = quantity === 0 ? '<span class="badge badge-danger">Sold Out</span>' : `Stock: ${quantity}`;
 
     return `
       <div class="col-lg-4 col-md-6 mb-4">
@@ -44,8 +44,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             <h5>${parseFloat(price).toFixed(2)} DT</h5>
             <p class="card-text">${stockDisplay}</p>
           </div>
-          <div class="card-footer">
-            <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${thumbnailUrl}" ${stock === 0 ? 'disabled' : ''}>
+          <div class.card-footer">
+            <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${thumbnailUrl}" ${quantity === 0 ? 'disabled' : ''}>
               Add to Cart
             </button>
           </div>
