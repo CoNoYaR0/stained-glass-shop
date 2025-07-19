@@ -26,8 +26,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       thumbnail_url ||
       '/images/fallback.jpg';
 
-    const categoryName = categories?.[0]?.name || 'Misc';
-    const displayName = sku || slug || name;
+    const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
+    const displayName = (sku || slug || name).replace(/_/g, ' ');
     const stockDisplay = stock === 0 ? '<span class="badge badge-danger">Sold Out</span>' : `Stock: ${stock}`;
 
     return `
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <img class="card-img-top" src="${thumbnailUrl}" alt="${name}" onerror="this.src='/images/fallback.jpg'">
           </a>
           <div class="card-body">
-            <p class="card-text text-muted">${categoryName}</p>
+            <p class="card-text text-muted">${categoryNames}</p>
             <h4 class="card-title">
               <a href="/products/${slug}/">${displayName}</a>
             </h4>
