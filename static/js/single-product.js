@@ -16,119 +16,106 @@ document.addEventListener("DOMContentLoaded", async () => {
     </div>
   `;
 
+  let product;
   try {
-    const res = await fetch(`https://dolibarr-middleware.onrender.com/api/v1/products/${slug}`);
-    const product = await res.json();
-    console.log("API Response:", product);
-
-    if (product && product.id) {
-      const { name, long_description, price, images, sku, stock_levels, categories, meta_title, meta_description, variants } = product;
-
-      // Set SEO meta tags
-      document.title = meta_title || name;
-      const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) {
-          metaDesc.setAttribute('content', meta_description || '');
-      }
-
-      const categoryName = categories?.[0]?.name || 'Misc';
-      const displayName = sku || name;
-
-      const renderProduct = (selectedVariant) => {
-        const variantImages = selectedVariant?.images?.length ? selectedVariant.images : images;
-        const totalStock = selectedVariant?.stock_levels?.[0]?.quantity || stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
-        const stockDisplay = totalStock > 0 ? 'Add to cart' : 'Sold Out';
-        const isSoldOut = totalStock === 0;
-
-        const imageSlider = variantImages?.map(image => `
-          <div class="swiper-slide">
-            <img src="${image.cdn_url}" class="img-fluid w-100" alt="${name}" loading="lazy">
-          </div>
-        `).join('');
-
-        const variantSelectors = variants?.length ? `
-          <div class="variants mt-4">
-            ${Object.keys(variants[0].attributes).map(attribute => `
-              <div class="form-group">
-                <label for="${attribute}">${attribute.charAt(0).toUpperCase() + attribute.slice(1)}</label>
-                <select class="form-control" id="${attribute}">
-                  ${[...new Set(variants.map(v => v.attributes[attribute]))].map(value => `
-                    <option value="${value}" ${selectedVariant?.attributes[attribute] === value ? 'selected' : ''}>${value}</option>
-                  `).join('')}
-                </select>
-              </div>
-            `).join('')}
-          </div>
-        ` : '';
-
-        container.innerHTML = `
-          <div class="col-md-6">
-            <div class="swiper product-image-slider">
-              <div class="swiper-wrapper">
-                ${imageSlider}
-              </div>
-              <div class="swiper-button-next"></div>
-              <div class="swiper-button-prev"></div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <p class="text-muted">${categoryName}</p>
-            <h1>${displayName}</h1>
-            <h3 class="text-primary">${parseFloat(price).toFixed(2)} DT</h3>
-            ${variantSelectors}
-            <div class="mt-4" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6;">
-              ${long_description || ''}
-            </div>
-            <button class="btn btn-warning btn-lg mt-4" ${isSoldOut ? 'disabled' : ''}>
-              ${stockDisplay}
-            </button>
-          </div>
-        `;
-
-        new Swiper('.product-image-slider', {
-          autoplay: {
-            delay: 3000,
-          },
-          navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-          },
-        });
-
-        Object.keys(variants?.[0]?.attributes || {}).forEach(attribute => {
-          document.getElementById(attribute)?.addEventListener('change', (event) => {
-            const selectedAttributes = {};
-            Object.keys(variants[0].attributes).forEach(attr => {
-              selectedAttributes[attr] = document.getElementById(attr).value;
-            });
-            const newVariant = variants.find(v =>
-              Object.keys(selectedAttributes).every(attr => v.attributes[attr] === selectedAttributes[attr])
-            );
-            renderProduct(newVariant);
-          });
-        });
-      };
-
-      renderProduct(variants?.[0]);
-
-    } else {
-      console.error("Product not found or API response is empty.");
-      container.innerHTML = `
-        <div class="col-12 text-center">
-          <h2>Product not found</h2>
-          <p>The product you are looking for does not exist.</p>
-          <a href="/products" class="btn btn-primary">Back to Products</a>
-        </div>
-      `;
-    }
+    const res = await fetch(`${API_URL}/products/${slug}`);
+    product = await res.json();
+    if (!product || !product.id) throw new Error("Product not found");
   } catch (err) {
     console.error("Error fetching product details:", err);
     container.innerHTML = `
       <div class="col-12 text-center">
-        <h2>Error</h2>
-        <p>There was an error loading the product details.</p>
+        <h2>Product not found</h2>
+        <p>The product you are looking for does not exist.</p>
         <a href="/products" class="btn btn-primary">Back to Products</a>
       </div>
     `;
+    return;
   }
+
+  const variants = await fetchVariants(product.id);
+
+  const { name, long_description, price, images, sku, stock_levels, categories, meta_title, meta_description } = product;
+
+  document.title = meta_title || name;
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) {
+      metaDesc.setAttribute('content', meta_description || '');
+  }
+
+  const categoryName = categories?.[0]?.name || 'Misc';
+  const displayName = sku || name;
+
+  const renderProduct = (selectedVariant) => {
+    const currentVariant = selectedVariant || (variants.length > 0 ? variants[0] : null);
+    const variantImages = currentVariant?.images?.length ? currentVariant.images : images;
+    const totalStock = currentVariant?.stock_levels?.[0]?.quantity || stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
+    const stockDisplay = totalStock > 0 ? 'Add to cart' : 'Sold Out';
+    const isSoldOut = totalStock === 0;
+
+    const imageSlider = variantImages?.length ? variantImages.map(image => `
+      <div class="swiper-slide">
+        <img src="${image.cdn_url}" class="img-fluid w-100" alt="${name}" loading="lazy" onerror="this.src='${PLACEHOLDER_IMAGE}'">
+      </div>
+    `).join('') : `
+      <div class="swiper-slide">
+        <img src="${PLACEHOLDER_IMAGE}" class="img-fluid w-100" alt="${name}">
+      </div>
+    `;
+
+    const groupedVariants = variants.length > 0 ? groupVariants(variants) : {};
+    const variantSelectors = variants.length > 0 ? createVariantSelectors(groupedVariants, product.id, currentVariant) : '';
+
+    container.innerHTML = `
+      <div class="col-md-6">
+        <div class="swiper product-image-slider">
+          <div class="swiper-wrapper">
+            ${imageSlider}
+          </div>
+          <div class="swiper-button-next"></div>
+          <div class="swiper-button-prev"></div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <p class="text-muted">${categoryName}</p>
+        <h1>${displayName}</h1>
+        <h3 class="text-primary product-price">${parseFloat(currentVariant?.price || price).toFixed(2)} DT</h3>
+        <p class="product-stock">Stock: ${totalStock}</p>
+        ${variantSelectors}
+        <div class="mt-4" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6;">
+          ${long_description || ''}
+        </div>
+        <button class="btn btn-warning btn-lg mt-4 add-to-cart" ${isSoldOut ? 'disabled' : ''}>
+          ${stockDisplay}
+        </button>
+      </div>
+    `;
+
+    new Swiper('.product-image-slider', {
+      autoplay: { delay: 3000 },
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      },
+    });
+
+    document.querySelectorAll('.variant-selector').forEach(selector => {
+      selector.addEventListener('change', (event) => {
+        const selectedOptions = {};
+        document.querySelectorAll(`.variant-selector[data-product-id="${product.id}"]`).forEach(s => {
+          selectedOptions[s.dataset.attribute] = s.value;
+        });
+
+        const newVariant = variants.find(v =>
+          Object.keys(selectedOptions).every(attr => v.attributes[attr] === selectedOptions[attr])
+        );
+
+        if (newVariant) {
+          renderProduct(newVariant);
+        }
+      });
+    });
+  };
+
+  renderProduct(variants?.[0]);
 });
