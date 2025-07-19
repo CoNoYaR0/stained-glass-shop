@@ -21,42 +21,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   const htmlPieces = products.map(prod => {
     const { id, name, slug, price, images, sku, stock_levels, categories } = prod;
 
-    const imageCarousel = images && images.length > 0 ? `
-      <div id="carousel-${id}" class="carousel slide" data-ride="carousel">
-        <ol class="carousel-indicators">
-          ${images.map((_, index) => `
-            <li data-target="#carousel-${id}" data-slide-to="${index}" class="${index === 0 ? 'active' : ''}"></li>
-          `).join('')}
-        </ol>
-        <div class="carousel-inner">
-          ${images.map((img, index) => `
-            <div class="carousel-item ${index === 0 ? 'active' : ''}">
-              <img src="${img.url}" class="d-block w-100" alt="${name}">
-            </div>
-          `).join('')}
-        </div>
-        <a class="carousel-control-prev" href="#carousel-${id}" role="button" data-slide="prev">
-          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-          <span class="sr-only">Previous</span>
-        </a>
-        <a class="carousel-control-next" href="#carousel-${id}" role="button" data-slide="next">
-          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-          <span class="sr-only">Next</span>
-        </a>
-      </div>
-    ` : `
-      <img class="card-img-top" src="/images/fallback.jpg" alt="${name}">
-    `;
+    const imageUrl = images?.[0]?.url || '/images/fallback.jpg';
 
     const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
     const displayName = (sku || slug || name).replace(/_/g, ' ');
-    const totalStock = stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
-    const stockDisplay = totalStock === 0 ? '<span class="badge badge-danger">Sold Out</span>' : `Stock: ${totalStock}`;
+    const stockDisplay = stock_levels ? `Stock: ${JSON.stringify(stock_levels)}` : 'Stock: N/A';
 
     return `
       <div class="col-lg-4 col-md-6 mb-4">
         <div class="card h-100 product-card">
-          ${imageCarousel}
+          <a href="/products/${slug}/">
+            <img class="card-img-top" src="${imageUrl}" alt="${name}" onerror="this.src='/images/fallback.jpg'">
+          </a>
           <div class="card-body">
             <p class="card-text text-muted">${categoryNames}</p>
             <h4 class="card-title">
@@ -66,7 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <p class="card-text">${stockDisplay}</p>
           </div>
           <div class="card-footer">
-            <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${images?.[0]?.url || '/images/fallback.jpg'}" ${totalStock === 0 ? 'disabled' : ''}>
+            <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${imageUrl}">
               Add to Cart
             </button>
           </div>
