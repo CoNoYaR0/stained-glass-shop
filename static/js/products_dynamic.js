@@ -19,9 +19,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 2) Generate HTML for each product
   const htmlPieces = products.map(prod => {
-    const { id, name, slug, price, images, sku, stock_levels, categories } = prod;
+    const { id, name, slug, price, images, thumbnail_url, sku, stock_levels, categories } = prod;
 
-    const imageUrl = images?.[0]?.url || '/images/fallback.jpg';
+    const imageUrl = thumbnail_url || images?.[0]?.url || '/images/fallback.jpg';
 
     const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
     const displayName = (sku || slug || name).replace(/_/g, ' ');
