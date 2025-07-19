@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const htmlPieces = products.map(prod => {
     const { id, name, slug, price, images, thumbnail_url, sku, stock_levels, categories } = prod;
 
-    const imageUrl = thumbnail_url || images?.[0]?.url || 'https://cdn.stainedglass.tn/placeholder.jpg';
+    const imageUrl = images?.[0]?.cdn_url || 'https://cdn.stainedglass.tn/placeholder.jpg';
 
     const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
     const displayName = (sku || slug || name).replace(/_/g, ' ');
