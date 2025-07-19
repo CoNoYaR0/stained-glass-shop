@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           metaDesc.setAttribute('content', meta_description || '');
       }
 
-      const imageUrl = images?.[0]?.url || 'https://cdn.stainedglass.tn/placeholder.jpg';
+      const imageUrl = images?.[0]?.cdn_url || 'https://cdn.stainedglass.tn/placeholder.jpg';
       const categoryName = categories?.[0]?.name || 'Misc';
       const displayName = sku || name;
       const totalStock = stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
