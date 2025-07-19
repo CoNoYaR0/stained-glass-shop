@@ -1,5 +1,3 @@
-// static/js/products_dynamic.js
-
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("products-list");
   if (!container) {
@@ -30,9 +28,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // 2) Generate HTML for each product
   const htmlPieces = products.map(prod => {
-    const { id, name, slug, price, images, thumbnail_url, sku, stock_levels, categories } = prod;
+    const { id, name, slug, price, images, sku, stock_levels, categories } = prod;
 
-    const imageUrl = images?.[0]?.cdn_url || 'https://cdn.stainedglass.tn/placeholder.jpg';
+    const imageSlider = images?.length ? `
+      <div class="swiper product-card-swiper">
+        <div class="swiper-wrapper">
+          ${images.map(image => `
+            <div class="swiper-slide">
+              <img src="${image.cdn_url}" class="card-img-top" alt="${name}" loading="lazy" onerror="this.src='https://cdn.stainedglass.tn/placeholder.jpg'">
+            </div>
+          `).join('')}
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+      </div>
+    ` : `<img class="card-img-top" src="https://cdn.stainedglass.tn/placeholder.jpg" alt="${name}">`;
 
     const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
     const displayName = (sku || slug || name).replace(/_/g, ' ');
@@ -42,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="col-lg-4 col-md-6 mb-4">
         <div class="card h-100 product-card">
           <a href="/products/${slug}/">
-            <img class="card-img-top" src="${imageUrl}" alt="${name}" onerror="this.src='https://cdn.stainedglass.tn/placeholder.jpg'">
+            ${imageSlider}
           </a>
           <div class="card-body">
             <p class="card-text text-muted">${categoryNames}</p>
@@ -53,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <p class="card-text">${stockDisplay}</p>
           </div>
           <div class="card-footer">
-            <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${imageUrl}">
+            <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${images?.[0]?.cdn_url || ''}">
               Add to Cart
             </button>
           </div>
@@ -65,7 +75,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 3) Inject the HTML into the container
   container.innerHTML = htmlPieces.join("");
 
-  // 4) Attach event listeners for the "Add to cart" buttons
+  // 4) Initialize Swiper
+  document.querySelectorAll('.product-card-swiper').forEach(element => {
+    new Swiper(element, {
+      autoplay: {
+        delay: 5000,
+      },
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      },
+    });
+  });
+
+  // 5) Attach event listeners for the "Add to cart" buttons
   attachAddToCartButtons();
 });
 

@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("API Response:", product);
 
     if (product && product.id) {
-      const { name, long_description, price, images, sku, stock_levels, categories, meta_title, meta_description } = product;
+      const { name, long_description, price, images, sku, stock_levels, categories, meta_title, meta_description, variants } = product;
 
       // Set SEO meta tags
       document.title = meta_title || name;
@@ -33,34 +33,84 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const categoryName = categories?.[0]?.name || 'Misc';
       const displayName = sku || name;
-      const totalStock = stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
-      const stockDisplay = totalStock > 0 ? 'Add to cart' : 'Sold Out';
-      const isSoldOut = totalStock === 0;
 
-      const imageSlider = images?.map(image => `
-        <div data-image="${image.cdn_url}">
-            <img src="${image.cdn_url}" class="img-fluid w-100" alt="${name}">
-        </div>
-      `).join('');
+      const renderProduct = (selectedVariant) => {
+        const variantImages = selectedVariant?.images?.length ? selectedVariant.images : images;
+        const totalStock = selectedVariant?.stock_levels?.[0]?.quantity || stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
+        const stockDisplay = totalStock > 0 ? 'Add to cart' : 'Sold Out';
+        const isSoldOut = totalStock === 0;
 
-      container.innerHTML = `
-        <div class="col-md-6">
-          <div class="product-image-slider">
-            ${imageSlider}
+        const imageSlider = variantImages?.map(image => `
+          <div class="swiper-slide">
+            <img src="${image.cdn_url}" class="img-fluid w-100" alt="${name}" loading="lazy">
           </div>
-        </div>
-        <div class="col-md-6">
-          <p class="text-muted">${categoryName}</p>
-          <h1>${displayName}</h1>
-          <h3 class="text-primary">${parseFloat(price).toFixed(2)} DT</h3>
-          <div class="mt-4" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6;">
-            ${long_description || ''}
+        `).join('');
+
+        const variantSelectors = variants?.length ? `
+          <div class="variants mt-4">
+            ${Object.keys(variants[0].attributes).map(attribute => `
+              <div class="form-group">
+                <label for="${attribute}">${attribute.charAt(0).toUpperCase() + attribute.slice(1)}</label>
+                <select class="form-control" id="${attribute}">
+                  ${[...new Set(variants.map(v => v.attributes[attribute]))].map(value => `
+                    <option value="${value}" ${selectedVariant?.attributes[attribute] === value ? 'selected' : ''}>${value}</option>
+                  `).join('')}
+                </select>
+              </div>
+            `).join('')}
           </div>
-          <button class="btn btn-warning btn-lg mt-4" ${isSoldOut ? 'disabled' : ''}>
-            ${stockDisplay}
-          </button>
-        </div>
-      `;
+        ` : '';
+
+        container.innerHTML = `
+          <div class="col-md-6">
+            <div class="swiper product-image-slider">
+              <div class="swiper-wrapper">
+                ${imageSlider}
+              </div>
+              <div class="swiper-button-next"></div>
+              <div class="swiper-button-prev"></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <p class="text-muted">${categoryName}</p>
+            <h1>${displayName}</h1>
+            <h3 class="text-primary">${parseFloat(price).toFixed(2)} DT</h3>
+            ${variantSelectors}
+            <div class="mt-4" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6;">
+              ${long_description || ''}
+            </div>
+            <button class="btn btn-warning btn-lg mt-4" ${isSoldOut ? 'disabled' : ''}>
+              ${stockDisplay}
+            </button>
+          </div>
+        `;
+
+        new Swiper('.product-image-slider', {
+          autoplay: {
+            delay: 3000,
+          },
+          navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+          },
+        });
+
+        Object.keys(variants?.[0]?.attributes || {}).forEach(attribute => {
+          document.getElementById(attribute)?.addEventListener('change', (event) => {
+            const selectedAttributes = {};
+            Object.keys(variants[0].attributes).forEach(attr => {
+              selectedAttributes[attr] = document.getElementById(attr).value;
+            });
+            const newVariant = variants.find(v =>
+              Object.keys(selectedAttributes).every(attr => v.attributes[attr] === selectedAttributes[attr])
+            );
+            renderProduct(newVariant);
+          });
+        });
+      };
+
+      renderProduct(variants?.[0]);
+
     } else {
       console.error("Product not found or API response is empty.");
       container.innerHTML = `
