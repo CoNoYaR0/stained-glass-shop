@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const htmlPieces = products.map(prod => {
     const { id, name, slug, price, images, thumbnail_url, sku, stock_levels, categories } = prod;
 
-    const imageUrl = thumbnail_url || images?.[0]?.url || '/images/fallback.jpg';
+    const imageUrl = thumbnail_url || images?.[0]?.url || 'https://cdn.stainedglass.tn/placeholder.jpg';
 
     const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
     const displayName = (sku || slug || name).replace(/_/g, ' ');
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div class="col-lg-4 col-md-6 mb-4">
         <div class="card h-100 product-card">
           <a href="/products/${slug}/">
-            <img class="card-img-top" src="${imageUrl}" alt="${name}" onerror="this.src='/images/fallback.jpg'">
+            <img class="card-img-top" src="${imageUrl}" alt="${name}" onerror="this.src='https://cdn.stainedglass.tn/placeholder.jpg'">
           </a>
           <div class="card-body">
             <p class="card-text text-muted">${categoryNames}</p>
