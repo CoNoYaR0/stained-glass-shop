@@ -28,11 +28,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const categoryMap = new Map(categories.map(cat => [cat.id, cat.name]));
+  const categoryMap = new Map(categories.map(cat => [cat.dolibarr_category_id, cat.name]));
+  console.log("Category Map:", categoryMap);
 
   // 2) Generate HTML for each product
   const htmlPieces = products.map(prod => {
     const { id, name, slug, price, images, thumbnail_url, category_id, sku } = prod;
+    console.log("Product Category ID:", category_id);
+
 
     const thumbnailUrl =
       images?.find(img => img.type === 'thumbnail')?.url ||
@@ -40,7 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       '/images/fallback.jpg';
 
     const categoryName = categoryMap.get(category_id) || 'Misc';
-    const displayName = sku || slug;
+    const displayName = (sku || slug).replace(/_/g, ' ');
 
     return `
       <div class="col-lg-4 col-md-6 mb-4">
