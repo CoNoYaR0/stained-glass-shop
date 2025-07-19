@@ -3,28 +3,43 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("products-list");
 
-  // 1) Fetch all products from the new Dolibarr middleware
+  // 1) Fetch all products and categories from the new Dolibarr middleware
   let products = [];
+  let categories = [];
   try {
-    const res = await fetch("https://dolibarr-middleware.onrender.com/api/v1/products");
-    const data = await res.json();
-    products = data.data; // The products are in the 'data' property
+    const [productsRes, categoriesRes] = await Promise.all([
+      fetch("https://dolibarr-middleware.onrender.com/api/v1/products"),
+      fetch("https://dolibarr-middleware.onrender.com/api/v1/categories")
+    ]);
+    const productsData = await productsRes.json();
+    const categoriesData = await categoriesRes.json();
+
+    products = productsData.data;
+    categories = categoriesData.data;
+
     if (!Array.isArray(products)) throw new Error("Expected an array of products");
+    if (!Array.isArray(categories)) throw new Error("Expected an array of categories");
+
     console.log("✅ Products loaded:", products);
+    console.log("✅ Categories loaded:", categories);
   } catch (err) {
-    console.error("❌ Error loading products:", err);
+    console.error("❌ Error loading data:", err);
     container.innerHTML = `<p>Error loading products.</p>`;
     return;
   }
 
+  const categoryMap = new Map(categories.map(cat => [cat.id, cat.name]));
+
   // 2) Generate HTML for each product
   const htmlPieces = products.map(prod => {
-    const { id, name, slug, price, images, thumbnail_url } = prod;
+    const { id, name, slug, price, images, thumbnail_url, category_id } = prod;
 
     const thumbnailUrl =
       images?.find(img => img.type === 'thumbnail')?.url ||
       thumbnail_url ||
       '/images/fallback.jpg';
+
+    const categoryName = categoryMap.get(category_id) || 'Uncategorized';
 
     return `
       <div class="col-lg-4 col-md-6 mb-4">
@@ -33,11 +48,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             <img class="card-img-top" src="${thumbnailUrl}" alt="${name}" onerror="this.src='/images/fallback.jpg'">
           </a>
           <div class="card-body">
+            <p class="card-text text-muted">${categoryName}</p>
             <h4 class="card-title">
               <a href="/products/${slug}/">${name}</a>
             </h4>
             <h5>${parseFloat(price).toFixed(2)} DT</h5>
-            <p class="card-text">${prod.description || ''}</p>
           </div>
           <div class="card-footer">
             <button type="button" class="btn btn-warning btn-block add-to-cart" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${thumbnailUrl}">
