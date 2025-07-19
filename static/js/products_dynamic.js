@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const categoryNames = categories?.map(cat => cat.name).join(', ') || 'Misc';
     const displayName = (sku || slug || name).replace(/_/g, ' ');
-    const stockDisplay = stock_levels ? `Stock: ${JSON.stringify(stock_levels)}` : 'Stock: N/A';
+    const stockDisplay = stock_levels?.[0] ? `Stock: ${stock_levels[0].quantity}` : 'Stock: N/A';
 
     return `
       <div class="col-lg-4 col-md-6 mb-4">
