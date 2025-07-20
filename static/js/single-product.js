@@ -5,6 +5,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  const thumbnailsContainer = document.querySelector('#product-thumbnails');
+  if (!thumbnailsContainer) {
+    // console.error("Container #product-thumbnails not found in DOM");
+  }
+
+  const thumbnailsContainer = document.querySelector('#product-thumbnails');
+  if (!thumbnailsContainer) {
+    // console.error("Container #product-thumbnails not found in DOM");
+  }
+
   const slug = window.location.pathname.split('/').filter(Boolean).pop();
   console.log("Parsed slug:", slug);
 
