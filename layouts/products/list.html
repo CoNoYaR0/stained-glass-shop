@@ -3,6 +3,8 @@
   <div class="container">
     <div class="row">
       {{ $url := "https://dolibarr-middleware.onrender.com/api/v1/products" }}
+      {{ $productsData := resources.GetRemote $url }}
+      {{ $url := "https://dolibarr-middleware.onrender.com/api/v1/products" }}
       {{ $products := getJSON $url }}
       {{ if $products }}
         {{ range $products }}
