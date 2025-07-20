@@ -1,4 +1,3 @@
 ---
-title: "Product"
-layout: "single"
+title: "Single Product"
 ---

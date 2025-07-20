@@ -1,32 +1,7 @@
 {{ define "main" }}
-<section class="products section">
+<section class="section">
   <div class="container">
-    <div class="row">
-      {{ $url := "https://dolibarr-middleware.onrender.com/api/v1/products" }}
-      {{ $productsData := resources.GetRemote $url }}
-      {{ $url := "https://dolibarr-middleware.onrender.com/api/v1/products" }}
-      {{ $products := getJSON $url }}
-      {{ if $products }}
-        {{ range $products }}
-          <div class="col-md-4">
-            <div class="product-item">
-              <div class="product-thumb">
-                <img class="img-fluid" src="{{ .thumbnail }}" alt="{{ .name }}">
-              </div>
-              <div class="product-content">
-                <h3><a href="#">{{ .name }}</a></h3>
-                <p class="price">{{ .price }} TND</p>
-                <a href="#" class="btn btn-main">Add to Cart</a>
-              </div>
-            </div>
-          </div>
-        {{ end }}
-      {{ else }}
-        <div class="col-12">
-          <p>No products available at the moment.</p>
-        </div>
-      {{ end }}
-    </div>
+    <h1 class="text-center">{{ .Title }}</h1>
   </div>
 </section>
 {{ end }}
