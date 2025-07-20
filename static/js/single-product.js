@@ -1,13 +1,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const container = document.getElementById("product-details");
   if (!container) {
-    console.error("Container #product-details not found in DOM");
+    // console.error("Container #product-details not found in DOM");
     return;
-  }
-
-  const thumbnailsContainer = document.querySelector('#product-thumbnails');
-  if (!thumbnailsContainer) {
-    // console.error("Container #product-thumbnails not found in DOM");
   }
 
   const slug = window.location.pathname.split('/').filter(Boolean).pop();
