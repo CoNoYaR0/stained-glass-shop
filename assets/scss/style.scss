@@ -1623,3 +1623,65 @@ button.add-to-cart:hover {
     flex: 1 1 auto;
   }
 }
+
+// Product-specific styles
+.card {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+  }
+
+  .card-img-top {
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+
+  .card-title a {
+    color: #333;
+    font-weight: 600;
+    &:hover {
+      color: $primary-color;
+    }
+  }
+
+  .card-footer {
+    background-color: #fff;
+    border-top: 1px solid #eee;
+    padding: 15px 20px;
+  }
+}
+
+.color-picker {
+  margin-bottom: 15px;
+  .colors {
+    display: flex;
+    .color {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      margin-right: 10px;
+      cursor: pointer;
+      border: 2px solid #fff;
+      transition: all 0.2s ease;
+      &:hover {
+        transform: scale(1.1);
+      }
+      &.active {
+        border-color: $primary-color;
+      }
+    }
+  }
+}
+
+.dimension-picker {
+  margin-bottom: 15px;
+}
