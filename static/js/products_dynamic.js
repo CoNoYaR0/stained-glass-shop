@@ -1,7 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const API_URL     = "https://dolibarr-middleware.onrender.com/api/v1/products";
-  const IMG_PREFIX  = "https://dolibarr-middleware.onrender.com"; // ajuster si besoin
-  const productGrid = document.getElementById("product-grid");
+  const API_URL      = "https://dolibarr-middleware.onrender.com/api/v1/products";
+  const CDN_BASE_URL = "https://cdn.stainedglass.tn"; 
+  const FALLBACK_IMG = `${CDN_BASE_URL}/images/fallback.jpg`;
+  const productGrid  = document.getElementById("product-grid");
 
   if (!productGrid) {
     console.error("❌ productGrid not found in DOM");
@@ -13,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res    = await fetch(API_URL);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result = await res.json();  // { data: [...], pagination: {...} }
+      const result = await res.json();    
       const raw    = Array.isArray(result.data) ? result.data : [];
       console.log("✅ API returned data array:", raw);
 
@@ -23,16 +24,15 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // On reformate chaque item "plat" en { variants: [...] }
+      // On transforme chaque élément "plat" en product avec une variant unique
       const products = raw.map(item => ({
-        id:   item.dolibarr_product_id || item.id,
-        name: item.name,
-        category: item.category || "Uncategorized",  // champ category attendu
-        tags: item.tags || [],
+        id:       item.dolibarr_product_id || item.id,
+        name:     item.name,
+        category: item.category || "Uncategorized",
         variants: [{
-          sku:   item.sku,
-          price: item.price || item.purchase_price_ht || 0,
-          stock: item.stock || item.quantity || 0,
+          sku:    item.sku,
+          price:  item.price || item.purchase_price_ht || 0,
+          stock:  item.stock || item.quantity || 0,
           images: Array.isArray(item.images) ? item.images : []
         }]
       }));
@@ -46,23 +46,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const renderProducts = (products) => {
     console.log("🖌 Rendering products...");
-    productGrid.innerHTML = ""; // on vide
+    productGrid.innerHTML = "";
 
     products.forEach(product => {
       const v0 = product.variants[0];
-      // Si l’URL commence par /api, on la préfixe
+
+      // Détermine l'URL de l'image : première image ou fallback
       let imgUrl = v0.images.length && v0.images[0].url
         ? v0.images[0].url
-        : "/images/placeholder.png";
-      if (imgUrl.startsWith("/")) imgUrl = IMG_PREFIX + imgUrl;
+        : FALLBACK_IMG;
 
-      // Nettoyage du SKU pour l’affichage titre
-      const cleanSKU = v0.sku.replace(/_/g, " ");
+      // Si c'est un chemin relatif ("/uploads/..."), on le sert depuis le CDN
+      if (imgUrl.startsWith("/")) {
+        imgUrl = `${CDN_BASE_URL}${imgUrl}`;
+      }
 
-      // Arrondi du prix
+      // Nettoyage du SKU et arrondi du prix
+      const cleanSKU     = v0.sku.replace(/_/g, " ");
       const roundedPrice = Math.round(v0.price);
+      const stockCount   = v0.stock;
 
-      const card = `
+      const cardHTML = `
         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
           <div class="block product-card">
             <div class="image-container">
@@ -73,28 +77,25 @@ document.addEventListener("DOMContentLoaded", () => {
                   data-name="${product.name}"
                   data-price="${v0.price}"
                   data-image="${imgUrl}"
-                  ${v0.stock <= 0 ? "disabled" : ""}>
-                  ${v0.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+                  ${stockCount <= 0 ? "disabled" : ""}>
+                  ${stockCount <= 0 ? "Out of Stock" : "Add to Cart"}
                 </button>
               </div>
             </div>
             <div class="product-info">
-              <!-- SKU en titre, underscores convertis -->
               <h4 class="mb-2 link-title">${cleanSKU}</h4>
-              <!-- Affichage du nom en dessous -->
-              <p class="name">Name: ${product.name}</p>
-              <!-- Affichage de la catégorie -->
-              <p class="category">Category: ${product.category}</p>
-              <!-- Prix arrondi -->
+              <p class="name">${product.name}</p>
+              <p class="category">${product.category}</p>
+              <p class="stock">${stockCount} in stock</p>
               <p class="price">${roundedPrice} TND</p>
             </div>
           </div>
         </div>
       `;
-      productGrid.insertAdjacentHTML("beforeend", card);
+      productGrid.insertAdjacentHTML("beforeend", cardHTML);
     });
 
-    // On ré-attache les boutons Add to Cart
+    // Ré-attachement des listeners Add to Cart
     if (window.attachAddToCartButtons) {
       console.log("🔗 Attaching Add to Cart buttons…");
       window.attachAddToCartButtons();
