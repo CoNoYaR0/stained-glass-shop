@@ -22,8 +22,6 @@
 
   <link rel="stylesheet" href="/plugins/slick/slick.min.css ">
 
-  <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.7.4/default/snipcart.css ">
-
 
   <!-- Main Stylesheet -->
 
@@ -183,9 +181,10 @@
 
 
       </div>
-
-      <button class="cart snipcart-checkout"><i class="tf-ion-android-cart"></i><span class="badge badge-primary snipcart-items-count"></span></button>
-
+      <button id="open-cart" class="cart">
+        <i class="tf-ion-android-cart"></i>
+        <span id="cart-count" class="badge badge-primary">0</span>
+      </button>
     </nav>
   </div>
 </header>
@@ -201,8 +200,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="/products/product-1/" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="Apple Watch" data-name="Apple Watch" data-price="30.00" data-image="/images/showcase/showcase-1.png">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="/images/showcase/showcase-1.png" alt="Apple Watch">
@@ -218,8 +217,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="/products/product-2/" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="Galaxy Watch" data-name="Galaxy Watch" data-price="30.00" data-image="/images/showcase/showcase-2.png">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="/images/showcase/showcase-2.png" alt="Galaxy Watch">
@@ -235,8 +234,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="/products/product-4/" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="Motorola Watch" data-name="Motorola Watch" data-price="30.00" data-image="/images/showcase/showcase-4.png">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="/images/showcase/showcase-4.png" alt="Motorola Watch">
@@ -252,8 +251,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="/products/product-7/" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="OnePlus Watch" data-name="OnePlus Watch" data-price="30.00" data-image="/images/showcase/showcase-7.png">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="/images/showcase/showcase-7.png" alt="OnePlus Watch">
@@ -269,8 +268,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="/products/product-8/" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="Oppo Watch" data-name="Oppo Watch" data-price="30.00" data-image="/images/showcase/showcase-8.png">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="/images/showcase/showcase-8.png" alt="Oppo Watch">
@@ -286,8 +285,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="/products/product-6/" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="Realme Watch" data-name="Realme Watch" data-price="30.00" data-image="/images/showcase/showcase-6.png">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="/images/showcase/showcase-6.png" alt="Realme Watch">
@@ -303,8 +302,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="/products/product-5/" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="Redmi Watch" data-name="Redmi Watch" data-price="30.00" data-image="/images/showcase/showcase-5.png">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="/images/showcase/showcase-5.png" alt="Redmi Watch">
@@ -320,8 +319,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="/products/product-3/" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="Xiaomi Watch" data-name="Xiaomi Watch" data-price="30.00" data-image="/images/showcase/showcase-3.png">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="/images/showcase/showcase-3.png" alt="Xiaomi Watch">
@@ -338,6 +337,22 @@
   </div>
 </section>
 
+<div id="custom-cart-panel" class="hidden">
+  <div class="cart-header">
+    <h2>Votre Panier</h2>
+    <button id="close-cart">×</button>
+  </div>
+  <div id="cart-items"></div>
+  <div class="cart-footer">
+    <div class="cart-total-line">
+      <span>Total:</span>
+      <span id="cart-total">0.00</span> TND
+    </div>
+    <a href="/checkout" id="checkout-button" class="btn btn-main btn-block">
+      Commander
+    </a>
+  </div>
+</div>
 <footer>
   <div class="container text-center">
     <div class="row">
@@ -469,22 +484,11 @@
 
 
 
-
-
-<div hidden id="snipcart" data-api-key="ZDgxY2ZiM2EtMWRmMi00M2ZkLWI1MDAtNzA2MDc0Y2Q1MzJlNjM3MTAzNDIwOTQ1NDA4NjM4"></div>
-
-
-
-
-
-
 <script src="/plugins/jquery/jquery.js"></script>
 
 <script src="/plugins/bootstrap/bootstrap.min.js"></script>
 
 <script src="/plugins/slick/slick.min.js"></script>
-
-<script src="https://cdn.snipcart.com/themes/v3.7.4/default/snipcart.js"></script>
 
 
 

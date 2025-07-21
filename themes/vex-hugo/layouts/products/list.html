@@ -10,8 +10,8 @@
       <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="block">
           <div class="gallery-overlay">
-            <a href="{{ .Permalink }}" class="gallery-popup">
-              <i class="tf-ion-plus-round"></i>
+            <a href="#" class="add-to-cart" data-id="{{ .Title }}" data-name="{{ .Title }}" data-price="{{ .Params.price }}" data-image="{{range first 1 .Params.images}}{{.|absURL}}{{end}}">
+              <i class="tf-ion-android-cart"></i>
             </a>
           </div>
           <img class="img-fluid" src="{{range first 1 .Params.images}}{{.|absURL}}{{end}}" alt="{{.Title}}">

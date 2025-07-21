@@ -22,8 +22,6 @@
 
   <link rel="stylesheet" href="/plugins/slick/slick.min.css ">
 
-  <link rel="stylesheet" href="https://cdn.snipcart.com/themes/v3.7.4/default/snipcart.css ">
-
 
   <!-- Main Stylesheet -->
 
@@ -190,9 +188,10 @@
 
 
       </div>
-
-      <button class="cart snipcart-checkout"><i class="tf-ion-android-cart"></i><span class="badge badge-primary snipcart-items-count"></span></button>
-
+      <button id="open-cart" class="cart">
+        <i class="tf-ion-android-cart"></i>
+        <span id="cart-count" class="badge badge-primary">0</span>
+      </button>
     </nav>
   </div>
 </header>
@@ -548,20 +547,9 @@
         <s class="price">$30.00</s>
         </p>
 
-        <button class="snipcart-add-item btn btn-main mb-5"
-          data-item-id="realme-watch__25.00"
-          data-item-name="Realme Watch"
-          data-item-image=" /images/showcase/showcase-6.png"
-          data-item-price="25.00" data-item-url="/products/product-6/"
 
-          data-item-custom1-name="Choose Color"
-          data-item-custom1-options="Black|White|Gray"
+        <a class="btn btn-main mb-5" href="/">Add to Cart</a>
 
-
-          data-item-custom2-name="Choose Size"
-          data-item-custom2-options="Small|Medium|Large"
-          >Add to Cart
-        </button>
 
 
         <div class="content"><p>Apple Watch is a line of smartwatches produced by Apple Inc. It incorporates fitness tracking and health-oriented capabilities with integration with iOS and other Apple products and services.</p>
@@ -571,6 +559,22 @@
   </div>
 </section>
 
+<div id="custom-cart-panel" class="hidden">
+  <div class="cart-header">
+    <h2>Votre Panier</h2>
+    <button id="close-cart">×</button>
+  </div>
+  <div id="cart-items"></div>
+  <div class="cart-footer">
+    <div class="cart-total-line">
+      <span>Total:</span>
+      <span id="cart-total">0.00</span> TND
+    </div>
+    <a href="/checkout" id="checkout-button" class="btn btn-main btn-block">
+      Commander
+    </a>
+  </div>
+</div>
 <footer>
   <div class="container text-center">
     <div class="row">
@@ -702,22 +706,11 @@
 
 
 
-
-
-<div hidden id="snipcart" data-api-key="ZDgxY2ZiM2EtMWRmMi00M2ZkLWI1MDAtNzA2MDc0Y2Q1MzJlNjM3MTAzNDIwOTQ1NDA4NjM4"></div>
-
-
-
-
-
-
 <script src="/plugins/jquery/jquery.js"></script>
 
 <script src="/plugins/bootstrap/bootstrap.min.js"></script>
 
 <script src="/plugins/slick/slick.min.js"></script>
-
-<script src="https://cdn.snipcart.com/themes/v3.7.4/default/snipcart.js"></script>
 
 
 
