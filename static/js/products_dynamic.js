@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const API_URL      = "https://dolibarr-middleware.onrender.com/api/v1/products";
-  const CDN_BASE_URL = "https://cdn.stainedglass.tn"; 
+  const CDN_BASE_URL = "https://cdn.stainedglass.tn";
   const FALLBACK_IMG = `${CDN_BASE_URL}/images/fallback.jpg`;
   const productGrid  = document.getElementById("product-grid");
 
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res    = await fetch(API_URL);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const result = await res.json();    
+      const result = await res.json();
       const raw    = Array.isArray(result.data) ? result.data : [];
       console.log("✅ API returned data array:", raw);
 
@@ -24,20 +24,46 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // On transforme chaque élément "plat" en product avec une variant unique
-      const products = raw.map(item => ({
-        id:       item.dolibarr_product_id || item.id,
-        name:     item.name,
-        category: item.category || "Uncategorized",
-        variants: [{
-          sku:    item.sku,
-          price:  item.price || item.purchase_price_ht || 0,
-          stock:  item.stock || item.quantity || 0,
-          images: Array.isArray(item.images) ? item.images : []
-        }]
-      }));
+      // 🆕 Group products by parent (detect C1, C2, etc.)
+      const grouped = {};
+      raw.forEach(item => {
+        const baseName = item.name.replace(/ C\d+$/, ""); // Remove suffix like " C1"
+        if (!grouped[baseName]) {
+          grouped[baseName] = {
+            id: item.dolibarr_product_id || item.id,
+            name: baseName.replace(/[_-]/g, " "), // Clean underscores/dashes
+            category: item.categories?.[0]?.name || "Uncategorized",
+            description: item.description || "",
+            variants: []
+          };
+        }
 
-      renderProducts(products);
+        // Detect variant attribute (dimension, color, etc.)
+        let attributeType = "Generic";
+        let attributeValue = "";
+
+        const desc = item.description?.toLowerCase() || "";
+        if (/(\d+cm|\d+x\d+)/i.test(desc)) {
+          attributeType = "Dimension";
+          attributeValue = desc.match(/(\d+cm|\d+x\d+)/i)?.[0] || "";
+        } else if (/rouge|bleu|vert|jaune/i.test(desc)) {
+          attributeType = "Color";
+          attributeValue = desc.match(/rouge|bleu|vert|jaune/i)?.[0] || "";
+        } else {
+          attributeValue = item.name.match(/C\d+$/)?.[0] || "";
+        }
+
+        grouped[baseName].variants.push({
+          sku: item.sku,
+          price: Math.round(item.price || 0),
+          stock: item.stock_levels?.[0]?.quantity || 0,
+          images: item.images || [],
+          attributeType,
+          attributeValue
+        });
+      });
+
+      renderProducts(Object.values(grouped));
     } catch (err) {
       console.error("❌ Failed to fetch products:", err);
       productGrid.innerHTML = "<p>Failed to load products. Please try again later.</p>";
@@ -51,20 +77,45 @@ document.addEventListener("DOMContentLoaded", () => {
     products.forEach(product => {
       const v0 = product.variants[0];
 
-      // Détermine l'URL de l'image : première image ou fallback
-      let imgUrl = v0.images.length && v0.images[0].url
-        ? v0.images[0].url
+      // Determine image URL: first image or fallback
+      let imgUrl = v0.images.length && v0.images[0].cdn_url
+        ? v0.images[0].cdn_url
         : FALLBACK_IMG;
 
-      // Si c'est un chemin relatif ("/uploads/..."), on le sert depuis le CDN
-      if (imgUrl.startsWith("/")) {
-        imgUrl = `${CDN_BASE_URL}${imgUrl}`;
-      }
-
-      // Nettoyage du SKU et arrondi du prix
-      const cleanSKU     = v0.sku.replace(/_/g, " ");
-      const roundedPrice = Math.round(v0.price);
+      // Clean SKU for display
+      const cleanSKU     = v0.sku.replace(/[_-]/g, " ");
+      const roundedPrice = v0.price;
       const stockCount   = v0.stock;
+
+      // 🆕 Create variant selector
+      let variantSelector = "";
+      if (product.variants.length > 1) {
+        if (v0.attributeType === "Color") {
+          // Color picker
+          variantSelector = `
+            <div class="variant-selector colors">
+              ${product.variants.map(variant => `
+                <button class="color-swatch" 
+                        style="background-color:${variant.attributeValue};"
+                        title="${variant.attributeValue}"
+                        data-sku="${variant.sku}"
+                        ${variant.stock <= 0 ? "disabled" : ""}></button>
+              `).join("")}
+            </div>
+          `;
+        } else {
+          // Dropdown for dimensions/others
+          variantSelector = `
+            <select class="variant-dropdown">
+              ${product.variants.map(variant => `
+                <option value="${variant.sku}" ${variant.stock <= 0 ? "disabled" : ""}>
+                  ${variant.attributeValue} ${variant.stock <= 0 ? "(Out of stock)" : ""}
+                </option>
+              `).join("")}
+            </select>
+          `;
+        }
+      }
 
       const cardHTML = `
         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
@@ -83,11 +134,11 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             </div>
             <div class="product-info">
-              <h4 class="mb-2 link-title">${cleanSKU}</h4>
-              <p class="name">${product.name}</p>
+              <h4 class="mb-2 link-title">${product.name} (${cleanSKU})</h4>
               <p class="category">${product.category}</p>
               <p class="stock">${stockCount} in stock</p>
               <p class="price">${roundedPrice} TND</p>
+              ${variantSelector}
             </div>
           </div>
         </div>
@@ -95,7 +146,6 @@ document.addEventListener("DOMContentLoaded", () => {
       productGrid.insertAdjacentHTML("beforeend", cardHTML);
     });
 
-    // Ré-attachement des listeners Add to Cart
     if (window.attachAddToCartButtons) {
       console.log("🔗 Attaching Add to Cart buttons…");
       window.attachAddToCartButtons();
