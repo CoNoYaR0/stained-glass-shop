@@ -1,5 +1,5 @@
 [fr]
 languageName = "Fr"
 languageCode = "fr-fr"
-contentDir = "content"
+contentDir = "content/french"
 weight = 1
