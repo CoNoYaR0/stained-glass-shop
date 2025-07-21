@@ -1,4 +1,4 @@
-// Preloader js
+// Preloader js    
 $(window).on('load', function () {
   $('.preloader').fadeOut(100);
 });
@@ -6,7 +6,7 @@ $(window).on('load', function () {
 (function ($) {
   'use strict';
 
-
+  
   // product Slider
   $('.product-image-slider').slick({
     autoplay: false,
