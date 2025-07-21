@@ -23,6 +23,11 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
   }
 
   function addToCart(product) {
+    if (product.stock !== undefined && product.stock <= 0) {
+      alert("This product is out of stock.");
+      return;
+    }
+
     const cart = getCart();
     if (product.id && typeof product.id === 'string') {
       product.id = product.id.trim();
@@ -51,7 +56,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
     }
   }
 
-  function attachAddToCartButtons() {
+  window.attachAddToCartButtons = function () {
     const buttons = document.querySelectorAll(".add-to-cart");
 
     if (buttons.length === 0) {
@@ -77,7 +82,8 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
           name: button.dataset.name,
           price: parseFloat(button.dataset.price),
           image: button.dataset.image || "",
-          quantity: 1
+          quantity: 1,
+          stock: button.dataset.stock ? parseInt(button.dataset.stock) : undefined
         };
 
         button.classList.add("bounce");
@@ -86,7 +92,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
         addToCart(product);
       });
     });
-  }
+  };
 
   function initializeCart() {
     try {
