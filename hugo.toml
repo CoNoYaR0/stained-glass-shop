@@ -26,9 +26,6 @@ link = "plugins/bootstrap/bootstrap.min.css"
 link = "plugins/themefisher-font/themefisher-font.min.css"
 [[params.plugins.css]]
 link = "plugins/slick/slick.min.css"
-[[params.plugins.css]]
-link = "https://cdn.snipcart.com/themes/v3.7.4/default/snipcart.css"
-
 # JS Plugins
 [[params.plugins.js]]
 link = "plugins/jquery/jquery.js"
@@ -36,8 +33,6 @@ link = "plugins/jquery/jquery.js"
 link = "plugins/bootstrap/bootstrap.min.js"
 [[params.plugins.js]]
 link = "plugins/slick/slick.min.js"
-[[params.plugins.js]]
-link = "https://cdn.snipcart.com/themes/v3.7.4/default/snipcart.js"
 
 
 
@@ -45,12 +40,6 @@ link = "https://cdn.snipcart.com/themes/v3.7.4/default/snipcart.js"
 [params.preloader]
 enable = true
 preloader = "" # use .png , .svg or .gif format
-
-# Snipcart
-[params.snipcart]
-enable = true
-# snipcart public api key
-snipcart_api = "ZDgxY2ZiM2EtMWRmMi00M2ZkLWI1MDAtNzA2MDc0Y2Q1MzJlNjM3MTAzNDIwOTQ1NDA4NjM4"
 
 # Subscription
 [params.subscription]

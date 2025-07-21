@@ -23,15 +23,6 @@
 </footer>
 
 
-<!-- Snipcart public key -->
-{{ with site.Params.snipcart }}
-{{ if .enable }}
-{{ with .snipcart_api }}
-<div hidden id="snipcart" data-api-key="{{.}}"></div>
-{{ end }}
-{{ end }}
-{{ end }}
-
 <!-- JS Plugins -->
 {{ range site.Params.plugins.js}}
 <script src="{{ .link | absURL }}"></script>
