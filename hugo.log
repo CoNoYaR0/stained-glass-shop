@@ -1,0 +1,22 @@
+Watching for changes in /app/{archetypes,assets,content,data,i18n,package.json,themes}
+Watching for config changes in /app/hugo.toml, /app/config/_default, /app/go.mod
+Start building sites …
+hugo v0.148.1-98ba786f2f5dca0866f47ab79f394370bcb77d2f+extended linux/amd64 BuildDate=2025-07-11T12:56:21Z VendorInfo=gohugoio
+
+
+                  │ FR
+──────────────────┼────
+ Pages            │ 31
+ Paginator pages  │  0
+ Non-page files   │  0
+ Static files     │ 12
+ Processed images │ 27
+ Aliases          │  0
+ Cleaned          │  0
+
+Built in 87 ms
+Environment: "development"
+Serving pages from disk
+Running in Fast Render Mode. For full rebuilds on change: hugo server --disableFastRender
+Web Server is available at http://localhost:1313/vex/ (bind address 127.0.0.1)
+Press Ctrl+C to stop

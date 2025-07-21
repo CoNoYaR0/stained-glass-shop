@@ -1,10 +1,10 @@
 ################################### Default Configuration ############################
-baseurl = "https://demo.gethugothemes.com/vex/examplesite/"
+baseurl = "https://demo.gethugothemes.com/vex/"
 title = "Vex | hugo landing page template"
 theme = "vex-hugo"
 # post excert
 summarylength = "20"
 # google analytics
 googleAnalytics = "" # Ex: UA-123-45
-# disable language
-disableLanguages = [] # disable language from here
+# set default language
+defaultContentLanguage = "fr"
