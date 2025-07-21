@@ -168,14 +168,12 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
 
     if (openCartBtn && closeCartBtn && cartPanel) {
       openCartBtn.addEventListener("click", () => {
-        cartPanel.classList.remove("hidden");
         cartPanel.classList.add("visible");
         renderCartItems();
       });
 
       closeCartBtn.addEventListener("click", () => {
         cartPanel.classList.remove("visible");
-        cartPanel.classList.add("hidden");
       });
     }
 
