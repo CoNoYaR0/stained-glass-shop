@@ -2,62 +2,62 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/vex/french/products/</loc>
+    <loc>/french/products/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/products/product-1/</loc>
+    <loc>/french/products/product-1/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/blog/post-1/</loc>
+    <loc>/french/blog/post-1/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/</loc>
+    <loc>/french/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/products/product-2/</loc>
+    <loc>/french/products/product-2/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/blog/post-3/</loc>
+    <loc>/french/blog/post-3/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/products/product-4/</loc>
+    <loc>/french/products/product-4/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/products/product-7/</loc>
+    <loc>/french/products/product-7/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/products/product-8/</loc>
+    <loc>/french/products/product-8/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/blog/</loc>
+    <loc>/french/blog/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/blog/post-2/</loc>
+    <loc>/french/blog/post-2/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/products/product-6/</loc>
+    <loc>/french/products/product-6/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/products/product-5/</loc>
+    <loc>/french/products/product-5/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/blog/post-4/</loc>
+    <loc>/french/blog/post-4/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/</loc>
+    <loc>/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/french/products/product-3/</loc>
+    <loc>/french/products/product-3/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/vex/categories/</loc>
+    <loc>/categories/</loc>
   </url><url>
-    <loc>http://localhost:1313/vex/french/contact/</loc>
+    <loc>/french/contact/</loc>
   </url><url>
-    <loc>http://localhost:1313/vex/tags/</loc>
+    <loc>/tags/</loc>
   </url><url>
-    <loc>http://localhost:1313/vex/french/privacy-policy/</loc>
+    <loc>/french/privacy-policy/</loc>
   </url><url>
-    <loc>http://localhost:1313/vex/french/terms-conditions/</loc>
+    <loc>/french/terms-conditions/</loc>
   </url>
 </urlset>
