@@ -99,6 +99,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
 
     function renderCartItems() {
       const cart = getCart();
+      console.log("Cart contents:", cart);
       const container = document.getElementById("cart-items");
       const totalEl = document.getElementById("cart-total");
 

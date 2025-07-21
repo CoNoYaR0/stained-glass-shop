@@ -1,4 +1,0 @@
-Watching for changes in /app/{archetypes,assets,content,data,i18n,package.json,themes}
-Watching for config changes in /app/hugo.toml, /app/config/_default, /app/go.mod
-Start building sites …
-hugo v0.148.1-98ba786f2f5dca0866f47ab79f394370bcb77d2f+extended linux/amd64 BuildDate=2025-07-11T12:56:21Z VendorInfo=gohugoio
