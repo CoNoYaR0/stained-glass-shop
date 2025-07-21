@@ -3,26 +3,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const productGrid = document.getElementById("product-grid");
 
   if (!productGrid) {
-    console.error("Product grid not found");
+    console.error("❌ productGrid not found in DOM");
     return;
   }
 
   const fetchProducts = async () => {
+    console.log("📡 Fetching products from API:", API_URL);
     try {
       const response = await fetch(API_URL);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const products = await response.json();
+      console.log("✅ API returned:", products);
+
+      if (!products.length) {
+        console.warn("⚠️ No products found in API response.");
+        productGrid.innerHTML = "<p>No products available.</p>";
+        return;
+      }
+
       renderProducts(products);
     } catch (error) {
-      console.error("Failed to fetch products:", error);
+      console.error("❌ Failed to fetch products:", error);
       productGrid.innerHTML = "<p>Failed to load products. Please try again later.</p>";
     }
   };
 
   const renderProducts = (products) => {
-    productGrid.innerHTML = ""; // Clear existing products
+    console.log("🖌 Rendering products...");
+    productGrid.innerHTML = ""; // Clear existing content
 
     products.forEach((product) => {
       if (!product.variants || product.variants.length === 0) return;
@@ -32,20 +42,20 @@ document.addEventListener("DOMContentLoaded", () => {
         ? firstVariant.images[0].url
         : "https://via.placeholder.com/300";
 
-      // Build variant selector if multiple variants exist
-      let variantSelector = "";
-      if (product.variants.length > 1) {
-        variantSelector = `
+      const variantSelector = product.variants.length > 1
+        ? `
           <select class="variant-selector" data-product-id="${product.id}">
-            ${product.variants
-              .map(
-                (variant) =>
-                  `<option value="${variant.sku}" data-price="${variant.price}" data-stock="${variant.stock}">${variant.name}</option>`
-              )
-              .join("")}
+            ${product.variants.map(
+              (variant) => `
+              <option value="${variant.sku}"
+                data-price="${variant.price}"
+                data-stock="${variant.stock}">
+                ${variant.name}
+              </option>`
+            ).join("")}
           </select>
-        `;
-      }
+        `
+        : "";
 
       const productCard = `
         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
@@ -74,11 +84,12 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </div>
       `;
-      productGrid.innerHTML += productCard;
+      productGrid.insertAdjacentHTML("beforeend", productCard);
     });
 
     // Re-attach cart buttons after rendering new products
     if (window.attachAddToCartButtons) {
+      console.log("🔗 Attaching Add to Cart buttons...");
       window.attachAddToCartButtons();
     }
 
