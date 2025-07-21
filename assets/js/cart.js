@@ -99,7 +99,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
 
     function renderCartItems() {
       const cart = getCart();
-      console.log("Cart contents:", cart);
+      console.log("🛒 Cart contents:", cart);
       const container = document.getElementById("cart-items");
       const totalEl = document.getElementById("cart-total");
 
@@ -229,6 +229,9 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
     }
 
     attachAddToCartButtons();
+
+    // ✅ Ajout d'un log clair quand le panier est chargé
+    console.log("%c✔️ Cart loaded successfully", "color: green; font-weight: bold;");
   }
 
   if (document.readyState === 'loading') {
