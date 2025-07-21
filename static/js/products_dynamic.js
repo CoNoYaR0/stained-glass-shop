@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const API_URL = "https://dolibarr-middleware.onrender.com/api/v1/products";
+  const API_URL     = "https://dolibarr-middleware.onrender.com/api/v1/products";
   const productGrid = document.getElementById("product-grid");
 
   if (!productGrid) {
@@ -10,108 +10,80 @@ document.addEventListener("DOMContentLoaded", () => {
   const fetchProducts = async () => {
     console.log("📡 Fetching products from API:", API_URL);
     try {
-      const response = await fetch(API_URL);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const res    = await fetch(API_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();      // { data: [...], pagination: {...} }
+      const raw    = Array.isArray(result.data) ? result.data : [];
+      console.log("✅ API returned data array:", raw);
 
-      const result   = await response.json();       // { data: [...], pagination: {...} }
-      const products = Array.isArray(result.data)     // on s’assure d’avoir un tableau
-        ? result.data
-        : [];
-
-      console.log("✅ API returned data array:", products);
-
-      if (!products.length) {
+      if (!raw.length) {
         console.warn("⚠️ No products found in API response.");
         productGrid.innerHTML = "<p>No products available.</p>";
         return;
       }
 
-      renderProducts(products);
+      // Map each “flat” product en { variants: [...] }
+      const products = raw.map(item => ({
+        id:   item.dolibarr_product_id || item.id,
+        name: item.name,
+        tags: item.tags || [],               // ou [] si pas de tags
+        variants: [{
+          sku:   item.sku,
+          price: item.price   || item.purchase_price_ht || 0,
+          stock: item.stock   || item.quantity          || 0,
+          images: item.images || []              // adapter si champ différent
+        }]
+      }));
 
-    } catch (error) {
-      console.error("❌ Failed to fetch products:", error);
+      renderProducts(products);
+    } catch (err) {
+      console.error("❌ Failed to fetch products:", err);
       productGrid.innerHTML = "<p>Failed to load products. Please try again later.</p>";
     }
   };
 
   const renderProducts = (products) => {
     console.log("🖌 Rendering products...");
-    productGrid.innerHTML = ""; // Clear existing content
+    productGrid.innerHTML = "";
 
-    products.forEach((product) => {
-      if (!product.variants || product.variants.length === 0) return;
-
-      const firstVariant = product.variants[0];
-      const imageUrl = firstVariant.images.length > 0
-        ? firstVariant.images[0].url
+    products.forEach(product => {
+      const v0 = product.variants[0];
+      const img = v0.images.length 
+        ? v0.images[0].url 
         : "https://via.placeholder.com/300";
 
-      // Si plusieurs variantes, on crée un selecteur
-      const variantSelector = product.variants.length > 1
-        ? `
-          <select class="variant-selector" data-product-id="${product.id}">
-            ${product.variants.map(
-              (variant) => `
-              <option value="${variant.sku}"
-                data-price="${variant.price}"
-                data-stock="${variant.stock}">
-                ${variant.name}
-              </option>`
-            ).join("")}
-          </select>
-        `
-        : "";
-
-      const productCard = `
+      // Pas de selector ici puisque on n’a qu’une variante
+      const card = `
         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
           <div class="block product-card">
             <div class="image-container">
-              <img class="img-fluid" src="${imageUrl}" alt="${product.name}">
+              <img class="img-fluid" src="${img}" alt="${product.name}">
               <div class="overlay">
                 <button class="add-to-cart translucent-btn"
-                  data-id="${firstVariant.sku}"
+                  data-id="${v0.sku}"
                   data-name="${product.name}"
-                  data-price="${firstVariant.price}"
-                  data-image="${imageUrl}"
-                  ${firstVariant.stock <= 0 ? "disabled" : ""}
-                >
-                  ${firstVariant.stock <= 0 ? "Out of Stock" : "Add to Cart"}
+                  data-price="${v0.price}"
+                  data-image="${img}"
+                  ${v0.stock <= 0 ? "disabled" : ""}>
+                  ${v0.stock <= 0 ? "Out of Stock" : "Add to Cart"}
                 </button>
               </div>
             </div>
             <div class="product-info">
               <h4 class="mb-2"><a href="#" class="link-title">${product.name}</a></h4>
-              <p class="sku">SKU: ${firstVariant.sku}</p>
-              <p class="tags">${(product.tags || []).join(", ")}</p>
-              ${variantSelector}
-              <p class="price">${firstVariant.price} TND</p>
+              <p class="sku">SKU: ${v0.sku}</p>
+              <p class="price">${v0.price} TND</p>
             </div>
           </div>
         </div>
       `;
-
-      productGrid.insertAdjacentHTML("beforeend", productCard);
+      productGrid.insertAdjacentHTML("beforeend", card);
     });
 
-    // Ré-attache les boutons Add to Cart
     if (window.attachAddToCartButtons) {
-      console.log("🔗 Attaching Add to Cart buttons...");
+      console.log("🔗 Attaching Add to Cart buttons…");
       window.attachAddToCartButtons();
     }
-
-    // Gère le changement de variante
-    document.querySelectorAll(".variant-selector").forEach((selector) => {
-      selector.addEventListener("change", (e) => {
-        const opt = e.target.options[e.target.selectedIndex];
-        const cardBtn = e.target.closest(".product-card").querySelector(".add-to-cart");
-        cardBtn.dataset.id    = opt.value;
-        cardBtn.dataset.price = opt.dataset.price;
-        cardBtn.textContent   = opt.dataset.stock <= 0 ? "Out of Stock" : "Add to Cart";
-        cardBtn.disabled      = opt.dataset.stock <= 0;
-      });
-    });
   };
 
   fetchProducts();
