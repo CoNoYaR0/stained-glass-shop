@@ -1,17 +1,17 @@
 {
-  "name": "stained-glass-shop",
-  "version": "1.0.0",
-  "type": "module",
+  "name": "vex-hugo",
+  "version": "2.0.0",
+  "license": "MIT",
+  "author": "gethugothemes",
   "scripts": {
-    "build": "hugo --minify --gc"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.50.0",
-    "axios": "^1.8.4",
-    "dotenv": "^16.5.0",
-    "hugo-installer": "^4.0.1",
-    "node-fetch": "^2.7.0",
-    "nodemailer": "^6.10.1",
-    "uuid": "^11.1.0"
+    "dev": "hugo server",
+    "build": "hugo --gc --minify --templateMetrics --templateMetricsHints --buildDrafts --buildExpired --buildFuture --forceSyncStatic",
+    "preview": "hugo server --disableFastRender --navigateToChanged --templateMetrics --templateMetricsHints --buildDrafts --buildExpired --buildFuture --watch --forceSyncStatic -e production --minify",
+    "dev:example": "cd exampleSite; hugo server --themesDir ../..",
+    "build:example": "cd exampleSite; hugo --themesDir ../.. --gc --minify --templateMetrics --templateMetricsHints --buildDrafts --buildExpired --buildFuture --forceSyncStatic",
+    "preview:example": "cd exampleSite; hugo server --themesDir ../.. --disableFastRender --navigateToChanged --templateMetrics --templateMetricsHints --buildDrafts --buildExpired --buildFuture --watch --forceSyncStatic -e production --minify",
+    "update-modules": "node ./scripts/clearModules.js && hugo mod clean --all && hugo mod get -u ./... && hugo mod tidy",
+    "project-setup": "node ./scripts/projectSetup.js",
+    "theme-setup": "node ./scripts/themeSetup.js"
   }
 }

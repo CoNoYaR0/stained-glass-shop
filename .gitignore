@@ -1,3 +1,11 @@
-node_modules/
-*.tar.gz
-hugo
+Thumbs.db
+.DS_Store
+.dist
+.tmp
+.sass-cache
+npm-debug.log
+node_modules
+builds
+package-lock.json
+Public
+resources

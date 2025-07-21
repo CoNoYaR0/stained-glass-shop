@@ -3,7 +3,7 @@
 
 [[main]]
 name = "Home"
-url = "fr/"
+url = "/"
 weight = 1
 
 [[main]]

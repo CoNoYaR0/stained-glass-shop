@@ -1,77 +1,137 @@
-# Live Chat System Guide - StainedGlass.tn
+<h1 align=center>Vex Hugo</h1> 
+<p align=center>Vex is a clean multipurpose e-commerce theme that makes building your first online store easier than ever. </p>
+<h2 align="center"> <a target="_blank" href="https://demo.gethugothemes.com/vex" rel="nofollow">👀Demo</a> | <a  target="_blank" href="https://pagespeed.web.dev/report?url=https%3A%2F%2Fdemo.gethugothemes.com%2Fvex%2Fsite%2F&form_factor=desktop">Page Speed (97%)🚀</a></h2>
 
-Welcome to the live chat system for StainedGlass.tn! This guide explains how to use the chat features, whether you're a customer looking for help or a staff member managing conversations.
 
-## For Our Valued Customers
 
-Our live chat is designed to help you connect with us easily. Here’s how it works:
+<p align=center>
+  <a href="https://github.com/gohugoio/hugo/releases/tag/v0.147.2" alt="Contributors">
+    <img src="https://img.shields.io/static/v1?label=min-HUGO-version&message=0.147.2&color=f00&logo=hugo" />
+  </a>
 
-### 1. Logging In with Facebook
-*   To start a chat, you'll need to log in using your Facebook account. Look for the **"Login with Facebook"** button, usually found in the website's header or menu.
-*   Clicking this button will take you to Facebook to confirm your identity.
-*   Once logged in, you'll be returned to our website. Your Facebook name might be displayed to show you're logged in.
+  <a href="https://github.com/themefisher/vex-hugo/blob/master/LICENSE">
+    <img src="https://img.shields.io/github/license/themefisher/vex-hugo" alt="license"></a>
 
-### 2. Using the Live Chat Widget
-*   After logging in, the **"Live Chat"** option (often found within a "Contact Us" floating button) will become active.
-*   Click it to open the chat box.
-*   Type your message in the input field and hit "Send" (or press Enter).
-*   Your messages and replies from our staff will appear in this chat box in real-time.
+  <img src="https://img.shields.io/github/languages/code-size/themefisher/vex-hugo" alt="code size">
 
-### 3. How Your Information Is Used
-*   We use your Facebook login to know who we're chatting with (e.g., your Facebook name helps us address you personally).
-*   This makes it easier to track your conversation if you contact us again.
-*   We only use the information needed for the chat (like your name) and don't store other sensitive Facebook data.
+  <a href="https://github.com/themefisher/vex-hugo/graphs/contributors">
+    <img src="https://img.shields.io/github/contributors/themefisher/vex-hugo" alt="contributors"></a>
 
-## For Staff & Administrators
+  <a href="https://twitter.com/intent/follow?screen_name=gethugothemes">
+    <img src="https://img.shields.io/twitter/follow/gethugothemes?style=social&logo=twitter"
+      alt="follow on Twitter"></a>
+</p>
 
-The Admin Chat Panel allows you to communicate directly with customers.
 
-### 1. Accessing the Admin Chat Panel
-*   The panel is located at: `[Your Website URL]/admin/live-chat/`
-    *   (Example: `https://stainedglass.tn/admin/live-chat/`)
 
-### 2. Logging In (Staff)
-*   You'll see a login form asking for your **Email** and **Password**.
-*   These are your specific staff credentials managed in our Supabase system.
-*   Enter your details and click "Login".
+<p align="center">
+  <img src="https://demo.gethugothemes.com/thumbnails/vex.png" alt="screenshot" width="100%">
+</p>
 
-### 3. Managing Conversations
-*   **Loading a User's Conversation:**
-    *   When a user starts a chat, you might get a notification (e.g., on Discord) that includes their **User ID**. This User ID is typically their Facebook name or a unique identifier from their Facebook login.
-    *   In the admin panel, there's a field to "Enter User ID". Type or paste the user's ID here.
-    *   Click **"Load Conversation"**. The chat history with that user will appear.
-*   **Sending Replies:**
-    *   Once a conversation is loaded, a reply box will appear below the chat history.
-    *   Type your message and click **"Send Reply"**.
-    *   The user will receive your message in their chat widget on the website in real-time.
-*   **Viewing Messages:**
-    *   User messages are typically shown on one side, and your (staff) replies on the other, with timestamps.
 
-### 4. Logging Out (Staff)
-*   When you're done, click the **"Logout"** button to securely end your admin session.
 
-## Key System Features
+## 🔑Key Features
 
-*   **Real-Time Messaging:** Conversations happen live. Both users and staff see messages as they are sent.
-*   **User Identification via Facebook:** Customers are identified by their Facebook profile information, making interactions personal and traceable.
-*   **Staff Accounts:** Staff use dedicated email/password accounts (managed via Supabase) to access the admin chat panel.
+- 📄 10+ Pre-Designed Pages
+- 🌍 Multiple language support (Fr, En)
+- 📊 Google Analytics support
+- 🎨 CSS and JS bundle with Hugo Pipe
+- ⚙️ Netlify settings predefine
+- 🅱️ Bootstrap Based
+- ✉️ Contact form support
+- 📧 Mailchimp integration
+- 🚀 Google Page Speed optimized
+- 🌐 Open Graph meta tag
+- 🐦 Twitter Card meta tag
 
-## Basic Troubleshooting & Verification
+## 📄 10+ Pre-Designed Pages
 
-*   **Customer Can't See Chat Option?**
-    *   Ensure they have logged in with Facebook. The chat option usually only appears after login.
-*   **Staff Can't Log In to Admin Panel?**
-    *   Double-check your email and password.
-    *   Ensure you are using your correct staff credentials.
-*   **Messages Not Sending/Receiving?**
-    *   For customers: Check your internet connection. Try sending the message again.
-    *   For staff: Ensure you've loaded a conversation and have an active internet connection.
-    *   If issues persist, a site administrator might need to check system configurations (see below).
+- 🏠 Home Page
+- 📄 Product Page
+- 📝 Product Single Page
+- 🛒 Cart Page
+- 💳 Checkout Page
+- 📚 Blog Page
+- 📝 Blog Single Page
+- 🔒 Privacy Page
+- 📞 Contact Page
+- 🔒 Terms and Condition Page
 
----
 
-*A Note for Technical Administrators:*
-*If the chat system isn't behaving as expected (e.g., Supabase client errors, functions not triggering), please ensure that the necessary environment variables are correctly configured:*
-    *   *Frontend (`window.APP_CONFIG` in HTML layouts): `SUPABASE_URL`, `SUPABASE_ANON_KEY`.*
-    *   *Netlify Backend Functions: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `DISCORD_WEBHOOK_URL`.*
-*These are typically set in Netlify's site settings (for backend) and might be injected into Hugo's build process for the frontend.*
+## 🔧Local development
+
+```bash
+# clone the repository
+git clone git@github.com:themefisher/vex-hugo.git
+
+# setup project
+$ npm run project-setup
+
+# install dependency
+npm install
+
+# Start local dev server
+$ npm run dev
+```
+
+Or Check out [Full Documentation](https://docs.gethugothemes.com/vex/?ref=github).
+
+
+## ⚙️Deployment and hosting
+
+[![Deploy to
+Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/themefisher/vex-hugo)
+
+Follow the steps.
+
+<!-- reporting issue -->
+## 🐞Reporting Issues
+
+We use GitHub Issues as the official bug tracker for the Vex Template. Please Search [existing
+issues](https://github.com/themefisher/vex-hugo/issues). Someone may have already reported the same problem.
+If your problem or idea has not been addressed yet, feel free to [open a new
+issue](https://github.com/themefisher/vex-hugo/issues).
+
+## 📱Submit Your Website To Our Showcase
+
+Are you using Vex Hugo theme? Submit it to our [showcase](https://gethugothemes.com/showcase). 
+
+Our showcase aims to demonstrate to the world what amazing websites people like you have created utilizing our Hugo themes and to show that Hugo has tremendous capabilities as a Static Site Generator. 
+
+View all the websites powered by Vex Hugo from [here](https://gethugothemes.com/showcase?theme=vex). 
+
+[Submit](https://gethugothemes.com/showcase?submit=show) your Vex Hugo powered website.
+
+<!-- licence -->
+## 📄License
+
+Copyright &copy; Designed by [Themefisher](https://themefisher.com) & Developed by
+[Gethugothemes](https://gethugothemes.com)
+
+**Code License:** Released under the [MIT](https://github.com/themefisher/vex-hugo/blob/master/LICENSE) license.
+
+**Image license:** The images are only for demonstration purposes. They have their licenses. We don't have permission to
+share those images.
+
+<!-- resources -->
+## 🙏Special Thanks
+
+- [Bootstrap](https://getbootstrap.com)
+- [Jquery](https://jquery.com)
+- [Slick Slider](https://kenwheeler.github.io/slick/)
+- [Google Fonts](https://fonts.google.com/)
+- [All Contributors](https://github.com/themefisher/vex-hugo/graphs/contributors)
+
+## 👨‍💻Hire Us
+
+Besides developing unique, blazing-fast Hugo themes, we also provide customized services. We specialize in creating affordable, high-quality static websites based on Hugo.
+
+If you need to customize the theme or complete website development from scratch, you can hire us. **Check Our
+[Services](https://gethugothemes.com/services/?utm_source=vex_github&utm_medium=referral&utm_campaign=github_theme_readme)**
+
+<!-- premium themes -->
+## 💎Premium Themes By Us
+
+| [![Mega-Bundle-HUGO](https://demo.gethugothemes.com/thumbnails/bundle.png?)](https://gethugothemes.com/bundle/?utm_source=vex_github&utm_medium=referral&utm_campaign=github_theme_readme) | [![Hargo](https://demo.gethugothemes.com/thumbnails/hargo.png)](https://gethugothemes.com/products/hargo/) | [![Loogbook](https://demo.gethugothemes.com/thumbnails/logbook.png)](https://gethugothemes.com/products/logbook/) |
+|:---:|:---:|:---:|
+| **Get 55+ Premium Hugo Themes Bundle** | **Hargo** | **logbook** |

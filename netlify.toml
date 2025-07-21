@@ -1,25 +1,16 @@
 [build]
   publish = "public"
   command = "hugo --minify --gc"
-  functions = "netlify/functions"
-
+  
 [build.environment]
-  HUGO_VERSION = "0.145.0"
+  HUGO_VERSION = "0.87.0"
   HUGO_BASEURL = "/"
-  MISE_PYTHON_COMPILE = "0"
-  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_ANON_KEY_PUBLIC,HUGO_SUPABASE_ANON_KEY_PUBLIC"
 
 [[headers]]
-  for = "/*"
-  [headers.values]
+  for = "/*" # This defines which paths this specific [[headers]] block will cover.
+
+[headers.values]
   X-Frame-Options = "DENY"
   X-XSS-Protection = "1; mode=block"
   Referrer-Policy = "same-origin"
   Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
-
-# Rule 2: Temporarily removed for testing
-# [[redirects]]
-#   from = "/admin/*"
-#   to = "/" # Redirect to homepage
-#   status = 302
-#   force = true
