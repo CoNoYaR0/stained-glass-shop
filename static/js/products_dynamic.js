@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             </div>
             <div class="product-info">
-              <a href="single.html?sku=${v0.sku}" class="product-link">
+              <a href="single.html?sku=${v0.sku}" style="text-decoration: none;">
                 <h4 class="mb-2 link-title">${cleanSKU}</h4>
               </a>
               <p class="tags">${allTags}</p>
