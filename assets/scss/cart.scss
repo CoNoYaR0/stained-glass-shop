@@ -1,41 +1,180 @@
 #custom-cart-panel {
+  display: none;
   position: fixed;
-  right: 0;
   top: 0;
-  width: 350px;
-  height: 100%;
-  background-color: #fff;
-  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
+  right: 0;
+  height: 100vh;
+  width: 400px;
+  background: rgba(255, 255, 255, 0.9); /* translucide */
+  backdrop-filter: blur(10px); /* effet de flou derrière */
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
   transform: translateX(100%);
-  transition: transform 0.3s ease-in-out;
-}
-
-#custom-cart-panel.visible {
-  transform: translateX(0);
-}
-
-#custom-cart-panel.hidden {
-  transform: translateX(100%);
-}
-
-.cart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-#cart-items {
-  flex-grow: 1;
+  transition: transform 0.4s ease, opacity 0.3s ease;
+  z-index: 9999;
   overflow-y: auto;
-  padding: 1rem;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+
+  &.visible {
+    display: flex;
+    flex-direction: column;
+    transform: translateX(0);
+  }
+
+  &.hidden {
+    display: none;
+  }
+
+  .cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  #close-cart {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #000;
+    }
+  }
+
+  #cart-items {
+    padding: 1rem;
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      background: #f8f8f8;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      padding: 0.8rem;
+
+      img {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-right: 1rem;
+      }
+
+      .cart-details {
+        flex: 1;
+
+        .cart-header-line {
+          display: flex;
+          justify-content: space-between;
+          font-size: 1rem;
+          font-weight: 500;
+          margin-bottom: 0.5rem;
+        }
+
+        .quantity-control {
+          display: flex;
+          align-items: center;
+
+          button {
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+              background-color: #f0f0f0;
+            }
+          }
+
+          span {
+            margin: 0 0.8rem;
+          }
+        }
+      }
+    }
+  }
+
+  .cart-footer {
+    margin-top: auto;
+    padding: 1rem;
+    border-top: 1px solid #e5e5e5;
+    text-align: center;
+
+    #cart-total {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    #checkout-button {
+      display: inline-block;
+      width: 100%;
+      background: linear-gradient(135deg, #ff8a00, #e52e71);
+      color: #fff;
+      font-size: 1.1rem;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(229, 46, 113, 0.3);
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(229, 46, 113, 0.4);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 3px 8px rgba(229, 46, 113, 0.2);
+      }
+    }
+  }
 }
 
-.cart-footer {
-  padding: 1rem;
-  border-top: 1px solid #eee;
+/* 🌱 Responsive (mobile) */
+@media (max-width: 768px) {
+  #custom-cart-panel {
+    width: 100vw;
+    border-radius: 0;
+  }
+}
+
+.cart-item .remove-item {
+  background: #ff4d4f; /* rouge doux */
+  color: #fff;
+  border: none;
+  border-radius: 50%; /* arrondi complet */
+  width: 28px;
+  height: 28px;
+  font-size: 1rem;
+  line-height: 28px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+
+  &:hover {
+    background-color: #ff7875; /* rouge plus clair */
+    transform: scale(1.1) rotate(90deg);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }

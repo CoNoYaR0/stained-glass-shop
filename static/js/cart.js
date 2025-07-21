@@ -200,12 +200,14 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
 
     if (openCartBtn && closeCartBtn && cartPanel) {
       openCartBtn.addEventListener("click", () => {
+        cartPanel.classList.remove("hidden");
         cartPanel.classList.add("visible");
         renderCartItems();
       });
 
       closeCartBtn.addEventListener("click", () => {
         cartPanel.classList.remove("visible");
+        cartPanel.classList.add("hidden");
       });
     } else {
       console.warn("Cart panel elements not found.");
@@ -230,7 +232,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
 
     attachAddToCartButtons();
 
-    // ✅ Ajout d'un log clair quand le panier est chargé
+    // ✅ Log clair pour confirmer le chargement
     console.log("%c✔️ Cart loaded successfully", "color: green; font-weight: bold;");
   }
 
