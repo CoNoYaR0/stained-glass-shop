@@ -14,8 +14,13 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const products = await response.json();
-      console.log("✅ API returned:", products);
+
+      const result   = await response.json();       // { data: [...], pagination: {...} }
+      const products = Array.isArray(result.data)     // on s’assure d’avoir un tableau
+        ? result.data
+        : [];
+
+      console.log("✅ API returned data array:", products);
 
       if (!products.length) {
         console.warn("⚠️ No products found in API response.");
@@ -24,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       renderProducts(products);
+
     } catch (error) {
       console.error("❌ Failed to fetch products:", error);
       productGrid.innerHTML = "<p>Failed to load products. Please try again later.</p>";
@@ -42,6 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ? firstVariant.images[0].url
         : "https://via.placeholder.com/300";
 
+      // Si plusieurs variantes, on crée un selecteur
       const variantSelector = product.variants.length > 1
         ? `
           <select class="variant-selector" data-product-id="${product.id}">
@@ -77,34 +84,32 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="product-info">
               <h4 class="mb-2"><a href="#" class="link-title">${product.name}</a></h4>
               <p class="sku">SKU: ${firstVariant.sku}</p>
-              <p class="tags">${product.tags.join(", ")}</p>
+              <p class="tags">${(product.tags || []).join(", ")}</p>
               ${variantSelector}
               <p class="price">${firstVariant.price} TND</p>
             </div>
           </div>
         </div>
       `;
+
       productGrid.insertAdjacentHTML("beforeend", productCard);
     });
 
-    // Re-attach cart buttons after rendering new products
+    // Ré-attache les boutons Add to Cart
     if (window.attachAddToCartButtons) {
       console.log("🔗 Attaching Add to Cart buttons...");
       window.attachAddToCartButtons();
     }
 
-    // Attach variant selector change events
+    // Gère le changement de variante
     document.querySelectorAll(".variant-selector").forEach((selector) => {
       selector.addEventListener("change", (e) => {
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        const parentCard = e.target.closest(".product-card");
-        const addToCartBtn = parentCard.querySelector(".add-to-cart");
-
-        addToCartBtn.dataset.id = selectedOption.value;
-        addToCartBtn.dataset.price = selectedOption.dataset.price;
-        addToCartBtn.textContent =
-          selectedOption.dataset.stock <= 0 ? "Out of Stock" : "Add to Cart";
-        addToCartBtn.disabled = selectedOption.dataset.stock <= 0;
+        const opt = e.target.options[e.target.selectedIndex];
+        const cardBtn = e.target.closest(".product-card").querySelector(".add-to-cart");
+        cardBtn.dataset.id    = opt.value;
+        cardBtn.dataset.price = opt.dataset.price;
+        cardBtn.textContent   = opt.dataset.stock <= 0 ? "Out of Stock" : "Add to Cart";
+        cardBtn.disabled      = opt.dataset.stock <= 0;
       });
     });
   };
