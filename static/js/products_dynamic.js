@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const API_URL      = "https://dolibarr-middleware.onrender.com/api/v1/products";
   const CDN_BASE_URL = "https://cdn.stainedglass.tn";
   const FALLBACK_IMG = `${CDN_BASE_URL}/images/fallback.jpg`;
-  const HEALTH_URL   = "https://dolibarr-middleware.onrender.com/health`;
+  const HEALTH_URL   = "https://dolibarr-middleware.onrender.com/health";
   const productGrid  = document.getElementById("product-grid");
 
   if (!productGrid) {
@@ -34,9 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const grouped = {};
       raw.forEach(item => {
-        // baseName = nom parent sans " C1", " C2", etc.
         const baseName = item.name.replace(/ C\d+$/, "");
-        // tags = **tous** les noms de catégories
         const tags = Array.isArray(item.categories)
           ? item.categories.map(c => c.name)
           : [];
@@ -49,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
           };
         }
 
-        // détecte attribut variant
         let attributeType  = "Generic";
         let attributeValue = "";
         const desc = (item.description || "").toLowerCase();
@@ -86,28 +83,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     products.forEach(product => {
       const v0 = product.variants[0];
-
-      // 1) Nettoyage du SKU :
-      //    - remplace "_" et "-" par espace
-      //    - supprime suffixe "C1", "C2", etc.
-      //    - retire parenthèses si présentes
       let cleanSKU = v0.sku
         .replace(/[_-]/g, " ")
         .replace(/\s*C\d+$/, "")
         .replace(/[()]/g, "")
         .trim();
 
-      // 2) Tous les tags, séparés par des virgules
       const allTags = product.tags.length
         ? product.tags.join(", ")
         : "Uncategorized";
 
-      // 3) Choix de l'image (première ou fallback)
       const imgUrl = (v0.images.length && v0.images[0].cdn_url)
         ? v0.images[0].cdn_url
         : FALLBACK_IMG;
 
-      // 4) Sélecteur de variantes (couleurs ou dimensions)
       let variantSelector = "";
       if (product.variants.length > 1) {
         if (v0.attributeType === "Color") {
