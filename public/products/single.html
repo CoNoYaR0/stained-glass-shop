@@ -48,10 +48,15 @@
         messageEl.textContent = err.message || 'An error occurred.';
       }
 
+      // Fetch list endpoint and extract array for SKU lookup
       async function lookupSlugBySku(sku) {
         const resp = await fetch(`${API_BASE}/api/v1/products?limit=1000`);
         if (!resp.ok) throw new Error('Failed to fetch product list');
-        const list = await resp.json();
+        const body = await resp.json();
+        // The API might return { data: [...] } or an array directly
+        const list = Array.isArray(body)
+          ? body
+          : (Array.isArray(body.data) ? body.data : []);
         const product = list.find(item => item.sku === sku);
         if (!product) throw new Error('Product not found.');
         return product.slug;
