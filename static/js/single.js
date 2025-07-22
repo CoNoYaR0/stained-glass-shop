@@ -38,9 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const allProducts = await response.json();
-            console.log('API response:', allProducts);
+            const responseData = await response.json();
+            console.log('API response:', responseData);
 
+            const allProducts = responseData.data;
             const productVariants = allProducts.filter(p => p.sku.startsWith(sku));
 
             if (!productVariants || productVariants.length === 0) {
