@@ -1,154 +1,93 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const API_BASE_URL = 'https://dolibarr-middleware.onrender.com/api/v1';
-    const CDN_BASE_URL = 'https://cdn.stainedglass.tn';
-    const FALLBACK_IMAGE = `${CDN_BASE_URL}/images/fallback.jpg`;
+document.addEventListener("DOMContentLoaded", () => {
+  const API_URL = "https://dolibarr-middleware.onrender.com/api/v1/products";
+  const CDN_BASE_URL = "https://cdn.stainedglass.tn";
+  const FALLBACK_IMG = `${CDN_BASE_URL}/images/fallback.jpg`;
+  const HEALTH_URL = "https://dolibarr-middleware.onrender.com/health";
+  const productContainer = document.getElementById("product-container");
 
-    const productContainer = document.querySelector('.product-single-container');
-    const loadingIndicator = document.getElementById('loading');
-    const errorContainer = document.getElementById('error');
-    const mainImage = document.getElementById('main-image');
-    const thumbnailGallery = document.getElementById('thumbnail-gallery');
-    const productTitle = document.getElementById('product-title');
-    const productSubtitle = document.getElementById('product-subtitle');
-    const productCategory = document.getElementById('product-category');
-    const productDescription = document.getElementById('product-description');
-    const productPrice = document.getElementById('product-price');
-    const productStock = document.getElementById('product-stock');
-    const addToCartBtn = document.getElementById('add-to-cart-btn');
-    const productDetailsContainer = document.getElementById('product-details');
+  if (!productContainer) {
+    console.error("❌ productContainer not found in DOM");
+    return;
+  }
 
-    let currentProduct = null;
+  // ─── Keep-alive ping ──────────────────────────────────────────────────────────
+  function keepAlive() {
+    fetch(HEALTH_URL).catch(() => {});
+  }
+  keepAlive();
+  setInterval(keepAlive, 10 * 60 * 1000);
 
-    const getSkuFromUrl = () => {
-        const params = new URLSearchParams(window.location.search);
-        return params.get('sku');
-    };
+  const getSkuFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('sku');
+  };
 
-    const fetchProduct = async () => {
-        try {
-            loadingIndicator.style.display = 'block';
-            if (productDetailsContainer) productDetailsContainer.style.display = 'none';
-            errorContainer.style.display = 'none';
+  // ─── Fetch & group products ──────────────────────────────────────────────────
+  const fetchProducts = async () => {
+    console.log("📡 Fetching products from API:", API_URL);
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const result = await res.json();
+      const raw = Array.isArray(result.data) ? result.data : [];
+      console.log("✅ API returned data array:", raw);
 
-            const sku = getSkuFromUrl();
-            if (!sku) {
-                throw new Error('Product SKU not found in URL.');
-            }
+      if (!raw.length) {
+        productContainer.innerHTML = "<p>No products available.</p>";
+        return;
+      }
 
-            // First, get the product by SKU
-            const searchUrl = `${API_BASE_URL}/products/search?q=${sku}`;
-            const searchResponse = await fetch(searchUrl);
-            if (!searchResponse.ok) {
-                throw new Error(`HTTP error! status: ${searchResponse.status}`);
-            }
-            const searchResults = await searchResponse.json();
-            if (!searchResults || !searchResults.data || searchResults.data.length === 0) {
-                throw new Error('Product not found.');
-            }
-            const productBySku = searchResults.data[0];
+      const sku = getSkuFromUrl();
+      const product = raw.find(p => p.sku === sku);
 
-            // Then, get the full product details with relations by ID
-            const productUrl = `${API_BASE_URL}/products/${productBySku.id}`;
-            const productResponse = await fetch(productUrl);
-            if (!productResponse.ok) {
-                throw new Error(`HTTP error! status: ${productResponse.status}`);
-            }
+      if (!product) {
+        productContainer.innerHTML = "<p>Product not found.</p>";
+        return;
+      }
 
-            const rawProduct = await productResponse.json();
-            currentProduct = mapProduct(rawProduct);
-            renderProduct();
+      renderProduct(product);
+    } catch (err) {
+      console.error("❌ Failed to fetch products:", err);
+      productContainer.innerHTML = "<p>Failed to load product. Please try again later.</p>";
+    }
+  };
 
-        } catch (err) {
-            showError(err.message);
-        } finally {
-            loadingIndicator.style.display = 'none';
-        }
-    };
+  // ─── Render product ──────────────────────────────────────────────────────────
+  const renderProduct = (product) => {
+    productContainer.innerHTML = "";
 
-    const mapProduct = (raw) => {
-        const cdnUrl = (path) => (path && path.startsWith('/')) ? `${CDN_BASE_URL}${path}` : path;
+    const imgUrl = (product.images && product.images.length && product.images[0].cdn_url)
+      ? product.images[0].cdn_url
+      : FALLBACK_IMG;
 
-        const images = [];
-        if (raw.thumbnail_url) {
-            images.push(cdnUrl(raw.thumbnail_url));
-        }
-        if (raw.photos && raw.photos.length) {
-            raw.photos.forEach(p => images.push(cdnUrl(p.url)));
-        }
+    const stock = product.stock_levels?.[0]?.quantity || 0;
+    const price = Math.round(product.price || 0);
 
-        return {
-            id: raw.id,
-            sku: raw.sku,
-            name: raw.name,
-            category: raw.category ? raw.category.name : 'Uncategorized',
-            price: Math.round(raw.price || 0),
-            stock: raw.stock || 0,
-            description: raw.description,
-            images: images.length > 0 ? [...new Set(images)] : [FALLBACK_IMAGE],
-        };
-    };
+    const productHTML = `
+      <div class="product-single-container">
+          <div id="loading">Loading...</div>
+          <div id="error" style="display: none; color: red;"></div>
+          <div id="product-details" class="product-container" style="display: none;">
+              <div class="product-image-gallery">
+                  <img id="main-image" src="${imgUrl}" alt="Product Image" class="product-single-image">
+                  <div id="thumbnail-gallery" class="thumbnail-gallery"></div>
+              </div>
+              <div class="product-info">
+                  <h1 id="product-title">${product.name}</h1>
+                  <h2 id="product-subtitle">${product.sku}</h2>
+                  <p id="product-category">${product.categories.map(c => c.name).join(', ')}</p>
+                  <div id="product-description">${product.description}</div>
+                  <p id="product-price" class="product-price">${price} TND</p>
+                  <p id="product-stock" class="product-stock">${stock > 0 ? `${stock} in stock` : 'Out of stock'}</p>
+                  <button id="add-to-cart-btn" class="add-to-cart-btn" ${stock <= 0 ? 'disabled' : ''}>Add to Cart</button>
+              </div>
+          </div>
+      </div>
+    `;
+    productContainer.innerHTML = productHTML;
+    document.getElementById('product-details').style.display = 'flex';
+    document.getElementById('loading').style.display = 'none';
+  };
 
-    const renderProduct = () => {
-        if (!currentProduct) return;
-
-        productTitle.textContent = currentProduct.sku.replace(/_/g, ' ');
-        productSubtitle.textContent = currentProduct.name;
-        productCategory.textContent = currentProduct.category;
-        productDescription.innerHTML = currentProduct.description;
-        productPrice.textContent = `${currentProduct.price} TND`;
-
-        mainImage.src = currentProduct.images[0];
-
-        renderStock();
-        renderGallery();
-
-        addToCartBtn.onclick = () => {
-            if (currentProduct.stock > 0) {
-                // Add to cart logic here
-                console.log('Adding to cart:', currentProduct);
-            }
-        };
-
-        if (productDetailsContainer) productDetailsContainer.style.display = 'flex';
-    };
-
-    const renderStock = () => {
-        if (currentProduct.stock > 0) {
-            productStock.textContent = `${currentProduct.stock} in stock`;
-            productStock.classList.remove('out-of-stock');
-            addToCartBtn.disabled = false;
-        } else {
-            productStock.textContent = 'Out of stock';
-            productStock.classList.add('out-of-stock');
-            addToCartBtn.disabled = true;
-        }
-    };
-
-    const renderGallery = () => {
-        thumbnailGallery.innerHTML = '';
-        if (currentProduct.images.length > 1) {
-            currentProduct.images.forEach((imageUrl, index) => {
-                const thumb = document.createElement('img');
-                thumb.src = imageUrl;
-                thumb.classList.add('thumbnail');
-                if (index === 0) {
-                    thumb.classList.add('selected');
-                }
-                thumb.onclick = () => {
-                    mainImage.src = imageUrl;
-                    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('selected'));
-                    thumb.classList.add('selected');
-                };
-                thumbnailGallery.appendChild(thumb);
-            });
-        }
-    };
-
-    const showError = (message) => {
-        errorContainer.textContent = `Error: ${message}`;
-        errorContainer.style.display = 'block';
-        if (productDetailsContainer) productDetailsContainer.style.display = 'none';
-    };
-
-    fetchProduct();
+  fetchProducts();
 });
