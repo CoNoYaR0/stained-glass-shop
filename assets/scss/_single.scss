@@ -1,19 +1,24 @@
 // Styles for the single product page
 .product-single-container {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
 }
 
 .product-single-image {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: auto;
+  max-width: 100%;
   object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #eee;
 }
 
 .thumbnail-gallery {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  flex-wrap: wrap;
 
   .thumbnail {
     width: 80px;
@@ -22,10 +27,20 @@
     cursor: pointer;
     border: 2px solid transparent;
     border-radius: 4px;
+    transition: border-color 0.3s;
 
     &:hover,
     &.selected {
-      border-color: #ff9800; // Orange accent
+      border-color: var(--vex-primary);
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .product-container {
+    flex-direction: column;
+  }
+  .product-image-gallery {
+    max-width: 100%;
   }
 }
