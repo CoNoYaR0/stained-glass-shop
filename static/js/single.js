@@ -32,23 +32,23 @@ document.addEventListener('DOMContentLoaded', () => {
             productDetailsContainer.style.display = 'none';
             errorContainer.style.display = 'none';
 
-            const fetchUrl = `${API_URL}?sku=${sku}`;
-            console.log('Fetching product from:', fetchUrl);
-            const response = await fetch(fetchUrl);
+            console.log('Fetching all products from:', API_URL);
+            const response = await fetch(API_URL);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data = await response.json();
-            console.log('API response:', data);
+            const allProducts = await response.json();
+            console.log('API response:', allProducts);
 
+            const productVariants = allProducts.filter(p => p.sku.startsWith(sku));
 
-            if (!data || data.length === 0) {
+            if (!productVariants || productVariants.length === 0) {
                 throw new Error('Product not found.');
             }
 
-            productData = data[0];
-            variants = data; // All returned items are variants
+            productData = productVariants[0];
+            variants = productVariants; // All returned items are variants
             renderProduct();
 
         } catch (err) {
