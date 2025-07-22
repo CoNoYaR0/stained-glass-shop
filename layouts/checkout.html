@@ -6,7 +6,41 @@
         <div class="content">
           <h1>{{ .Title }}</h1>
           <form id="checkout-form">
-            <!-- Checkout form will be rendered here by js -->
+            <!-- Champ pour le nom -->
+            <div class="form-group">
+              <label for="nom">Nom</label>
+              <input type="text" id="nom" name="nom" class="form-control" required>
+            </div>
+            <!-- Champ pour le prénom -->
+            <div class="form-group">
+              <label for="prenom">Prénom</label>
+              <input type="text" id="prenom" name="prenom" class="form-control" required>
+            </div>
+            <!-- Champ pour le téléphone -->
+            <div class="form-group">
+              <label for="tel">Téléphone</label>
+              <input type="tel" id="tel" name="tel" class="form-control" required>
+            </div>
+            <!-- Champ pour l'email -->
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+            <!-- Champ pour l'adresse -->
+            <div class="form-group">
+              <label for="adresse">Adresse</label>
+              <textarea id="adresse" name="adresse" class="form-control" required></textarea>
+            </div>
+            <!-- Options de paiement -->
+            <div id="paiement-options">
+              <!-- Les options de paiement seront injectées ici par checkout.js -->
+            </div>
+            <!-- Wrapper pour l'iframe de paiement CB -->
+            <div id="cb-wrapper" class="hidden">
+              <!-- L'iframe de Paymee sera injectée ici -->
+            </div>
+            <!-- Bouton de soumission -->
+            <button type="submit" class="btn btn-primary">Valider la commande</button>
           </form>
         </div>
       </div>
