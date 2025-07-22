@@ -149,30 +149,24 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="product-details" class="product-container">
+    <div class="container product-single-container">
+        <div id="loading">Loading...</div>
+        <div id="error" style="display: none; color: red;"></div>
+        <div id="product-details" class="product-container" style="display: none;">
             <div class="product-image-gallery">
-                <img id="main-image" src="https://via.placeholder.com/400" alt="Product Image" class="main-image">
-                <div id="thumbnail-gallery" class="thumbnail-gallery">
-                    <!-- Thumbnails will be rendered here -->
-                </div>
+                <img id="main-image" src="" alt="Product Image" class="product-single-image">
+                <div id="thumbnail-gallery" class="thumbnail-gallery"></div>
             </div>
             <div class="product-info">
-                <h1 id="product-title">Product Title</h1>
-                <p id="product-tags" class="product-tags">Category</p>
-                <div id="product-description" class="product-description">
-                    <p>Product description will be loaded here.</p>
-                </div>
-                <p id="product-price" class="product-price">-- TND</p>
-                <p id="product-stock" class="product-stock">Checking stock...</p>
-                <div id="variant-selector" class="variant-selector">
-                    <!-- Variant selector will be rendered here -->
-                </div>
+                <h1 id="product-title"></h1>
+                <h2 id="product-subtitle"></h2>
+                <p id="product-category"></p>
+                <div id="product-description"></div>
+                <p id="product-price" class="product-price"></p>
+                <p id="product-stock" class="product-stock"></p>
                 <button id="add-to-cart-btn" class="add-to-cart-btn" disabled>Add to Cart</button>
             </div>
         </div>
-        <div id="loading">Loading...</div>
-        <div id="error" style="display: none; color: red;"></div>
     </div>
 
     </body>
