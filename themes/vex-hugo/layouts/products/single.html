@@ -1,9 +1,29 @@
 {{ define "main" }}
-<section class="section">
-  <div class="container">
-    <div id="product-container" class="product-single-container">
-    </div>
+
+<div class="product-single-container">
+  <div class="product-image-gallery">
+    <img id="main-img"
+         class="product-single-image"
+         src="{{ .Params.thumbnail_url }}"    <!-- or via JS -->
+         alt="{{ .Title }}">
+    <div id="thumbs" class="thumbnail-gallery"></div>
   </div>
-</section>
+
+  <div class="product-info-panel">
+    <h1>{{ .Title }}</h1>
+    {{ .Content }}
+    <p class="price">{{ .Params.price }} TND</p>
+    <p class="stock">{{ .Params.stock }} in stock</p>
+
+    <button id="add-to-cart"
+            class="add-to-cart-btn"
+            disabled>
+      Add to Cart
+    </button>
+  </div>
+</div>
+
+{{ end }}
+
 <script type="module" src="/js/single.js"></script>
 {{ end }}
