@@ -1,5 +1,3 @@
-import { addToCart } from './cart.js';
-
 document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = 'https://dolibarr-middleware.onrender.com/api/v1';
     const CDN_BASE_URL = 'https://cdn.stainedglass.tn';
