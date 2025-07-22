@@ -1,3 +1,4 @@
+port 1313 already in use, attempting to use an available port
 Watching for changes in /app/{archetypes,assets,content,data,i18n,package.json,static,themes}
 Watching for config changes in /app/hugo.toml, /app/config/_default, /app/go.mod
 Start building sites …
@@ -14,9 +15,9 @@ hugo v0.148.1-98ba786f2f5dca0866f47ab79f394370bcb77d2f+extended linux/amd64 Buil
  Aliases          │  0
  Cleaned          │  0
 
-Built in 479 ms
+Built in 103 ms
 Environment: "development"
 Serving pages from disk
 Running in Fast Render Mode. For full rebuilds on change: hugo server --disableFastRender
-Web Server is available at //localhost:1313/ (bind address 127.0.0.1)
+Web Server is available at //localhost:40863/ (bind address 127.0.0.1)
 Press Ctrl+C to stop
