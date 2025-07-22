@@ -57,7 +57,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
   }
 
   window.attachAddToCartButtons = function () {
-    const buttons = document.querySelectorAll(".add-to-cart-btn");
+    const buttons = document.querySelectorAll(".add-to-cart");
 
     buttons.forEach((button) => {
       if (button.dataset.listenerAttached === 'true') return;
