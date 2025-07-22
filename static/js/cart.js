@@ -57,17 +57,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
   }
 
   window.attachAddToCartButtons = function () {
-    const buttons = document.querySelectorAll(".add-to-cart");
-
-    if (buttons.length === 0) {
-      if (retryCount < MAX_RETRIES) {
-        retryCount++;
-        setTimeout(attachAddToCartButtons, 300);
-      } else {
-        console.warn(".add-to-cart buttons not found after multiple retries.");
-      }
-      return;
-    }
+    const buttons = document.querySelectorAll(".add-to-cart-btn");
 
     buttons.forEach((button) => {
       if (button.dataset.listenerAttached === 'true') return;
@@ -93,6 +83,10 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
       });
     });
   };
+
+  document.addEventListener('productRendered', () => {
+    attachAddToCartButtons();
+  });
 
   function initializeCart() {
     try {
