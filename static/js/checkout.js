@@ -1,9 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("Checkout script loaded.");
   const form = document.getElementById("checkout-form");
+  console.log("Form element:", form);
   // On lit le panier dès le début
   const cart = JSON.parse(localStorage.getItem("customCart") || "[]");
+  console.log("Cart:", cart);
   const btn = document.querySelector("#checkout-form button[type='submit']");
+  console.log("Submit button:", btn);
   const cbWrapper = document.getElementById("cb-wrapper");
+  console.log("CB wrapper:", cbWrapper);
 
   // 🎨 Style du bouton “Valider la commande”
   if (btn) {
