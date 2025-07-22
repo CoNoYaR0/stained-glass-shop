@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const CDN_BASE_URL = 'https://cdn.stainedglass.tn';
     const FALLBACK_IMAGE = `${CDN_BASE_URL}/images/fallback.jpg`;
 
-    // DOM Elements
     const productContainer = document.querySelector('.product-single-container');
     const loadingIndicator = document.getElementById('loading');
     const errorContainer = document.getElementById('error');
@@ -16,28 +15,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const productPrice = document.getElementById('product-price');
     const productStock = document.getElementById('product-stock');
     const addToCartBtn = document.getElementById('add-to-cart-btn');
+    const productDetailsContainer = document.getElementById('product-details');
 
     let currentProduct = null;
 
-    const getSlugFromUrl = () => {
+    const getProductIdFromUrl = () => {
         const params = new URLSearchParams(window.location.search);
-        return params.get('sku');
+        return params.get('id');
     };
 
-    const fetchProduct = async (slug) => {
+    const fetchProducts = async () => {
         try {
             loadingIndicator.style.display = 'block';
-            if (productContainer) productContainer.style.display = 'none';
+            if (productDetailsContainer) productDetailsContainer.style.display = 'none';
             errorContainer.style.display = 'none';
 
-            const url = `${API_BASE_URL}/products/${slug}?includerelations=photos,category,stock`;
+            const url = `${API_BASE_URL}/products?includerelations=photos,category,stock&limit=100`; // Adjust limit as needed
             const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const rawProduct = await response.json();
+            const products = await response.json();
+            const productId = getProductIdFromUrl();
+
+            if (!productId) {
+                throw new Error('Product ID not found in URL.');
+            }
+
+            const rawProduct = products.find(p => p.id == productId);
+
+            if (!rawProduct) {
+                throw new Error('Product not found.');
+            }
+
             currentProduct = mapProduct(rawProduct);
             renderProduct();
 
@@ -60,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return {
+            id: raw.id,
             sku: raw.sku,
             name: raw.name,
             category: raw.category ? raw.category.name : 'Uncategorized',
@@ -86,11 +99,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         addToCartBtn.onclick = () => {
             if (currentProduct.stock > 0) {
-                addToCart(currentProduct);
+                // Add to cart logic here
+                console.log('Adding to cart:', currentProduct);
             }
         };
 
-        if (productContainer) productContainer.style.display = 'flex';
+        if (productDetailsContainer) productDetailsContainer.style.display = 'flex';
     };
 
     const renderStock = () => {
@@ -128,13 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const showError = (message) => {
         errorContainer.textContent = `Error: ${message}`;
         errorContainer.style.display = 'block';
-        if (productContainer) productContainer.style.display = 'none';
+        if (productDetailsContainer) productDetailsContainer.style.display = 'none';
     };
 
-    const slug = getSlugFromUrl();
-    if (slug) {
-        fetchProduct(slug);
-    } else {
-        showError('Could not determine product slug from URL.');
-    }
+    fetchProducts();
 });
