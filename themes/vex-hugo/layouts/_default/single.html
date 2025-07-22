@@ -11,8 +11,6 @@
 {{ define "main" }}
 
 <div id="product-container" class="product-single-container">
-
-<div class="product-single-container">
   <!-- Zone image + miniatures -->
   <div class="product-image-gallery">
     <img id="main-img"
@@ -21,7 +19,6 @@
          alt="{{ .Title }}">
 
     <div id="thumbs" class="thumbnail-gallery">
-      {{/* si le JS ne remplace pas, tu peux lister ici les photos */}}
       {{ range .Params.images }}
         <img src="{{ .url }}" class="thumbnail" alt="thumb">
       {{ end }}
@@ -30,11 +27,11 @@
 
   <!-- Zone infos -->
   <div class="product-info-panel">
-    <h1>{{ .Params.sku | replace "_" " " }}</h1>
+    <h1>{{ replace .Params.sku "_" " " }}</h1>
     <p class="name">{{ .Title }}</p>
     <p class="category">{{ .Params.category }}</p>
 
-    {{ .Content }}   {{/* description HTML */}}
+    {{ .Content }} <!-- description -->
 
     <p class="price">{{ .Params.price }} TND</p>
     <p class="stock">{{ .Params.stock }} in stock</p>
@@ -51,6 +48,8 @@
   </div>
 </div>
 
-{{ end }}
+{{ end }}  {{/* ← ferme le bloc "main" */}}
 
-<script type="module" src="/js/single.js"></script>
+{{ define "scripts" }}
+  <script type="module" src="/js/single.js"></script>
+{{ end }}
