@@ -44,7 +44,6 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
     saveCart(cart);
     updateCartCount();
   }
-  export { addToCart };
 
   function updateCartCount() {
     const cart = getCart();
