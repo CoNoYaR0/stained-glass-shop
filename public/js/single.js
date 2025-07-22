@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
         productContainer.innerHTML = "<p>Product not found.</p>";
         return;
       }
-      
+
       renderProduct(product);
     } catch (err) {
       console.error("❌ Failed to fetch products:", err);

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="fr-fr"><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<html lang="fr-fr">
+  <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
   <meta charset="utf-8">
   <title>Comment choisir la bonne montre pour vous.</title>
 
@@ -7,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="this is a meta description">
   <meta name="author" content="Themefisher">
-  <meta name="generator" content="Hugo 0.145.0">
+  <meta name="generator" content="Hugo 0.148.1">
   
   
   <meta name="theme-name" content="vex-hugo" />
@@ -47,12 +48,22 @@
   
 
 </head>
-<body id="body">
+
+
+
+
+
+  <link rel="stylesheet" href="/scss/single.min.css">
+
+
+  <body id="body">
+
 <!-- preloader start -->
 <div class="preloader">
   
 </div>
 <!-- preloader end -->
+
 
 <header class="sticky-top bg-white">
   <div class="container">
@@ -195,120 +206,56 @@
 </header>
 
 
-<section class="section">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-5 mb-4 mb-md-0">
-        <div class="sticky-image">
-          
+    
+    
 
+<div id="product-container" class="product-single-container">
 
+  <div class="product-image-gallery">
+    <img
+      id="main-img"
+      class="product-single-image"
+      src="https://cdn.stainedglass.tn/images/fallback.jpg"
+      alt="Comment choisir la bonne montre pour vous."
+    >
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    <div id="thumbs" class="thumbnail-gallery">
+      
+      
+    </div>
+  </div>
 
   
+  <div class="product-info-panel">
+    <h1></h1>
+    <p class="name">Comment choisir la bonne montre pour vous.</p>
+    <p class="category"></p>
 
-
-
-
-
-  
-
-  
-  
-    
-      
-    
-
-
-    
-    
-
-
-    
-    
-      
-      
-    
-    
-    
-
-
-    
-    
-      
-      
-        
-        
-        
-        
-        
-        
-
-
-        
-        
-
-
-        <img
-          
-            src="/images/showcase/showcase-1_hu_57c0dfbf85d78f8c.webp" loading="lazy"
-            decoding="async" alt="Comment choisir la bonne montre pour vous."
-          
-
-          class=" img-fluid w-100 img"
-          width="375"
-          height="432"
-          onerror="this.onerror='null';this.src='\/images\/showcase\/showcase-1.png';" />
-      
-      
-    
-    
-  
-
-
-  
-
-
-        </div>
-      </div>
-      <div class="col-lg-6 col-md-7 offset-lg-1">
-        <h1 class="mb-4">Comment choisir la bonne montre pour vous.</h1>
-        <div class="content">
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>
 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborumLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>
 
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
-<div id="custom-cart-panel" class="hidden">
+    <p class="price"> TND</p>
+    <p class="stock"> in stock</p>
+
+    <button
+      id="add-to-cart"
+      class="add-to-cart-btn"
+      data-id=""
+      data-name="Comment choisir la bonne montre pour vous."
+      data-price=""
+      data-image=""
+      disabled
+    >
+      Add to Cart
+    </button>
+  </div>
+</div>
+
+
+
+    <div id="custom-cart-panel" class="hidden">
   <div class="cart-header">
     <h2>Votre Panier</h2>
     <button id="close-cart">×</button>
@@ -324,13 +271,14 @@
     </a>
   </div>
 </div>
-<footer>
+
+    <footer>
   <div class="container text-center">
     <div class="row">
       <div class="col-md-12">
         <div class="block">
           <a href="//localhost:1313/" class="mb-4 d-inline-block" style="width: 100px;">
-             
+
             
 
 
@@ -469,6 +417,11 @@
 
 <script src="/js/cart.js"></script>
 
-</body>
 
+
+
+
+  <script type="module" src="/js/single.js"></script>
+
+  </body>
 </html>
