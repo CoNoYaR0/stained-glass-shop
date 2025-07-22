@@ -24,32 +24,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return params.get('id');
     };
 
-    const fetchProducts = async () => {
+    const fetchProduct = async () => {
         try {
             loadingIndicator.style.display = 'block';
             if (productDetailsContainer) productDetailsContainer.style.display = 'none';
             errorContainer.style.display = 'none';
 
-            const url = `${API_BASE_URL}/products?includerelations=photos,category,stock&limit=100`; // Adjust limit as needed
+            const productId = getProductIdFromUrl();
+            if (!productId) {
+                throw new Error('Product ID not found in URL.');
+            }
+
+            const url = `${API_BASE_URL}/products/${productId}?includerelations=photos,category,stock`;
             const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const products = await response.json();
-            const productId = getProductIdFromUrl();
-
-            if (!productId) {
-                throw new Error('Product ID not found in URL.');
-            }
-
-            const rawProduct = products.find(p => p.id == productId);
-
-            if (!rawProduct) {
-                throw new Error('Product not found.');
-            }
-
+            const rawProduct = await response.json();
             currentProduct = mapProduct(rawProduct);
             renderProduct();
 
@@ -145,5 +138,5 @@ document.addEventListener('DOMContentLoaded', () => {
         if (productDetailsContainer) productDetailsContainer.style.display = 'none';
     };
 
-    fetchProducts();
+    fetchProduct();
 });
