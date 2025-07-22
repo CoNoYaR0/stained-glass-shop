@@ -21,7 +21,7 @@
     >
 
     <div id="thumbs" class="thumbnail-gallery">
-      {{/* Boucle qui gère objets {url:…} ou simples strings */}}
+      {{/* Gère à la fois les strings et objets {url:…} */}}
       {{ range .Params.images }}
         {{ $src := . }}
         {{ if isset . "url" }}
@@ -59,5 +59,6 @@
 
 {{ end }}  {{/* ← ferme le bloc "main" */}}
 
-  <script type="module" src="/js/single.js"></script>
-  
+{{ define "scripts" }}
+  <script type="module" src="{{ "js/single.js" | relURL }}"></script>
+{{ end }}
