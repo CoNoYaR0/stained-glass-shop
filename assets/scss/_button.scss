@@ -1,0 +1,65 @@
+/* ============================
+   _button.scss
+   ============================ */
+
+.translucent-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 30px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.translucent-btn:hover {
+  background: linear-gradient(135deg, #ff8a00, #e52e71);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.translucent-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.add-to-cart-btn {
+  /* taille & centrage */
+  margin: 2rem auto 0;
+  padding: 1rem 2rem;
+
+  /* typo */
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  color: #fff !important;
+
+  /* style */
+  border: none;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, var(--vex-primary), var(--vex-secondary)) !important;
+  background-image: none !important;
+  background-size: 200% auto;
+  background-position: left center;
+  box-shadow: 0 4px 14px rgba(255, 159, 43, .35);
+  transition: transform .25s, box-shadow .25s, background-position .25s;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255, 159, 43, .45);
+    background-position: right center;
+  }
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(255, 159, 43, .25);
+  }
+  &:disabled {
+    background: #bfbfbf;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}

@@ -2,62 +2,62 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>//localhost:45879/products/</loc>
+    <loc>//localhost:45333/products/</loc>
     <lastmod>2023-08-24T10:00:00+02:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/single/</loc>
+    <loc>//localhost:45333/products/single/</loc>
     <lastmod>2023-08-24T10:00:00+02:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/</loc>
+    <loc>//localhost:45333/</loc>
     <lastmod>2023-08-24T10:00:00+02:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/product-1/</loc>
+    <loc>//localhost:45333/products/product-1/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/blog/post-1/</loc>
+    <loc>//localhost:45333/blog/post-1/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/product-2/</loc>
+    <loc>//localhost:45333/products/product-2/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/blog/post-3/</loc>
+    <loc>//localhost:45333/blog/post-3/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/product-4/</loc>
+    <loc>//localhost:45333/products/product-4/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/product-7/</loc>
+    <loc>//localhost:45333/products/product-7/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/product-8/</loc>
+    <loc>//localhost:45333/products/product-8/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/blog/</loc>
+    <loc>//localhost:45333/blog/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/blog/post-2/</loc>
+    <loc>//localhost:45333/blog/post-2/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/product-6/</loc>
+    <loc>//localhost:45333/products/product-6/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/product-5/</loc>
+    <loc>//localhost:45333/products/product-5/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/blog/post-4/</loc>
+    <loc>//localhost:45333/blog/post-4/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/products/product-3/</loc>
+    <loc>//localhost:45333/products/product-3/</loc>
     <lastmod>2019-10-17T11:22:16+06:00</lastmod>
   </url><url>
-    <loc>//localhost:45879/categories/</loc>
+    <loc>//localhost:45333/categories/</loc>
   </url><url>
-    <loc>//localhost:45879/contact/</loc>
+    <loc>//localhost:45333/contact/</loc>
   </url><url>
-    <loc>//localhost:45879/tags/</loc>
+    <loc>//localhost:45333/tags/</loc>
   </url><url>
-    <loc>//localhost:45879/privacy-policy/</loc>
+    <loc>//localhost:45333/privacy-policy/</loc>
   </url><url>
-    <loc>//localhost:45879/terms-conditions/</loc>
+    <loc>//localhost:45333/terms-conditions/</loc>
   </url>
 </urlset>

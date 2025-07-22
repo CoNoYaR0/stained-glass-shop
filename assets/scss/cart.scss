@@ -219,29 +219,5 @@
     &:hover .overlay {
       opacity: 1;
     }
-
-    .translucent-btn {
-      background: rgba(255, 255, 255, 0.9);
-      border: none;
-      border-radius: 30px;
-      padding: 10px 20px;
-      font-size: 1rem;
-      font-weight: bold;
-      color: #333;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      cursor: pointer;
-      transition: all 0.3s ease;
-
-      &:hover {
-        background: linear-gradient(135deg, #ff8a00, #e52e71);
-        color: #fff;
-        transform: scale(1.05);
-      }
-
-      &:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-      }
-    }
   }
 }
