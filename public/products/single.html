@@ -65,19 +65,20 @@
   <script>
     (function() {
       const params = new URLSearchParams(window.location.search);
-      const slug = params.get('slug');
+      // Accept both 'slug' and 'sku' as the product identifier
+      const productId = params.get('slug') || params.get('sku');
       const messageEl = document.getElementById('message');
       const heroEl = document.getElementById('hero');
       const titleEl = document.getElementById('title');
       const priceEl = document.getElementById('price');
       const storyEl = document.getElementById('story');
 
-      if (!slug) {
+      if (!productId) {
         messageEl.textContent = 'No product specified.';
         return;
       }
 
-      fetch(`/api/v1/products/${encodeURIComponent(slug)}`)
+      fetch(`/api/v1/products/${encodeURIComponent(productId)}`)
         .then(res => {
           if (!res.ok) throw new Error('Product not found');
           return res.json();
@@ -85,7 +86,7 @@
         .then(product => {
           // Hero image
           const imgUrl = (product.images && product.images.length)
-            ? product.images[0].url || product.images[0]
+            ? (product.images[0].url || product.images[0])
             : '';
           if (imgUrl) heroEl.style.backgroundImage = `url('${imgUrl}')`;
 
@@ -104,7 +105,8 @@
             const heading = document.createElement('h2');
             heading.textContent = `Part ${i + 1}`;
             const para = document.createElement('p');
-            para.textContent = sentence.trim().replace(/\.$/, '') + '.');
+            // Remove trailing period, then add one
+            para.textContent = sentence.trim().replace(/\.$/, '') + '.';
             section.appendChild(heading);
             section.appendChild(para);
             storyEl.appendChild(section);
