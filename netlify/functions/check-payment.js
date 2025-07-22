@@ -1,42 +1,43 @@
-const axios = require("axios");
+const { createClient } = require("@supabase/supabase-js");
 
-exports.handler = async function (event, context) {
-  if (event.httpMethod !== "GET") {
-    return {
-      statusCode: 405,
-      body: "Method Not Allowed",
-    };
-  }
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
-  const { token } = event.queryStringParameters;
-
+exports.handler = async (event) => {
+  const token = event.queryStringParameters?.token;
   if (!token) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Missing payment token" }),
+      body: JSON.stringify({ error: "Token manquant." })
     };
   }
 
   try {
-    const response = await axios.get(
-      `https://sandbox.paymee.tn/api/v1/payments/${token}/check`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${process.env.PAYMEE_API_KEY}`,
-        },
-      }
-    );
+    // Cherche la commande par note dans la table des commandes validées (ex: invoices ou valid_orders)
+    const { data, error } = await supabase
+      .from("valid_orders")
+      .select("note")
+      .eq("note", token)
+      .single();
+
+    if (error || !data) {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ status: false })
+      };
+    }
 
     return {
       statusCode: 200,
-      body: JSON.stringify(response.data),
+      body: JSON.stringify({ status: true })
     };
-  } catch (error) {
-    console.error("Error checking payment:", error);
+  } catch (err) {
+    console.error("💥 check-payment error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Failed to check payment" }),
+      body: JSON.stringify({ error: "Erreur serveur" })
     };
   }
 };
