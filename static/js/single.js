@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addToCartBtn.dataset.id = selectedVariant.id;
         addToCartBtn.dataset.name = productTitle.textContent; // Use cleaned title
         addToCartBtn.dataset.price = selectedVariant.price;
-        addToCartBtn.dataset.image = selectedVariant.images.length > 0 ? selectedVariant.images[0].url : mainImage.src;
+        addToCartBtn.dataset.image = mainImage.src;
     };
 
     /**
