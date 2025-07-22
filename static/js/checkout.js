@@ -21,12 +21,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Ajoute les options de paiement (CB / Livraison)
   const paiementWrapper = document.getElementById("paiement-options");
   if (paiementWrapper) {
-    paiementWrapper.innerHTML = `
+    paiementWrapper.innerHTML = 
       <div>
         <label><input type="radio" name="paiement" value="cb"> Paiement par carte</label><br>
         <label><input type="radio" name="paiement" value="livraison"> Paiement à la livraison</label>
       </div>
-    `;
+    ;
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -190,4 +190,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // Si paiement CB, on ne fait rien ici : c’est l’iframe + postMessage qui gèrent.
   });
-});
+}); 
