@@ -64,8 +64,8 @@
 
   <script>
     (function() {
+      const API_BASE = 'https://dolibarr-middleware.onrender.com';
       const params = new URLSearchParams(window.location.search);
-      // Read the 'slug' parameter for the product identifier
       const slug = params.get('slug');
       const messageEl = document.getElementById('message');
       const heroEl = document.getElementById('hero');
@@ -78,7 +78,7 @@
         return;
       }
 
-      fetch(`/api/v1/products/${encodeURIComponent(slug)}`)
+      fetch(`${API_BASE}/api/v1/products/${encodeURIComponent(slug)}`)
         .then(res => {
           if (!res.ok) throw new Error('Product not found');
           return res.json();
