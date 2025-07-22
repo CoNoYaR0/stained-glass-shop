@@ -16,42 +16,24 @@
     <img
       id="main-img"
       class="product-single-image"
-      src="{{ .Params.thumbnail_url | default "https://cdn.stainedglass.tn/images/fallback.jpg" }}"
-      alt="{{ .Title }}"
+      src="https://cdn.stainedglass.tn/images/fallback.jpg"
+      alt="Product image"
     >
-
     <div id="thumbs" class="thumbnail-gallery">
-      {{/* Gère à la fois les strings et objets {url:…} */}}
-      {{ range .Params.images }}
-        {{ $src := . }}
-        {{ if isset . "url" }}
-          {{ $src = .url }}
-        {{ end }}
-        <img src="{{ $src }}" class="thumbnail" alt="thumb">
-      {{ end }}
+      <!-- Thumbnails will be injected by JS -->
     </div>
   </div>
 
   <!-- Zone infos -->
   <div class="product-info-panel">
-    <h1>{{ replace .Params.sku "_" " " }}</h1>
-    <p class="name">{{ .Title }}</p>
-    <p class="category">{{ .Params.category }}</p>
+    <h1 id="product-sku"></h1>
+    <p id="product-name" class="name"></p>
+    <p id="product-category" class="category"></p>
+    <div id="product-description"></div>
+    <p id="product-price" class="price"></p>
+    <p id="product-stock" class="stock"></p>
 
-    {{ .Content }} <!-- description HTML -->
-
-    <p class="price">{{ .Params.price }} TND</p>
-    <p class="stock">{{ .Params.stock }} in stock</p>
-
-    <button
-      id="add-to-cart"
-      class="add-to-cart-btn"
-      data-id="{{ .Params.sku }}"
-      data-name="{{ .Title }}"
-      data-price="{{ .Params.price }}"
-      data-image="{{ .Params.thumbnail_url }}"
-      {{ if le .Params.stock 0 }}disabled{{ end }}
-    >
+    <button id="add-to-cart" class="add-to-cart-btn" disabled>
       Add to Cart
     </button>
   </div>

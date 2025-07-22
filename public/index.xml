@@ -6,8 +6,15 @@
     <description>Recent content on Vex | hugo landing page template</description>
     <generator>Hugo</generator>
     <language>fr-fr</language>
-    <lastBuildDate>Thu, 17 Oct 2019 11:22:16 +0600</lastBuildDate>
+    <lastBuildDate>Thu, 24 Aug 2023 10:00:00 +0200</lastBuildDate>
     <atom:link href="//localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Product</title>
+      <link>//localhost:1313/products/single/</link>
+      <pubDate>Thu, 24 Aug 2023 10:00:00 +0200</pubDate>
+      <guid>//localhost:1313/products/single/</guid>
+      <description></description>
+    </item>
     <item>
       <title>Apple Watch</title>
       <link>//localhost:1313/products/product-1/</link>
