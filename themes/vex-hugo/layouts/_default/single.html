@@ -4,7 +4,7 @@
    =============================================== */}}
 
 {{ define "styles" }}
-  {{ $single := resources.Get "scss/single-product.scss" | toCSS | minify }}
+  {{ $single := resources.Get "scss/single.scss" | toCSS | minify }}
   <link rel="stylesheet" href="{{ $single.RelPermalink }}">
 {{ end }}
 
