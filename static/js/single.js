@@ -1,259 +1,147 @@
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM fully loaded and parsed');
+import { addToCart } from './cart.js';
 
-    const API_URL = 'https://dolibarr-middleware.onrender.com/api/v1/products';
-    const HEALTH_CHECK_URL = 'https://dolibarr-middleware.onrender.com/health';
+document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE_URL = 'https://dolibarr-middleware.onrender.com/api/v1';
+    const CDN_BASE_URL = 'https://cdn.stainedglass.tn';
+    const FALLBACK_IMAGE = `${CDN_BASE_URL}/images/fallback.jpg`;
 
     // DOM Elements
-    const productDetailsContainer = document.getElementById('product-details');
+    const productContainer = document.querySelector('.product-single-container');
     const loadingIndicator = document.getElementById('loading');
     const errorContainer = document.getElementById('error');
     const mainImage = document.getElementById('main-image');
     const thumbnailGallery = document.getElementById('thumbnail-gallery');
     const productTitle = document.getElementById('product-title');
-    const productTags = document.getElementById('product-tags');
+    const productSubtitle = document.getElementById('product-subtitle');
+    const productCategory = document.getElementById('product-category');
     const productDescription = document.getElementById('product-description');
     const productPrice = document.getElementById('product-price');
     const productStock = document.getElementById('product-stock');
-    const variantSelectorContainer = document.getElementById('variant-selector');
     const addToCartBtn = document.getElementById('add-to-cart-btn');
 
-    let productData = null;
-    let variants = [];
+    let currentProduct = null;
 
-    /**
-     * Fetches product data from the API.
-     * @param {string} sku - The product SKU to fetch.
-     */
-    const fetchProduct = async (sku) => {
-        console.log(`Fetching product with SKU: ${sku}`);
+    const getSlugFromUrl = () => {
+        const path = window.location.pathname;
+        const parts = path.split('/');
+        const lastPart = parts[parts.length - 1];
+        if (lastPart.endsWith('.html')) {
+            return lastPart.slice(0, -5);
+        }
+        return lastPart;
+    };
+
+    const fetchProduct = async (slug) => {
         try {
             loadingIndicator.style.display = 'block';
-            productDetailsContainer.style.display = 'none';
+            if (productContainer) productContainer.style.display = 'none';
             errorContainer.style.display = 'none';
 
-            console.log('Fetching all products from:', API_URL);
-            const response = await fetch(API_URL);
+            const url = `${API_BASE_URL}/products/${slug}?includerelations=photos,category,stock`;
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const responseData = await response.json();
-            console.log('API response:', responseData);
 
-            const allProducts = responseData.data;
-            const productVariants = allProducts.filter(p => p.sku.startsWith(sku));
-
-            if (!productVariants || productVariants.length === 0) {
-                throw new Error('Product not found.');
-            }
-
-            productData = productVariants[0];
-            variants = productVariants; // All returned items are variants
+            const rawProduct = await response.json();
+            currentProduct = mapProduct(rawProduct);
             renderProduct();
 
         } catch (err) {
-            console.error('Error fetching product:', err);
             showError(err.message);
         } finally {
             loadingIndicator.style.display = 'none';
         }
     };
 
-    /**
-     * Renders the fetched product data on the page.
-     */
-    const renderProduct = () => {
-        console.log('Rendering product:', productData);
-        const defaultVariant = variants[0];
+    const mapProduct = (raw) => {
+        const cdnUrl = (path) => (path && path.startsWith('/')) ? `${CDN_BASE_URL}${path}` : path;
 
-        // Clean and set title
-        const cleanedSku = defaultVariant.sku.replace(/_C\d+$/, '').replace(/[_-]/g, ' ');
-        productTitle.textContent = cleanedSku;
-        document.title = cleanedSku; // Update page title
-
-        // Set tags/categories
-        productTags.textContent = defaultVariant.categories.map(c => c.label).join(', ') || 'Uncategorized';
-
-        // Set description
-        productDescription.innerHTML = defaultVariant.description;
-
-        // Render gallery
-        renderGallery(defaultVariant.images);
-
-        // Render variants
-        if (variants.length > 1) {
-            renderVariantSelector();
-            // Select the first variant by default
-            updateVariant(variants[0].id);
-        } else {
-            // If only one product, treat it as the single variant
-            updateVariant(defaultVariant.id);
+        const images = [];
+        if (raw.thumbnail_url) {
+            images.push(cdnUrl(raw.thumbnail_url));
+        }
+        if (raw.photos && raw.photos.length) {
+            raw.photos.forEach(p => images.push(cdnUrl(p.url)));
         }
 
-        productDetailsContainer.style.display = 'flex';
-        attachAddToCartButtons(); // Attach cart logic from external script
+        return {
+            sku: raw.sku,
+            name: raw.name,
+            category: raw.category ? raw.category.name : 'Uncategorized',
+            price: Math.round(raw.price || 0),
+            stock: raw.stock || 0,
+            description: raw.description,
+            images: images.length > 0 ? [...new Set(images)] : [FALLBACK_IMAGE],
+        };
     };
 
-    /**
-     * Renders the image gallery.
-     * @param {Array} images - Array of image objects.
-     */
-    const renderGallery = (images) => {
-        console.log('Rendering gallery with images:', images);
-        const fallbackImage = 'https://via.placeholder.com/400';
-        mainImage.src = images.length > 0 ? images[0].url : fallbackImage;
+    const renderProduct = () => {
+        if (!currentProduct) return;
 
+        productTitle.textContent = currentProduct.sku.replace(/_/g, ' ');
+        productSubtitle.textContent = currentProduct.name;
+        productCategory.textContent = currentProduct.category;
+        productDescription.innerHTML = currentProduct.description;
+        productPrice.textContent = `${currentProduct.price} TND`;
+
+        mainImage.src = currentProduct.images[0];
+
+        renderStock();
+        renderGallery();
+
+        addToCartBtn.onclick = () => {
+            if (currentProduct.stock > 0) {
+                addToCart(currentProduct);
+            }
+        };
+
+        if (productContainer) productContainer.style.display = 'flex';
+    };
+
+    const renderStock = () => {
+        if (currentProduct.stock > 0) {
+            productStock.textContent = `${currentProduct.stock} in stock`;
+            productStock.classList.remove('out-of-stock');
+            addToCartBtn.disabled = false;
+        } else {
+            productStock.textContent = 'Out of stock';
+            productStock.classList.add('out-of-stock');
+            addToCartBtn.disabled = true;
+        }
+    };
+
+    const renderGallery = () => {
         thumbnailGallery.innerHTML = '';
-        if (images.length > 1) {
-            images.forEach((image, index) => {
+        if (currentProduct.images.length > 1) {
+            currentProduct.images.forEach((imageUrl, index) => {
                 const thumb = document.createElement('img');
-                thumb.src = image.url;
-                thumb.alt = `Thumbnail ${index + 1}`;
+                thumb.src = imageUrl;
                 thumb.classList.add('thumbnail');
-                if (index === 0) thumb.classList.add('selected');
-
-                thumb.addEventListener('click', () => {
-                    mainImage.src = image.url;
+                if (index === 0) {
+                    thumb.classList.add('selected');
+                }
+                thumb.onclick = () => {
+                    mainImage.src = imageUrl;
                     document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('selected'));
                     thumb.classList.add('selected');
-                });
+                };
                 thumbnailGallery.appendChild(thumb);
             });
         }
     };
 
-    /**
-     * Renders the variant selector (color swatches or dropdown).
-     */
-    const renderVariantSelector = () => {
-        console.log('Rendering variant selector');
-        const attributeType = variants[0].attributeType;
-        variantSelectorContainer.innerHTML = ''; // Clear previous options
-
-        const label = document.createElement('label');
-        label.textContent = `Select ${attributeType || 'Option'}:`;
-        variantSelectorContainer.appendChild(label);
-
-        if (attributeType === 'Color') {
-            const swatchesContainer = document.createElement('div');
-            swatchesContainer.className = 'color-swatches';
-            variants.forEach(variant => {
-                const swatch = document.createElement('div');
-                swatch.className = 'color-swatch';
-                swatch.style.backgroundColor = variant.attributeValue;
-                swatch.dataset.variantId = variant.id;
-                swatch.title = variant.attributeValue;
-
-                swatch.addEventListener('click', () => {
-                    updateVariant(variant.id);
-                    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-                    swatch.classList.add('selected');
-                });
-                swatchesContainer.appendChild(swatch);
-            });
-            variantSelectorContainer.appendChild(swatchesContainer);
-        } else {
-            const select = document.createElement('select');
-            select.className = 'variant-select';
-            variants.forEach(variant => {
-                const option = document.createElement('option');
-                option.value = variant.id;
-                option.textContent = variant.attributeValue || variant.sku;
-                select.appendChild(option);
-            });
-            select.addEventListener('change', (e) => updateVariant(e.target.value));
-            variantSelectorContainer.appendChild(select);
-        }
-    };
-
-    /**
-     * Updates the UI with the selected variant's data.
-     * @param {string} variantId - The ID of the selected variant.
-     */
-    const updateVariant = (variantId) => {
-        console.log(`Updating variant to ID: ${variantId}`);
-        const selectedVariant = variants.find(v => v.id == variantId);
-        if (!selectedVariant) {
-            console.error(`Variant with ID ${variantId} not found.`);
-            return;
-        }
-
-        // Update Price
-        productPrice.textContent = `${Math.round(selectedVariant.price)} TND`;
-
-        // Update Stock
-        const stock = selectedVariant.stock;
-        if (stock > 0) {
-            productStock.textContent = `${stock} in stock`;
-            productStock.className = 'product-stock';
-            addToCartBtn.disabled = false;
-        } else {
-            productStock.textContent = 'Out of stock';
-            productStock.className = 'product-stock out-of-stock';
-            addToCartBtn.disabled = true;
-        }
-
-        // Update Add to Cart button data attributes
-        addToCartBtn.dataset.id = selectedVariant.id;
-        addToCartBtn.dataset.name = productTitle.textContent; // Use cleaned title
-        addToCartBtn.dataset.price = selectedVariant.price;
-        addToCartBtn.dataset.image = mainImage.src;
-    };
-
-    /**
-     * Displays an error message.
-     * @param {string} message - The error message to display.
-     */
     const showError = (message) => {
-        console.error(`Displaying error: ${message}`);
         errorContainer.textContent = `Error: ${message}`;
         errorContainer.style.display = 'block';
-        productDetailsContainer.style.display = 'none';
+        if (productContainer) productContainer.style.display = 'none';
     };
 
-    /**
-     * Dummy function placeholder for external cart logic.
-     * This function should be defined in your global scripts.
-     */
-    const attachAddToCartButtons = () => {
-        if (window.attachAddToCartButtons) {
-            window.attachAddToCartButtons();
-        } else {
-            console.warn('attachAddToCartButtons function not found. Cart functionality might not work.');
-            // Basic fallback for demonstration
-            addToCartBtn.addEventListener('click', () => {
-                if (addToCartBtn.disabled) return;
-                alert(`Added to cart:
-                    ID: ${addToCartBtn.dataset.id}
-                    Name: ${addToCartBtn.dataset.name}
-                    Price: ${addToCartBtn.dataset.price} TND`);
-            });
-        }
-    };
-
-    /**
-     * Keep-alive ping to prevent the backend from sleeping.
-     */
-    const keepAlive = () => {
-        console.log('Starting keep-alive ping');
-        setInterval(() => {
-            console.log('Pinging health check URL');
-            fetch(HEALTH_CHECK_URL).catch(err => console.error('Keep-alive ping failed:', err));
-        }, 10 * 60 * 1000); // 10 minutes
-    };
-
-    // --- Initialization ---
-    console.log('Initializing single product page script');
-    const urlParams = new URLSearchParams(window.location.search);
-    const sku = urlParams.get('sku');
-    console.log(`Parsed SKU from URL: ${sku}`);
-
-    if (sku) {
-        fetchProduct(sku);
+    const slug = getSlugFromUrl();
+    if (slug) {
+        fetchProduct(slug);
     } else {
-        showError('No product SKU provided in the URL.');
+        showError('Could not determine product slug from URL.');
     }
-
-    keepAlive();
 });
