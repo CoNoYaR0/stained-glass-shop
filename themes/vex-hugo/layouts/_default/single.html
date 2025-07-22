@@ -3,11 +3,6 @@
      theme : vex-hugo
    =============================================== */}}
 
-{{ define "styles" }}
-  {{ $single := resources.Get "scss/single.scss" | toCSS | minify }}
-  <link rel="stylesheet" href="{{ $single.RelPermalink }}">
-{{ end }}
-
 {{ define "main" }}
 
 <div id="product-container" class="product-single-container">
