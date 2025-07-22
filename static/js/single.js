@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data || data.length === 0) {
                 throw new Error('Product not found.');
             }
-            
+
             productData = data[0];
             variants = data; // All returned items are variants
             renderProduct();
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderProduct = () => {
         console.log('Rendering product:', productData);
         const defaultVariant = variants[0];
-        
+
         // Clean and set title
         const cleanedSku = defaultVariant.sku.replace(/_C\d+$/, '').replace(/[_-]/g, ' ');
         productTitle.textContent = cleanedSku;
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Set tags/categories
         productTags.textContent = defaultVariant.categories.map(c => c.label).join(', ') || 'Uncategorized';
-        
+
         // Set description
         productDescription.innerHTML = defaultVariant.description;
 
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // If only one product, treat it as the single variant
             updateVariant(defaultVariant.id);
         }
-        
+
         productDetailsContainer.style.display = 'flex';
         attachAddToCartButtons(); // Attach cart logic from external script
     };
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Rendering gallery with images:', images);
         const fallbackImage = 'https://via.placeholder.com/400';
         mainImage.src = images.length > 0 ? images[0].url : fallbackImage;
-        
+
         thumbnailGallery.innerHTML = '';
         if (images.length > 1) {
             images.forEach((image, index) => {
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 thumb.alt = `Thumbnail ${index + 1}`;
                 thumb.classList.add('thumbnail');
                 if (index === 0) thumb.classList.add('selected');
-                
+
                 thumb.addEventListener('click', () => {
                     mainImage.src = image.url;
                     document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('selected'));
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Rendering variant selector');
         const attributeType = variants[0].attributeType;
         variantSelectorContainer.innerHTML = ''; // Clear previous options
-        
+
         const label = document.createElement('label');
         label.textContent = `Select ${attributeType || 'Option'}:`;
         variantSelectorContainer.appendChild(label);
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 swatch.style.backgroundColor = variant.attributeValue;
                 swatch.dataset.variantId = variant.id;
                 swatch.title = variant.attributeValue;
-                
+
                 swatch.addEventListener('click', () => {
                     updateVariant(variant.id);
                     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update Price
         productPrice.textContent = `${Math.round(selectedVariant.price)} TND`;
-        
+
         // Update Stock
         const stock = selectedVariant.stock;
         if (stock > 0) {
@@ -253,6 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         showError('No product SKU provided in the URL.');
     }
-    
+
     keepAlive();
 });
