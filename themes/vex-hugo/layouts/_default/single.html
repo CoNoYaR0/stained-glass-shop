@@ -1,21 +1,52 @@
+{{/* ===============================================
+     SINGLE PRODUCT PAGE
+     theme : vex-hugo
+   =============================================== */}}
+
+{{ define "styles" }}
+  {{ $single := resources.Get "scss/single-product.scss" | toCSS | minify }}
+  <link rel="stylesheet" href="{{ $single.RelPermalink }}">
+{{ end }}
+
 {{ define "main" }}
 
-<section class="section">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-5 mb-4 mb-md-0">
-        <div class="sticky-image">
-          {{ partial "image.html" (dict "Src" .Params.image "Alt" .Title "Class" "img-fluid w-100" ) }}
-        </div>
-      </div>
-      <div class="col-lg-6 col-md-7 offset-lg-1">
-        <h1 class="mb-4">{{.Title | markdownify}}</h1>
-        <div class="content">
-          {{.Content}}
-        </div>
-      </div>
+<div class="product-single-container">
+  <!-- Zone image + miniatures -->
+  <div class="product-image-gallery">
+    <img id="main-img"
+         class="product-single-image"
+         src="{{ .Params.thumbnail_url | default "https://cdn.stainedglass.tn/images/fallback.jpg" }}"
+         alt="{{ .Title }}">
+
+    <div id="thumbs" class="thumbnail-gallery">
+      {{/* si le JS ne remplace pas, tu peux lister ici les photos */}}
+      {{ range .Params.images }}
+        <img src="{{ .url }}" class="thumbnail" alt="thumb">
+      {{ end }}
     </div>
   </div>
-</section>
+
+  <!-- Zone infos -->
+  <div class="product-info-panel">
+    <h1>{{ .Params.sku | replace "_" " " }}</h1>
+    <p class="name">{{ .Title }}</p>
+    <p class="category">{{ .Params.category }}</p>
+
+    {{ .Content }}   {{/* description HTML */}}
+
+    <p class="price">{{ .Params.price }} TND</p>
+    <p class="stock">{{ .Params.stock }} in stock</p>
+
+    <button id="add-to-cart"
+            class="add-to-cart-btn"
+            data-id="{{ .Params.sku }}"
+            data-name="{{ .Title }}"
+            data-price="{{ .Params.price }}"
+            data-image="{{ .Params.thumbnail_url }}"
+            {{ if le .Params.stock 0 }}disabled{{ end }}>
+      Add to Cart
+    </button>
+  </div>
+</div>
 
 {{ end }}
