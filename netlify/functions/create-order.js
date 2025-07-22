@@ -51,20 +51,28 @@ async function handleCreateOrder(body) {
   const invoiceLines = [];
 
   for (const product of cart) {
-    if (!product.id) {
-      console.error(`❌ критическая ошибка: ID продукта отсутствует в элементе корзины. Невозможно получить информацию о продукте из Dolibarr. Элемент корзины: ${JSON.stringify(product)}`);
-      // Laisser la fonction continuer ; l'appel axios suivant échouera probablement et sera géré par le try-catch global.
-    }
-    const res = await axios.get(`${dolibarrAPI}/products/${product.id}`, { headers });
-    const prodData = res.data;
+    try {
+      const res = await axios.get(`${dolibarrAPI}/products`, {
+        headers,
+        params: { sqlfilters: `(ref:=:'${product.id}')` }
+      });
 
-    invoiceLines.push({
-      fk_product: product.id,
-      qty: product.qty,
-      subprice: product.price_ht,
-      tva_tx: product.tva,
-      description: prodData.label
-    });
+      if (res.data && res.data.length > 0) {
+        const prodData = res.data[0];
+        invoiceLines.push({
+          fk_product: prodData.id,
+          qty: product.qty,
+          subprice: product.price_ht,
+          tva_tx: product.tva,
+          description: prodData.label
+        });
+      } else {
+        throw new Error(`Product with ref ${product.id} not found in Dolibarr.`);
+      }
+    } catch (error) {
+      console.error(`❌ Erreur lors de la récupération du produit ${product.id}:`, error.response?.data || error.message);
+      throw new Error(`Failed to retrieve product details for ${product.id}.`);
+    }
   }
 
   const invoice = {
