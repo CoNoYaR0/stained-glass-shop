@@ -155,9 +155,9 @@ document.addEventListener("DOMContentLoaded", () => {
       productGrid.insertAdjacentHTML("beforeend", cardHTML);
     });
 
-    if (window.attachAddToCartButtons) {
-      window.attachAddToCartButtons();
-    }
+    // Dispatch a custom event to let other scripts know the products have been rendered
+    const event = new Event('productRendered');
+    document.dispatchEvent(event);
   };
 
   fetchProducts();
