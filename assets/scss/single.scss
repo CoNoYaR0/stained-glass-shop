@@ -1,6 +1,9 @@
-/* =======================
-   SINGLE PRODUCT PAGE
-   ======================= */
+/* ============================
+   single-product.scss
+   (pour la fiche produit unique)
+   ============================ */
+
+/* 1. Conteneur global */
 .product-single-container {
   --gap: 2rem;
   max-width: 1200px;
@@ -8,21 +11,22 @@
   padding: 2rem var(--gap);
   display: flex;
   gap: var(--gap);
-  position: relative; /* pour bouton absolu */
-  padding-bottom: 6rem; /* espace bouton */
 }
 
+/* 2. Zone image + galerie */
 .product-image-gallery {
   flex: 0 0 38%;
   max-width: 38%;
 }
+
 .product-single-image {
   width: 100%;
-  aspect-ratio: 1/1;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 0.75rem;
   border: 1px solid #eee;
 }
+
 .thumbnail-gallery {
   display: flex;
   flex-wrap: wrap;
@@ -30,104 +34,79 @@
   margin-top: 0.5rem;
 
   .thumbnail {
-    width: 4.5rem; height: 4.5rem;
+    width: 4.5rem;
+    height: 4.5rem;
     border-radius: 0.5rem;
     object-fit: cover;
     cursor: pointer;
     border: 2px solid transparent;
     transition: border-color .25s;
-    &:hover, &.selected {
+
+    &:hover,
+    &.selected {
       border-color: var(--vex-primary);
     }
   }
 }
 
+/* 3. Zone texte / infos */
 .product-info-panel {
   flex: 1 1 0;
   max-width: calc(62% - var(--gap));
-
-  h1 {
-    font-size: 2.25rem; margin-bottom: 0.5rem; line-height: 1.2;
-  }
-  .name {
-    font-size: 1.25rem; font-weight: 400; color: #555;
-    margin-bottom: 1rem;
-  }
-  .category {
-    font-size: 0.95rem; color: #888; text-transform: capitalize;
-    margin-bottom: 1.5rem;
-  }
-  .price {
-    font-size: 1.75rem; font-weight: 700;
-    margin: 1.5rem 0 0.25rem;
-  }
-  .stock {
-    font-size: 1rem; color: var(--vex-primary);
-    margin-bottom: 1.5rem;
-  }
-
-  ul { margin-left: 1.5rem; margin-bottom: 1.5rem;
-    li { margin-bottom: 0.5rem; }
-  }
-
-  /* variante select */
-  .variant-selector {
-    display: inline-block;
-    margin: 0.5rem 0 1rem;
-    padding: 0.5rem 1rem;
-    border: 1px solid #ccc;
-    border-radius: 0.5rem;
-    background: #fff;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: border-color .2s;
-    &:focus {
-      outline: none;
-      border-color: var(--vex-primary);
-    }
-  }
+  /* centre tous les textes et bouton */
+  text-align: center;
 }
 
-/* 4. Bouton Add to Cart */
+/* 4. Bouton Add to Cart – même gradient que les cards */
 .add-to-cart-btn {
+  /* taille & centrage */
+  display: block;
   width: 100%;
-  max-width: 400px;
-  position: absolute; bottom: 2rem; left: 50%;
-  transform: translateX(-50%);
-  margin-top: 2rem;
-  padding: 0.9rem 1.5rem;
-  font-size: 1.1rem; font-weight: 600; color: #fff;
-  border: 0; border-radius: 0.75rem;
+  margin: 2rem auto 0;
+  padding: 1rem 2rem;
+
+  /* typo */
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  color: #fff !important;
+
+  /* style */
+  border: none;
+  border-radius: 0.75rem;
   background: linear-gradient(135deg, var(--vex-primary), var(--vex-secondary));
+  background-size: 200% auto;
+  background-position: left center;
   box-shadow: 0 4px 14px rgba(255, 159, 43, .35);
-  transition: transform .25s, box-shadow .25s;
+  transition: transform .25s, box-shadow .25s, background-position .25s;
+
   &:hover:not(:disabled) {
-    transform: translate(-50%, -2px); /* on garde le translateX */
-    box-shadow: 0 6px 18px rgba(255,159,43,.45);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255, 159, 43, .45);
+    background-position: right center;
   }
   &:active:not(:disabled) {
-    transform: translateX(-50%);
-    box-shadow: 0 3px 8px rgba(255,159,43,.25);
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(255, 159, 43, .25);
   }
   &:disabled {
-    background: #bfbfbf; cursor: not-allowed; box-shadow: none;
-    opacity: .6;
+    background: #bfbfbf;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 }
 
-/* 5. Mobile */
+/* 5. Responsive mobile (≤ 768 px) */
 @media (max-width: 768px) {
   .product-single-container {
     flex-direction: column;
-    padding-bottom: 4rem;
   }
-  .product-image-gallery, .product-info-panel {
+  .product-image-gallery,
+  .product-info-panel {
     max-width: 100%;
   }
   .product-single-image {
-    aspect-ratio: 4/3;
-  }
-  .add-to-cart-btn {
-    position: static; transform: none; margin: 2rem auto 0;
+    aspect-ratio: 4 / 3; /* un peu plus “plat” sur mobile */
   }
 }
