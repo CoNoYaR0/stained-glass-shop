@@ -73,7 +73,8 @@
   /* style */
   border: none;
   border-radius: 0.75rem;
-  background: linear-gradient(135deg, var(--vex-primary), var(--vex-secondary));
+  background: linear-gradient(135deg, var(--vex-primary), var(--vex-secondary)) !important;
+  background-image: none !important;
   background-size: 200% auto;
   background-position: left center;
   box-shadow: 0 4px 14px rgba(255, 159, 43, .35);

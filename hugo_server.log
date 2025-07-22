@@ -15,9 +15,9 @@ hugo v0.148.1-98ba786f2f5dca0866f47ab79f394370bcb77d2f+extended linux/amd64 Buil
  Aliases          │  0
  Cleaned          │  0
 
-Built in 119 ms
+Built in 113 ms
 Environment: "development"
 Serving pages from disk
 Running in Fast Render Mode. For full rebuilds on change: hugo server --disableFastRender
-Web Server is available at //localhost:45603/ (bind address 127.0.0.1)
+Web Server is available at //localhost:34827/ (bind address 127.0.0.1)
 Press Ctrl+C to stop
