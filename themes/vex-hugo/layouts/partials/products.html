@@ -18,7 +18,7 @@
               </a>
             </div>
             {{ with .Params.images }}
-            <img class="img-fluid" src="{{range first 1 . }}{{ . | absURL }}{{end}}" alt="{{.Title}}">
+            <img class="img-fluid" src="{{range first 1 . }}{{ . | absURL }}{{end}}" alt="{{$.Title}}">
             {{ end }}
           </div>
           {{ end }}
