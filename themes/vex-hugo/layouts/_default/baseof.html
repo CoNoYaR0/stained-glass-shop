@@ -1,13 +1,21 @@
 <!DOCTYPE html>
-<html lang="{{ with site.LanguageCode }}{{ . }}{{ else }}en-US{{ end }}">
-{{- partial "head.html" . -}}
+<html lang="{{ with .Site.LanguageCode }}{{ . }}{{ else }}en-US{{ end }}">
+  {{ partial "head.html" . }}
 
-<body id="body">
-	{{- partial "preloader.html" . -}}
-	{{- partial "header.html" . -}}
-	{{- block "main" . }}{{- end }}
-  {{- partial "cart.html" . -}}
-	{{- partial "footer.html" . -}}
-</body>
+  {{/* === injecte ici les <link> de define "styles" === */}}
+  {{ block "styles" . }}{{ end }}
 
+  <body id="body">
+    {{ partial "preloader.html" . }}
+    {{ partial "header.html" . }}
+
+    {{/* === injecte ici le contenu du bloc "main" défini dans chaque template === */}}
+    {{ block "main" . }}{{ end }}
+
+    {{ partial "cart.html" . }}
+    {{ partial "footer.html" . }}
+
+    {{/* === injecte ici les <script> de define "scripts" === */}}
+    {{ block "scripts" . }}{{ end }}
+  </body>
 </html>
