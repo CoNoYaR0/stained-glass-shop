@@ -35,14 +35,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Product SKU not found in URL.');
             }
 
-            const url = `${API_BASE_URL}/products/search?sku=${sku}&includerelations=photos,category,stock`;
-            const response = await fetch(url);
+            // First, get the product by SKU
+            const searchUrl = `${API_BASE_URL}/products/search?sku=${sku}`;
+            const searchResponse = await fetch(searchUrl);
+            if (!searchResponse.ok) {
+                throw new Error(`HTTP error! status: ${searchResponse.status}`);
+            }
+            const productBySku = await searchResponse.json();
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Then, get the full product details with relations by ID
+            const productUrl = `${API_BASE_URL}/products/${productBySku.id}?includerelations=photos,category,stock`;
+            const productResponse = await fetch(productUrl);
+            if (!productResponse.ok) {
+                throw new Error(`HTTP error! status: ${productResponse.status}`);
             }
 
-            const rawProduct = await response.json();
+            const rawProduct = await productResponse.json();
             currentProduct = mapProduct(rawProduct);
             renderProduct();
 
