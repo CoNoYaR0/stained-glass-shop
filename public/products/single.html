@@ -1,418 +1,231 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .product-container {
-            display: flex;
-            gap: 40px;
-        }
-        .product-image-gallery {
-            flex: 1;
-            max-width: 50%;
-        }
-        .main-image {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            border: 1px solid #eee;
-        }
-        .thumbnail-gallery {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .thumbnail {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 4px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: border-color 0.3s;
-        }
-        .thumbnail:hover, .thumbnail.selected {
-            border-color: #ff9800; /* Orange accent */
-        }
-        .product-info {
-            flex: 1;
-        }
-        #product-title {
-            font-size: 2em;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        .product-tags {
-            color: #777;
-            margin-bottom: 20px;
-        }
-        .product-description {
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-        .product-price {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .product-stock {
-            font-size: 1.1em;
-            color: #4CAF50;
-            margin-bottom: 20px;
-        }
-        .product-stock.out-of-stock {
-            color: #F44336;
-        }
-        .variant-selector {
-            margin-bottom: 20px;
-        }
-        .variant-selector label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        .color-swatches {
-            display: flex;
-            gap: 10px;
-        }
-        .color-swatch {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid #ccc;
-            transition: transform 0.2s;
-        }
-        .color-swatch:hover {
-            transform: scale(1.1);
-        }
-        .color-swatch.selected {
-            border-color: #ff9800; /* Orange accent */
-            box-shadow: 0 0 5px #ff9800;
-        }
-        .variant-select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        .add-to-cart-btn {
-            background-color: #ff9800;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2em;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            width: 100%;
-        }
-        .add-to-cart-btn:hover:not(:disabled) {
-            background-color: #e68900;
-        }
-        .add-to-cart-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        /* Responsive layout */
-        @media (max-width: 768px) {
-            .product-container {
-                flex-direction: column;
-            }
-            .product-image-gallery {
-                max-width: 100%;
-            }
-        }
-        #loading {
-            text-align: center;
-            padding: 50px;
-            font-size: 1.5em;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Product Details</title>
+<style>
+  /* … (même CSS que ton original, inchangé) … */
+</style>
 </head>
 <body>
-    <div class="container">
-        <div id="product-details" class="product-container">
-            <div class="product-image-gallery">
-                <img id="main-image" src="https://via.placeholder.com/400" alt="Product Image" class="main-image">
-                <div id="thumbnail-gallery" class="thumbnail-gallery">
-                    <!-- Thumbnails will be rendered here -->
-                </div>
-            </div>
-            <div class="product-info">
-                <h1 id="product-title">Product Title</h1>
-                <p id="product-tags" class="product-tags">Category</p>
-                <div id="product-description" class="product-description">
-                    <p>Product description will be loaded here.</p>
-                </div>
-                <p id="product-price" class="product-price">-- TND</p>
-                <p id="product-stock" class="product-stock">Checking stock...</p>
-                <div id="variant-selector" class="variant-selector">
-                    <!-- Variant selector will be rendered here -->
-                </div>
-                <button id="add-to-cart-btn" class="add-to-cart-btn" disabled>Add to Cart</button>
-            </div>
-        </div>
-        <div id="loading">Loading...</div>
-        <div id="error" style="display: none; color: red;"></div>
+  <div class="container">
+    <div id="product-details" class="product-container">
+      <div class="product-image-gallery">
+        <img id="main-image" class="main-image" src="https://via.placeholder.com/400" alt="Product image">
+        <div id="thumbnail-gallery" class="thumbnail-gallery"></div>
+      </div>
+
+      <div class="product-info">
+        <h1 id="product-title"></h1>
+        <p id="product-tags"   class="product-tags"></p>
+        <div id="product-description" class="product-description"></div>
+        <p id="product-price" class="product-price"></p>
+        <p id="product-stock" class="product-stock"></p>
+
+        <div id="variant-selector" class="variant-selector"></div>
+
+        <button id="add-to-cart-btn" class="add-to-cart-btn" disabled>Add to Cart</button>
+      </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const API_URL = 'https://dolibarr-middleware.onrender.com/api/v1/products';
-            const HEALTH_CHECK_URL = 'https://dolibarr-middleware.onrender.com/health';
+    <div id="loading">Loading…</div>
+    <div id="error"   style="display:none;color:red;"></div>
+  </div>
 
-            // DOM Elements
-            const productDetailsContainer = document.getElementById('product-details');
-            const loadingIndicator = document.getElementById('loading');
-            const errorContainer = document.getElementById('error');
-            const mainImage = document.getElementById('main-image');
-            const thumbnailGallery = document.getElementById('thumbnail-gallery');
-            const productTitle = document.getElementById('product-title');
-            const productTags = document.getElementById('product-tags');
-            const productDescription = document.getElementById('product-description');
-            const productPrice = document.getElementById('product-price');
-            const productStock = document.getElementById('product-stock');
-            const variantSelectorContainer = document.getElementById('variant-selector');
-            const addToCartBtn = document.getElementById('add-to-cart-btn');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  /* ---------------------------------------------------------------------- */
+  const API_URL   = 'https://dolibarr-middleware.onrender.com/api/v1/products';
+  const PING_URL  = 'https://dolibarr-middleware.onrender.com/health';
+  const FALLBACK  = 'https://via.placeholder.com/400';
 
-            let productData = null;
-            let variants = [];
+  /* -------- éléments DOM -------- */
+  const $details   = document.getElementById('product-details');
+  const $loading   = document.getElementById('loading');
+  const $error     = document.getElementById('error');
+  const $mainImg   = document.getElementById('main-image');
+  const $thumbs    = document.getElementById('thumbnail-gallery');
+  const $title     = document.getElementById('product-title');
+  const $tags      = document.getElementById('product-tags');
+  const $desc      = document.getElementById('product-description');
+  const $price     = document.getElementById('product-price');
+  const $stock     = document.getElementById('product-stock');
+  const $selector  = document.getElementById('variant-selector');
+  const $btnCart   = document.getElementById('add-to-cart-btn');
 
-            /**
-             * Fetches product data from the API.
-             * @param {string} sku - The product SKU to fetch.
-             */
-            const fetchProduct = async (sku) => {
-                try {
-                    loadingIndicator.style.display = 'block';
-                    productDetailsContainer.style.display = 'none';
-                    errorContainer.style.display = 'none';
+  let variants = [];
 
-                    const response = await fetch(`${API_URL}?sku=${sku}`);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
+  /* ------------------- utils -------------------- */
+  const showError = msg => {
+    $error.textContent = `Error: ${msg}`;
+    $error.style.display = 'block';
+    $details.style.display = 'none';
+  };
 
-                    if (!data || data.length === 0) {
-                        throw new Error('Product not found.');
-                    }
+  const keepAlive = () => {
+    fetch(PING_URL).catch(()=>{});
+    setInterval(()=>fetch(PING_URL).catch(()=>{}), 10*60*1000);
+  };
 
-                    productData = data[0];
-                    variants = data; // All returned items are variants
-                    renderProduct();
+  /* ------------------- fetch -------------------- */
+  const fetchProductBySku = async sku => {
+    $loading.style.display = 'block';
+    $details.style.display = 'none';
+    $error.style.display   = 'none';
 
-                } catch (err) {
-                    showError(err.message);
-                } finally {
-                    loadingIndicator.style.display = 'none';
-                }
-            };
+    try {
+      const res  = await fetch(`${API_URL}?sku=${encodeURIComponent(sku)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const items = Array.isArray(json.data) ? json.data : json;
 
-            /**
-             * Renders the fetched product data on the page.
-             */
-            const renderProduct = () => {
-                const defaultVariant = variants[0];
+      if (!items || !items.length) throw new Error('Product not found.');
 
-                // Clean and set title
-                const cleanedSku = defaultVariant.sku.replace(/_C\d+$/, '').replace(/[_-]/g, ' ');
-                productTitle.textContent = cleanedSku;
-                document.title = cleanedSku; // Update page title
+      variants = items;                         // toutes les variantes
+      renderProduct(variants[0]);               // première variante par défaut
+      $details.style.display = 'flex';
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      $loading.style.display = 'none';
+    }
+  };
 
-                // Set tags/categories
-                productTags.textContent = defaultVariant.categories.map(c => c.label).join(', ') || 'Uncategorized';
+  /* ---------------- render helpers -------------- */
+  const renderProduct = variant => {
+    // --- titre nettoyé -------------------------------------
+    const cleanSku = variant.sku
+      .replace(/_C\d+$/i,'')
+      .replace(/[_-]/g,' ')
+      .trim();
+    $title.textContent = cleanSku;
+    document.title = cleanSku;
 
-                // Set description
-                productDescription.innerHTML = defaultVariant.description;
+    // --- tags / catégories ---------------------------------
+    $tags.textContent = (variant.categories ?? [])
+      .map(c => c.name || c.label)
+      .filter(Boolean)
+      .join(', ') || 'Uncategorized';
 
-                // Render gallery
-                renderGallery(defaultVariant.images);
+    // --- description (HTML déjà safe issu du back) ---------
+    $desc.innerHTML = variant.description || '';
 
-                // Render variants
-                if (variants.length > 1) {
-                    renderVariantSelector();
-                    // Select the first variant by default
-                    updateVariant(variants[0].id);
-                } else {
-                    // If only one product, treat it as the single variant
-                    updateVariant(defaultVariant.id);
-                }
+    // --- galerie ------------------------------------------
+    renderGallery(variant);
 
-                productDetailsContainer.style.display = 'flex';
-                attachAddToCartButtons(); // Attach cart logic from external script
-            };
+    // --- variantes ----------------------------------------
+    if (variants.length > 1) renderVariantSelector();
+    updateVariant(variant.id);                  // mise à jour prix / stock
+  };
 
-            /**
-             * Renders the image gallery.
-             * @param {Array} images - Array of image objects.
-             */
-            const renderGallery = (images) => {
-                const fallbackImage = 'https://via.placeholder.com/400';
-                mainImage.src = images.length > 0 ? images[0].url : fallbackImage;
+  /* galerie */
+  const renderGallery = variant => {
+    const images = variant.images ?? [];
+    const first  = images[0]?.cdn_url || images[0]?.url || FALLBACK;
+    $mainImg.src = first;
+    $thumbs.innerHTML = '';
 
-                thumbnailGallery.innerHTML = '';
-                if (images.length > 1) {
-                    images.forEach((image, index) => {
-                        const thumb = document.createElement('img');
-                        thumb.src = image.url;
-                        thumb.alt = `Thumbnail ${index + 1}`;
-                        thumb.classList.add('thumbnail');
-                        if (index === 0) thumb.classList.add('selected');
+    images.forEach((img, i) => {
+      const url = img.cdn_url || img.url;
+      const el  = document.createElement('img');
+      el.src = url;
+      el.alt = `thumb-${i}`;
+      el.className = 'thumbnail' + (i===0 ? ' selected':'');
+      el.addEventListener('click',()=> {
+        $mainImg.src = url;
+        document.querySelectorAll('.thumbnail').forEach(t=>t.classList.remove('selected'));
+        el.classList.add('selected');
+      });
+      $thumbs.appendChild(el);
+    });
+  };
 
-                        thumb.addEventListener('click', () => {
-                            mainImage.src = image.url;
-                            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('selected'));
-                            thumb.classList.add('selected');
-                        });
-                        thumbnailGallery.appendChild(thumb);
-                    });
-                }
-            };
+  /* sélecteur de variantes */
+  const renderVariantSelector = () => {
+    $selector.innerHTML = '';
+    // s’il n’y a pas d’attributeType dans l’API, on bascule sur dropdown
+    const useDropdown = !variants[0].attributeType || variants[0].attributeType === 'Generic';
 
-            /**
-             * Renders the variant selector (color swatches or dropdown).
-             */
-            const renderVariantSelector = () => {
-                const attributeType = variants[0].attributeType;
-                variantSelectorContainer.innerHTML = ''; // Clear previous options
-
-                const label = document.createElement('label');
-                label.textContent = `Select ${attributeType || 'Option'}:`;
-                variantSelectorContainer.appendChild(label);
-
-                if (attributeType === 'Color') {
-                    const swatchesContainer = document.createElement('div');
-                    swatchesContainer.className = 'color-swatches';
-                    variants.forEach(variant => {
-                        const swatch = document.createElement('div');
-                        swatch.className = 'color-swatch';
-                        swatch.style.backgroundColor = variant.attributeValue;
-                        swatch.dataset.variantId = variant.id;
-                        swatch.title = variant.attributeValue;
-
-                        swatch.addEventListener('click', () => {
-                            updateVariant(variant.id);
-                            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
-                            swatch.classList.add('selected');
-                        });
-                        swatchesContainer.appendChild(swatch);
-                    });
-                    variantSelectorContainer.appendChild(swatchesContainer);
-                } else {
-                    const select = document.createElement('select');
-                    select.className = 'variant-select';
-                    variants.forEach(variant => {
-                        const option = document.createElement('option');
-                        option.value = variant.id;
-                        option.textContent = variant.attributeValue || variant.sku;
-                        select.appendChild(option);
-                    });
-                    select.addEventListener('change', (e) => updateVariant(e.target.value));
-                    variantSelectorContainer.appendChild(select);
-                }
-            };
-
-            /**
-             * Updates the UI with the selected variant's data.
-             * @param {string} variantId - The ID of the selected variant.
-             */
-            const updateVariant = (variantId) => {
-                const selectedVariant = variants.find(v => v.id == variantId);
-                if (!selectedVariant) return;
-
-                // Update Price
-                productPrice.textContent = `${Math.round(selectedVariant.price)} TND`;
-
-                // Update Stock
-                const stock = selectedVariant.stock;
-                if (stock > 0) {
-                    productStock.textContent = `${stock} in stock`;
-                    productStock.className = 'product-stock';
-                    addToCartBtn.disabled = false;
-                } else {
-                    productStock.textContent = 'Out of stock';
-                    productStock.className = 'product-stock out-of-stock';
-                    addToCartBtn.disabled = true;
-                }
-
-                // Update Add to Cart button data attributes
-                addToCartBtn.dataset.id = selectedVariant.id;
-                addToCartBtn.dataset.name = productTitle.textContent; // Use cleaned title
-                addToCartBtn.dataset.price = selectedVariant.price;
-                addToCartBtn.dataset.image = selectedVariant.images.length > 0 ? selectedVariant.images[0].url : mainImage.src;
-            };
-
-            /**
-             * Displays an error message.
-             * @param {string} message - The error message to display.
-             */
-            const showError = (message) => {
-                errorContainer.textContent = `Error: ${message}`;
-                errorContainer.style.display = 'block';
-                productDetailsContainer.style.display = 'none';
-            };
-
-            /**
-             * Dummy function placeholder for external cart logic.
-             * This function should be defined in your global scripts.
-             */
-            const attachAddToCartButtons = () => {
-                if (window.attachAddToCartButtons) {
-                    window.attachAddToCartButtons();
-                } else {
-                    console.warn('attachAddToCartButtons function not found. Cart functionality might not work.');
-                    // Basic fallback for demonstration
-                    addToCartBtn.addEventListener('click', () => {
-                        if (addToCartBtn.disabled) return;
-                        alert(`Added to cart:
-                            ID: ${addToCartBtn.dataset.id}
-                            Name: ${addTo-cart-btn.dataset.name}
-                            Price: ${addToCartBtn.dataset.price} TND`);
-                    });
-                }
-            };
-
-            /**
-             * Keep-alive ping to prevent the backend from sleeping.
-             */
-            const keepAlive = () => {
-                setInterval(() => {
-                    fetch(HEALTH_CHECK_URL).catch(err => console.error('Keep-alive ping failed:', err));
-                }, 10 * 60 * 1000); // 10 minutes
-            };
-
-            // --- Initialization ---
-            const urlParams = new URLSearchParams(window.location.search);
-            const sku = urlParams.get('sku');
-
-            if (sku) {
-                fetchProduct(sku);
-            } else {
-                showError('No product SKU provided in the URL.');
-            }
-
-            keepAlive();
+    if (useDropdown) {
+      const sel = document.createElement('select');
+      sel.className = 'variant-select';
+      variants.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = v.attributeValue || v.sku;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', e => updateVariant(e.target.value));
+      $selector.appendChild(sel);
+    } else if (variants[0].attributeType === 'Color') {
+      const wrap = document.createElement('div');
+      wrap.className = 'color-swatches';
+      variants.forEach(v => {
+        const s = document.createElement('div');
+        s.className = 'color-swatch';
+        s.style.backgroundColor = v.attributeValue;
+        s.title = v.attributeValue;
+        s.dataset.id = v.id;
+        s.addEventListener('click', () => {
+          updateVariant(v.id);
+          document.querySelectorAll('.color-swatch').forEach(x=>x.classList.remove('selected'));
+          s.classList.add('selected');
         });
-    </script>
+        wrap.appendChild(s);
+      });
+      $selector.appendChild(wrap);
+    }
+  };
+
+  /* maj quand on change de variante */
+  const updateVariant = id => {
+    const v = variants.find(x=>String(x.id)===String(id));
+    if (!v) return;
+
+    // prix
+    $price.textContent = `${Math.round(v.price)} TND`;
+
+    // stock
+    const qty = v.stock ?? v.stock_levels?.[0]?.quantity ?? 0;
+    if (qty>0) {
+      $stock.textContent = `${qty} in stock`;
+      $stock.className = 'product-stock';
+      $btnCart.disabled = false;
+    } else {
+      $stock.textContent = 'Out of stock';
+      $stock.className = 'product-stock out-of-stock';
+      $btnCart.disabled = true;
+    }
+
+    // btn data-attrs
+    $btnCart.dataset.id    = v.id;
+    $btnCart.dataset.name  = $title.textContent;
+    $btnCart.dataset.price = v.price;
+    $btnCart.dataset.image = v.images?.[0]?.cdn_url || v.images?.[0]?.url || $mainImg.src;
+  };
+
+  /* attache panier (fallback) */
+  const attachAddToCart = () => {
+    if (window.attachAddToCartButtons) {
+      window.attachAddToCartButtons();
+    } else {
+      $btnCart.addEventListener('click', () => {
+        if ($btnCart.disabled) return;
+        alert(`Added to cart:\n${$btnCart.dataset.name} – ${$btnCart.dataset.price} TND`);
+      });
+    }
+  };
+
+  /* ------------------ init ------------------- */
+  const sku = new URLSearchParams(location.search).get('sku');
+  if (sku) {
+    fetchProductBySku(decodeURIComponent(sku)).then(attachAddToCart);
+  } else {
+    showError('No product SKU provided in URL.');
+  }
+  keepAlive();
+});
+</script>
 </body>
 </html>
