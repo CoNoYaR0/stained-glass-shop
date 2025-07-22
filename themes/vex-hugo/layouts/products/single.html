@@ -13,14 +13,21 @@
 <div id="product-container" class="product-single-container">
   <!-- Zone image + miniatures -->
   <div class="product-image-gallery">
-    <img id="main-img"
-         class="product-single-image"
-         src="{{ .Params.thumbnail_url | default "https://cdn.stainedglass.tn/images/fallback.jpg" }}"
-         alt="{{ .Title }}">
+    <img
+      id="main-img"
+      class="product-single-image"
+      src="{{ .Params.thumbnail_url | default "https://cdn.stainedglass.tn/images/fallback.jpg" }}"
+      alt="{{ .Title }}"
+    >
 
     <div id="thumbs" class="thumbnail-gallery">
+      {{/* Boucle qui gère objets {url:…} ou simples strings */}}
       {{ range .Params.images }}
-        <img src="{{ .url }}" class="thumbnail" alt="thumb">
+        {{ $src := . }}
+        {{ if isset . "url" }}
+          {{ $src = .url }}
+        {{ end }}
+        <img src="{{ $src }}" class="thumbnail" alt="thumb">
       {{ end }}
     </div>
   </div>
@@ -31,18 +38,20 @@
     <p class="name">{{ .Title }}</p>
     <p class="category">{{ .Params.category }}</p>
 
-    {{ .Content }} <!-- description -->
+    {{ .Content }} <!-- description HTML -->
 
     <p class="price">{{ .Params.price }} TND</p>
     <p class="stock">{{ .Params.stock }} in stock</p>
 
-    <button id="add-to-cart"
-            class="add-to-cart-btn"
-            data-id="{{ .Params.sku }}"
-            data-name="{{ .Title }}"
-            data-price="{{ .Params.price }}"
-            data-image="{{ .Params.thumbnail_url }}"
-            {{ if le .Params.stock 0 }}disabled{{ end }}>
+    <button
+      id="add-to-cart"
+      class="add-to-cart-btn"
+      data-id="{{ .Params.sku }}"
+      data-name="{{ .Title }}"
+      data-price="{{ .Params.price }}"
+      data-image="{{ .Params.thumbnail_url }}"
+      {{ if le .Params.stock 0 }}disabled{{ end }}
+    >
       Add to Cart
     </button>
   </div>
