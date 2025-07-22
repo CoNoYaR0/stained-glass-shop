@@ -22,7 +22,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
     }
   }
 
-  function addToCart(product) {
+  window.addToCart = function(product) {
     if (product.stock !== undefined && product.stock <= 0) {
       alert("This product is out of stock.");
       return;
@@ -44,6 +44,7 @@ if (typeof window.CART_JS_INITIALIZED === 'undefined') {
     saveCart(cart);
     updateCartCount();
   }
+  export { addToCart };
 
   function updateCartCount() {
     const cart = getCart();
