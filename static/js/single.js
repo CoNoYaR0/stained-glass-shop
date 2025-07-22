@@ -42,10 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(`HTTP error! status: ${searchResponse.status}`);
             }
             const searchResults = await searchResponse.json();
-            if (!searchResults || searchResults.length === 0) {
+            if (!searchResults || !searchResults.data || searchResults.data.length === 0) {
                 throw new Error('Product not found.');
             }
-            const productBySku = searchResults[0];
+            const productBySku = searchResults.data[0];
 
             // Then, get the full product details with relations by ID
             const productUrl = `${API_BASE_URL}/products/${productBySku.id}?includerelations=photos,category,stock`;
