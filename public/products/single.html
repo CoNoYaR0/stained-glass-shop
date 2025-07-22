@@ -1,220 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Product Details</title>
-
-  <!-- ✂︎ keep your existing CSS here – unchanged ✂︎ -->
-  <style>
-    /* …  your previous <style> block  … */
-  </style>
-</head>
-<body>
+{{ define "main" }}
+<section class="section">
   <div class="container">
-    <div id="product-details" class="product-container">
-      <div class="product-image-gallery">
-        <img id="main-image" class="main-image"
-             src="https://via.placeholder.com/400" alt="Product image" />
-        <div id="thumbnail-gallery" class="thumbnail-gallery"></div>
-      </div>
-
-      <div class="product-info">
-        <h1 id="product-title"></h1>
-        <p id="product-tags" class="product-tags"></p>
-        <div id="product-description" class="product-description"></div>
-        <p id="product-price" class="product-price"></p>
-        <p id="product-stock" class="product-stock"></p>
-
-        <div id="variant-selector" class="variant-selector"></div>
-        <button id="add-to-cart-btn" class="add-to-cart-btn" disabled>
-          Add to Cart
-        </button>
+    <div id="product-details" class="row">
+      <div class="col-12 text-center">
+        <div class="spinner-border" role="status">
+          <span class="sr-only">Loading...</span>
+        </div>
       </div>
     </div>
-
-    <div id="loading">Loading…</div>
-    <div id="error" style="display:none;color:red;"></div>
   </div>
+</section>
+{{ end }}
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      /* ------------------------------------------------------------------ */
-      const API_ROOT  = 'https://dolibarr-middleware.onrender.com/api/v1/products';
-      const PING_URL  = 'https://dolibarr-middleware.onrender.com/health';
-      const FALLBACK  = 'https://via.placeholder.com/400';
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const slug = window.location.pathname.split('/').filter(Boolean).pop();
+    console.log("Parsed slug:", slug);
+    const container = document.getElementById("product-details");
 
-      /* ---------- DOM refs ----------- */
-      const $details  = document.getElementById('product-details');
-      const $loading  = document.getElementById('loading');
-      const $error    = document.getElementById('error');
-      const $mainImg  = document.getElementById('main-image');
-      const $thumbs   = document.getElementById('thumbnail-gallery');
-      const $title    = document.getElementById('product-title');
-      const $tags     = document.getElementById('product-tags');
-      const $desc     = document.getElementById('product-description');
-      const $price    = document.getElementById('product-price');
-      const $stock    = document.getElementById('product-stock');
-      const $selector = document.getElementById('variant-selector');
-      const $btnCart  = document.getElementById('add-to-cart-btn');
+    try {
+      const res = await fetch(`https://dolibarr-middleware.onrender.com/api/v1/products/${slug}`);
+      const product = await res.json();
+      console.log("API Response:", product);
 
-      let variants = [];
+      if (product && product.id) {
+        const { name, long_description, price, images, sku, stock_levels, categories, meta_title, meta_description } = product;
 
-      /* ---------------- helpers ---------------- */
-      const showError = (msg) => {
-        $error.textContent   = `Error: ${msg}`;
-        $error.style.display = 'block';
-        $details.style.display = 'none';
-      };
-
-      const keepAlive = () => {
-        fetch(PING_URL).catch(() => {});
-        setInterval(() => fetch(PING_URL).catch(() => {}), 10 * 60 * 1000);
-      };
-
-      /* ---------------- fetch ------------------ */
-      const fetchProductBySku = async (sku) => {
-        $loading.style.display = 'block';
-        $details.style.display = 'none';
-        $error.style.display   = 'none';
-
-        try {
-          const res = await fetch(`${API_ROOT}/${encodeURIComponent(sku)}`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();     // single object
-          if (!data) throw new Error('Product not found');
-
-          variants = data.variants?.length ? data.variants : [data];
-          renderProduct(variants[0]);
-          $details.style.display = 'flex';
-        } catch (e) {
-          showError(e.message);
-        } finally {
-          $loading.style.display = 'none';
-        }
-      };
-
-      /* -------------- render --------------- */
-      const renderProduct = (variant) => {
-        const cleanSku = variant.sku
-          .replace(/_C\d+$/i, '')
-          .replace(/[_-]/g, ' ')
-          .trim();
-
-        $title.textContent = cleanSku;
-        document.title     = cleanSku;
-
-        $tags.textContent = (variant.categories ?? [])
-          .map((c) => c.name || c.label)
-          .join(', ') || 'Uncategorized';
-
-        $desc.innerHTML = variant.description || '';
-
-        renderGallery(variant);
-        if (variants.length > 1) renderVariantSelector();
-        updateVariant(variant.id);
-      };
-
-      const renderGallery = (variant) => {
-        const imgs = variant.images ?? [];
-        const first = imgs[0]?.cdn_url || imgs[0]?.url || FALLBACK;
-        $mainImg.src = first;
-        $thumbs.innerHTML = '';
-
-        imgs.forEach((img, i) => {
-          const url = img.cdn_url || img.url;
-          const t   = document.createElement('img');
-          t.src   = url;
-          t.alt   = `thumb-${i}`;
-          t.className = 'thumbnail' + (i === 0 ? ' selected' : '');
-          t.onclick = () => {
-            $mainImg.src = url;
-            document.querySelectorAll('.thumbnail').forEach(x => x.classList.remove('selected'));
-            t.classList.add('selected');
-          };
-          $thumbs.appendChild(t);
-        });
-      };
-
-      const renderVariantSelector = () => {
-        $selector.innerHTML = '';
-        const type = variants[0].attributeType || 'Generic';
-
-        if (type === 'Color') {
-          const wrap = document.createElement('div');
-          wrap.className = 'color-swatches';
-          variants.forEach((v) => {
-            const s = document.createElement('div');
-            s.className = 'color-swatch';
-            s.style.backgroundColor = v.attributeValue;
-            s.title = v.attributeValue;
-            s.onclick = () => {
-              updateVariant(v.id);
-              document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
-              s.classList.add('selected');
-            };
-            wrap.appendChild(s);
-          });
-          $selector.appendChild(wrap);
-        } else {
-          const sel = document.createElement('select');
-          sel.className = 'variant-select';
-          variants.forEach((v) => {
-            const opt = document.createElement('option');
-            opt.value = v.id;
-            opt.textContent = v.attributeValue || v.sku;
-            sel.appendChild(opt);
-          });
-          sel.onchange = (e) => updateVariant(e.target.value);
-          $selector.appendChild(sel);
-        }
-      };
-
-      const updateVariant = (id) => {
-        const v = variants.find((x) => String(x.id) === String(id));
-        if (!v) return;
-
-        const qty = v.stock ?? v.stock_levels?.[0]?.quantity ?? 0;
-        $price.textContent = `${Math.round(v.price)} TND`;
-
-        if (qty > 0) {
-          $stock.textContent = `${qty} in stock`;
-          $stock.className   = 'product-stock';
-          $btnCart.disabled  = false;
-        } else {
-          $stock.textContent = 'Out of stock';
-          $stock.className   = 'product-stock out-of-stock';
-          $btnCart.disabled  = true;
+        // Set SEO meta tags
+        document.title = meta_title || name;
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+            metaDesc.setAttribute('content', meta_description || '');
         }
 
-        $btnCart.dataset.id    = v.id;
-        $btnCart.dataset.name  = $title.textContent;
-        $btnCart.dataset.price = v.price;
-        $btnCart.dataset.image =
-          v.images?.[0]?.cdn_url || v.images?.[0]?.url || $mainImg.src;
-      };
+        const imageUrl = images?.[0]?.url || 'https://cdn.stainedglass.tn/placeholder.jpg';
+        const categoryName = categories?.[0]?.name || 'Misc';
+        const displayName = sku || name;
+        const totalStock = stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
+        const stockDisplay = totalStock > 0 ? 'Add to cart' : 'Sold Out';
+        const isSoldOut = totalStock === 0;
 
-      /* -------- attach cart fallback ---------- */
-      const attachAddToCart = () => {
-        if (window.attachAddToCartButtons) {
-          window.attachAddToCartButtons();
-        } else {
-          $btnCart.onclick = () => {
-            if ($btnCart.disabled) return;
-            alert(
-              `Added to cart:\n${$btnCart.dataset.name}\n${$btnCart.dataset.price} TND`
-            );
-          };
-        }
-      };
-
-      /* ---------------- init ------------------ */
-      const sku = new URLSearchParams(location.search).get('sku');
-      if (sku) fetchProductBySku(decodeURIComponent(sku)).then(attachAddToCart);
-      else showError('No product SKU provided in URL.');
-
-      keepAlive();
-    });
-  </script>
-</body>
-</html>
+        container.innerHTML = `
+          <div class="col-md-6">
+            <img src="${imageUrl}" class="img-fluid" alt="${name}">
+          </div>
+          <div class="col-md-6">
+            <p class="text-muted">${categoryName}</p>
+            <h1>${displayName}</h1>
+            <h3 class="text-primary">${parseFloat(price).toFixed(2)} DT</h3>
+            <div class="mt-4" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6;">
+              ${long_description || ''}
+            </div>
+            <button class="btn btn-warning btn-lg mt-4" ${isSoldOut ? 'disabled' : ''}>
+              ${stockDisplay}
+            </button>
+          </div>
+        `;
+      } else {
+        console.error("Product not found or API response is empty.");
+        container.innerHTML = `
+          <div class="col-12 text-center">
+            <h2>Product not found</h2>
+            <p>The product you are looking for does not exist.</p>
+            <a href="/products" class="btn btn-primary">Back to Products</a>
+          </div>
+        `;
+      }
+    } catch (err) {
+      console.error("Error fetching product details:", err);
+      container.innerHTML = `
+        <div class="col-12 text-center">
+          <h2>Error</h2>
+          <p>There was an error loading the product details.</p>
+          <a href="/products" class="btn btn-primary">Back to Products</a>
+        </div>
+      `;
+    }
+  });
+</script>
