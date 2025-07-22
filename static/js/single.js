@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const productBySku = searchResults.data[0];
 
             // Then, get the full product details with relations by ID
-            const productUrl = `${API_BASE_URL}/products/${productBySku.id}?includerelations=photos,category,stock`;
+            const productUrl = `${API_BASE_URL}/products/${productBySku.id}`;
             const productResponse = await fetch(productUrl);
             if (!productResponse.ok) {
                 throw new Error(`HTTP error! status: ${productResponse.status}`);
