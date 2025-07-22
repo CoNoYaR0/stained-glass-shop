@@ -1,80 +1,119 @@
-{{ define "main" }}
-<section class="section">
-  <div class="container">
-    <div id="product-details" class="row">
-      <div class="col-12 text-center">
-        <div class="spinner-border" role="status">
-          <span class="sr-only">Loading...</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-{{ end }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Details</title>
+  <style>
+    /* Basic reset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
 
-<script>
-  document.addEventListener("DOMContentLoaded", async () => {
-    const slug = window.location.pathname.split('/').filter(Boolean).pop();
-    console.log("Parsed slug:", slug);
-    const container = document.getElementById("product-details");
+    /* Container */
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
 
-    try {
-      const res = await fetch(`https://dolibarr-middleware.onrender.com/api/v1/products/${slug}`);
-      const product = await res.json();
-      console.log("API Response:", product);
-
-      if (product && product.id) {
-        const { name, long_description, price, images, sku, stock_levels, categories, meta_title, meta_description } = product;
-
-        // Set SEO meta tags
-        document.title = meta_title || name;
-        const metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) {
-            metaDesc.setAttribute('content', meta_description || '');
-        }
-
-        const imageUrl = images?.[0]?.url || 'https://cdn.stainedglass.tn/placeholder.jpg';
-        const categoryName = categories?.[0]?.name || 'Misc';
-        const displayName = sku || name;
-        const totalStock = stock_levels?.reduce((total, level) => total + level.quantity, 0) || 0;
-        const stockDisplay = totalStock > 0 ? 'Add to cart' : 'Sold Out';
-        const isSoldOut = totalStock === 0;
-
-        container.innerHTML = `
-          <div class="col-md-6">
-            <img src="${imageUrl}" class="img-fluid" alt="${name}">
-          </div>
-          <div class="col-md-6">
-            <p class="text-muted">${categoryName}</p>
-            <h1>${displayName}</h1>
-            <h3 class="text-primary">${parseFloat(price).toFixed(2)} DT</h3>
-            <div class="mt-4" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.6;">
-              ${long_description || ''}
-            </div>
-            <button class="btn btn-warning btn-lg mt-4" ${isSoldOut ? 'disabled' : ''}>
-              ${stockDisplay}
-            </button>
-          </div>
-        `;
-      } else {
-        console.error("Product not found or API response is empty.");
-        container.innerHTML = `
-          <div class="col-12 text-center">
-            <h2>Product not found</h2>
-            <p>The product you are looking for does not exist.</p>
-            <a href="/products" class="btn btn-primary">Back to Products</a>
-          </div>
-        `;
-      }
-    } catch (err) {
-      console.error("Error fetching product details:", err);
-      container.innerHTML = `
-        <div class="col-12 text-center">
-          <h2>Error</h2>
-          <p>There was an error loading the product details.</p>
-          <a href="/products" class="btn btn-primary">Back to Products</a>
-        </div>
-      `;
+    /* Hero image */
+    .hero {
+      width: 100%;
+      height: 400px;
+      background-size: cover;
+      background-position: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
     }
-  });
-</script>
+
+    /* Title & price */
+    .title {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    .price {
+      display: inline-block;
+      background: #f4f4f4;
+      padding: 8px 16px;
+      font-size: 1.25rem;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    /* Story sections */
+    .story-section {
+      margin-bottom: 20px;
+    }
+    .story-section h2 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    .story-section p {
+      margin-bottom: 12px;
+    }
+
+    /* Loading / error */
+    .message { text-align: center; margin-top: 50px; font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="hero" class="hero"></div>
+    <h1 id="title" class="title"></h1>
+    <div id="price" class="price"></div>
+    <div id="story"></div>
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const slug = params.get('slug');
+      const messageEl = document.getElementById('message');
+      const heroEl = document.getElementById('hero');
+      const titleEl = document.getElementById('title');
+      const priceEl = document.getElementById('price');
+      const storyEl = document.getElementById('story');
+
+      if (!slug) {
+        messageEl.textContent = 'No product specified.';
+        return;
+      }
+
+      fetch(`/api/v1/products/${encodeURIComponent(slug)}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Product not found');
+          return res.json();
+        })
+        .then(product => {
+          // Hero image
+          const imgUrl = (product.images && product.images.length)
+            ? product.images[0].url || product.images[0]
+            : '';
+          if (imgUrl) heroEl.style.backgroundImage = `url('${imgUrl}')`;
+
+          // Title & price
+          titleEl.textContent = product.name || product.title || 'Unnamed Product';
+          priceEl.textContent = product.price
+            ? `$${parseFloat(product.price).toFixed(2)}`
+            : 'Price unavailable';
+
+          // Storytelling description
+          const desc = product.description || '';
+          const sentences = desc.split(/\.\s+/).filter(s => s.trim());
+          sentences.forEach((sentence, i) => {
+            const section = document.createElement('div');
+            section.className = 'story-section';
+            const heading = document.createElement('h2');
+            heading.textContent = `Part ${i + 1}`;
+            const para = document.createElement('p');
+            para.textContent = sentence.trim().replace(/\.$/, '') + '.');
+            section.appendChild(heading);
+            section.appendChild(para);
+            storyEl.appendChild(section);
+          });
+        })
+        .catch(err => {
+          messageEl.textContent = err.message || 'An error occurred.';
+        });
+    })();
+  </script>
+</body>
+</html>
