@@ -38,17 +38,19 @@
     <p class="price">{{ .Params.price }} TND</p>
     <p class="stock">{{ .Params.stock }} in stock</p>
 
-    <button
-      id="add-to-cart"
-      class="add-to-cart-btn"
-      data-id="{{ .Params.sku }}"
-      data-name="{{ .Title }}"
-      data-price="{{ .Params.price }}"
-      data-image="{{ .Params.thumbnail_url }}"
-      {{ if le .Params.stock 0 }}disabled{{ end }}
-    >
-      Add to Cart
-    </button>
+    <div class="overlay">
+        <button
+            id="add-to-cart"
+            class="add-to-cart translucent-btn"
+            data-id="{{ .Params.sku }}"
+            data-name="{{ .Title }}"
+            data-price="{{ .Params.price }}"
+            data-image="{{ .Params.thumbnail_url }}"
+            {{ if le .Params.stock 0 }}disabled{{ end }}
+        >
+            Add to Cart
+        </button>
+    </div>
   </div>
 </div>
 
