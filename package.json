@@ -16,5 +16,8 @@
   },
   "devDependencies": {
     "hugo-extended": "^0.148.1"
+  },
+  "dependencies": {
+    "axios": "^1.10.0"
   }
 }
