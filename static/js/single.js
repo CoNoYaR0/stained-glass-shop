@@ -20,13 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentProduct = null;
 
     const getSlugFromUrl = () => {
-        const path = window.location.pathname;
-        const parts = path.split('/');
-        const lastPart = parts[parts.length - 1];
-        if (lastPart.endsWith('.html')) {
-            return lastPart.slice(0, -5);
-        }
-        return lastPart;
+        const params = new URLSearchParams(window.location.search);
+        return params.get('sku');
     };
 
     const fetchProduct = async (slug) => {
