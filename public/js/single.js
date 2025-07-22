@@ -88,6 +88,10 @@ document.addEventListener("DOMContentLoaded", () => {
         thumbsContainer.appendChild(thumb);
       });
     }
+
+    // Dispatch a custom event to let other scripts know the product has been rendered
+    const event = new Event('productRendered');
+    document.dispatchEvent(event);
   };
 
   fetchProducts();
