@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentProduct = null;
 
-    const getProductIdFromUrl = () => {
+    const getSkuFromUrl = () => {
         const params = new URLSearchParams(window.location.search);
-        return params.get('id');
+        return params.get('sku');
     };
 
     const fetchProduct = async () => {
@@ -30,12 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (productDetailsContainer) productDetailsContainer.style.display = 'none';
             errorContainer.style.display = 'none';
 
-            const productId = getProductIdFromUrl();
-            if (!productId) {
-                throw new Error('Product ID not found in URL.');
+            const sku = getSkuFromUrl();
+            if (!sku) {
+                throw new Error('Product SKU not found in URL.');
             }
 
-            const url = `${API_BASE_URL}/products/${productId}?includerelations=photos,category,stock`;
+            const url = `${API_BASE_URL}/products/search?sku=${sku}&includerelations=photos,category,stock`;
             const response = await fetch(url);
 
             if (!response.ok) {
