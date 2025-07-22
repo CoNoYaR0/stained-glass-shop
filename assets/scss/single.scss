@@ -1,1 +1,110 @@
+/* ============================
+   single-product.scss
+   (pour la fiche produit unique)
+   ============================ */
 
+/* 1. Conteneur global */
+.product-single-container {
+  --gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem var(--gap);
+  display: flex;
+  gap: var(--gap);
+}
+
+/* 2. Zone image + galerie */
+.product-image-gallery {
+  flex: 0 0 38%;
+  max-width: 38%;
+}
+
+.product-single-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  border: 1px solid #eee;
+}
+
+.thumbnail-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  .thumbnail {
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 0.5rem;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color .25s;
+
+    &:hover,
+    &.selected {
+      border-color: var(--vex-primary);
+    }
+  }
+}
+
+/* 3. Zone texte / infos */
+.product-info-panel {
+  flex: 1 1 0;
+  max-width: calc(62% - var(--gap));
+  /* centre tous les textes et bouton */
+  text-align: center;
+}
+
+/* 4. Bouton Add to Cart – même gradient que les cards */
+.product-info-panel .add-to-cart-btn {
+  /* taille & centrage */
+  margin: 2rem auto 0;
+  padding: 1rem 2rem;
+
+  /* typo */
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  color: #fff !important;
+
+  /* style */
+  border: none;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, var(--vex-primary), var(--vex-secondary));
+  background-size: 200% auto;
+  background-position: left center;
+  box-shadow: 0 4px 14px rgba(255, 159, 43, .35);
+  transition: transform .25s, box-shadow .25s, background-position .25s;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(255, 159, 43, .45);
+    background-position: right center;
+  }
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 8px rgba(255, 159, 43, .25);
+  }
+  &:disabled {
+    background: #bfbfbf;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+/* 5. Responsive mobile (≤ 768 px) */
+@media (max-width: 768px) {
+  .product-single-container {
+    flex-direction: column;
+  }
+  .product-image-gallery,
+  .product-info-panel {
+    max-width: 100%;
+  }
+  .product-single-image {
+    aspect-ratio: 4 / 3; /* un peu plus “plat” sur mobile */
+  }
+}
