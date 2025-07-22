@@ -5,13 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Product Details</title>
   <style>
-    /* Basic reset */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 800px; margin: 0 auto; padding: 20px; }
     .hero { width: 100%; height: 400px; background-size: cover; background-position: center; border-radius: 8px; margin-bottom: 20px; }
     .title { font-size: 2.5rem; margin-bottom: 10px; }
-    .price { display: inline-block; background: #f4f4f4; padding: 8px 16px; font-size: 1.25rem; border-radius: 4px; margin-bottom: 20px; }
+    .price-stock { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; }
+    .price { font-size: 1.5rem; font-weight: bold; }
+    .stock { font-size: 1rem; color: #777; }
+    .variants { margin-bottom: 20px; }
+    .variants .swatch { width: 24px; height: 24px; border: 1px solid #ccc; border-radius: 50%; margin-right: 8px; cursor: pointer; }
+    .variants select { padding: 4px; }
+    .add-to-cart { padding: 10px 20px; font-size: 1rem; border: none; border-radius: 4px; background: #28a745; color: #fff; cursor: pointer; }
+    .add-to-cart:disabled { background: #ccc; cursor: not-allowed; }
     .story-section { margin-bottom: 20px; }
     .story-section h2 { font-size: 1.5rem; margin-bottom: 8px; color: #555; }
     .story-section p { margin-bottom: 12px; }
@@ -22,83 +28,131 @@
   <div class="container">
     <div id="hero" class="hero"></div>
     <h1 id="title" class="title"></h1>
-    <div id="price" class="price"></div>
+    <div class="price-stock">
+      <span id="price" class="price"></span>
+      <span id="stock" class="stock"></span>
+    </div>
+    <div id="variants" class="variants"></div>
+    <button id="add-to-cart" class="add-to-cart">Add to Cart</button>
     <div id="story"></div>
     <div id="message" class="message"></div>
   </div>
 
   <script>
-    (async () => {
-      const API_BASE = 'https://dolibarr-middleware.onrender.com';
-      const params = new URLSearchParams(window.location.search);
-      const slugParam = params.get('slug');
-      const skuParam  = params.get('sku');
-      const messageEl = document.getElementById('message');
+    document.addEventListener('DOMContentLoaded', async () => {
+      const API_BASE    = 'https://dolibarr-middleware.onrender.com';
+      const CDN_BASE    = 'https://cdn.stainedglass.tn';
+      const FALLBACK_IMG = `${CDN_BASE}/images/fallback.jpg`;
+      const HEALTH_URL   = `${API_BASE}/health`;
 
-      if (!slugParam && !skuParam) {
+      const params  = new URLSearchParams(window.location.search);
+      const slug    = params.get('slug');
+      const messageEl = document.getElementById('message');
+      if (!slug) {
         messageEl.textContent = 'No product specified.';
         return;
       }
 
+      // Keep-alive ping
+      (async function keepAlive() {
+        try { await fetch(HEALTH_URL); } catch (e) {}
+        setTimeout(keepAlive, 10 * 60 * 1000);
+      })();
+
       try {
-        // Determine slug to use: prefer slugParam, otherwise lookup by SKU
-        const slug = slugParam || await lookupSlugBySku(skuParam);
-        await fetchAndRender(slug);
-      } catch (err) {
-        messageEl.textContent = err.message || 'An error occurred.';
-      }
-
-      // Fetch list endpoint and extract array for SKU lookup
-      async function lookupSlugBySku(sku) {
-        const resp = await fetch(`${API_BASE}/api/v1/products?limit=1000`);
-        if (!resp.ok) throw new Error('Failed to fetch product list');
-        const body = await resp.json();
-        // The API might return { data: [...] } or an array directly
-        const list = Array.isArray(body)
-          ? body
-          : (Array.isArray(body.data) ? body.data : []);
-        const product = list.find(item => item.sku === sku);
-        if (!product) throw new Error('Product not found.');
-        return product.slug;
-      }
-
-      async function fetchAndRender(slug) {
         const resp = await fetch(`${API_BASE}/api/v1/products/${encodeURIComponent(slug)}`);
-        if (!resp.ok) throw new Error('Product not found.');
+        if (!resp.ok) throw new Error('Product not found');
         const product = await resp.json();
-        renderProduct(product);
+        initProductPage(product);
+      } catch (err) {
+        messageEl.textContent = err.message;
       }
 
-      function renderProduct(product) {
-        // Hero image
-        const heroEl = document.getElementById('hero');
-        const imgUrl = Array.isArray(product.images) && product.images.length
-          ? (product.images[0].url || product.images[0])
-          : '';
-        if (imgUrl) heroEl.style.backgroundImage = `url('${imgUrl}')`;
+      function initProductPage(product) {
+        // Title
+        document.getElementById('title').textContent = product.name;
 
-        // Title & price
-        document.getElementById('title').textContent = product.name || 'Unnamed Product';
-        document.getElementById('price').textContent =
-          product.price ? `$${parseFloat(product.price).toFixed(2)}` : 'Price unavailable';
-
-        // Storytelling description
+        // Story
         const storyEl = document.getElementById('story');
         const desc = product.description || '';
-        const sentences = desc.split(/\.\s+/).filter(s => s.trim());
-        sentences.forEach((sentence, i) => {
-          const section = document.createElement('div');
-          section.className = 'story-section';
-          const heading = document.createElement('h2');
-          heading.textContent = `Part ${i + 1}`;
-          const para = document.createElement('p');
-          para.textContent = sentence.trim().replace(/\.$/, '') + '.';
-          section.appendChild(heading);
-          section.appendChild(para);
-          storyEl.appendChild(section);
+        desc.split(/\.\s+/).filter(s => s.trim()).forEach((sentence, i) => {
+          const sec = document.createElement('div'); sec.className = 'story-section';
+          const h2 = document.createElement('h2'); h2.textContent = `Part ${i+1}`;
+          const p  = document.createElement('p'); p.textContent = sentence.trim().replace(/\.$/, '') + '.';
+          sec.append(h2, p);
+          storyEl.appendChild(sec);
         });
+
+        // Variants and rendering
+        const variants = Array.isArray(product.variants) && product.variants.length
+          ? product.variants
+          : [{
+              sku: product.slug,
+              price: product.price,
+              stock: product.stock_levels?.[0]?.quantity || 0,
+              images: product.images || []
+            }];
+
+        const heroEl   = document.getElementById('hero');
+        const priceEl  = document.getElementById('price');
+        const stockEl  = document.getElementById('stock');
+        const variantsEl = document.getElementById('variants');
+        const addBtn   = document.getElementById('add-to-cart');
+
+        let selectedIndex = 0;
+        function renderVariant(idx) {
+          const v = variants[idx];
+          // Image
+          const imgUrl = Array.isArray(v.images) && v.images.length
+            ? (v.images[0].cdn_url || v.images[0].url || v.images[0])
+            : FALLBACK_IMG;
+          heroEl.style.backgroundImage = `url('${imgUrl}')`;
+
+          // Price & stock
+          priceEl.textContent = `$${parseFloat(v.price).toFixed(2)}`;
+          stockEl.textContent = `${v.stock} in stock`;
+
+          // Button data
+          addBtn.dataset.sku   = v.sku;
+          addBtn.dataset.price = v.price;
+          addBtn.disabled      = v.stock <= 0;
+        }
+
+        // Build variant selectors
+        if (variants.length > 1) {
+          variantsEl.innerHTML = '';
+          if (variants[0].attributeType === 'Color') {
+            variants.forEach((v, i) => {
+              const btn = document.createElement('button');
+              btn.className = 'swatch';
+              btn.title     = v.attributeValue;
+              btn.style.backgroundColor = v.attributeValue;
+              btn.disabled  = v.stock <= 0;
+              btn.dataset.index = i;
+              btn.addEventListener('click', () => { selectedIndex = i; renderVariant(i); });
+              variantsEl.appendChild(btn);
+            });
+          } else {
+            const sel = document.createElement('select');
+            variants.forEach((v, i) => {
+              const opt = document.createElement('option');
+              opt.value   = i;
+              opt.text    = `${v.attributeValue}${v.stock<=0?' (Out)' : ''}`;
+              opt.disabled = v.stock <= 0;
+              sel.appendChild(opt);
+            });
+            sel.addEventListener('change', e => { selectedIndex = +e.target.value; renderVariant(selectedIndex); });
+            variantsEl.appendChild(sel);
+          }
+        }
+
+        // Initial render
+        renderVariant(0);
+
+        // Attach cart logic
+        if (window.attachAddToCartButtons) window.attachAddToCartButtons();
       }
-    })();
+    });
   </script>
 </body>
 </html>
