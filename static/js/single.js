@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // First, get the product by SKU
-            const searchUrl = `${API_BASE_URL}/products/search?sku=${sku}`;
+            const searchUrl = `${API_BASE_URL}/products/search?q=${sku}`;
             const searchResponse = await fetch(searchUrl);
             if (!searchResponse.ok) {
                 throw new Error(`HTTP error! status: ${searchResponse.status}`);
