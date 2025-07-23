@@ -39,5 +39,7 @@
 {{ end }}  {{/* ← ferme le bloc "main" */}}
 
 {{ define "scripts" }}
-  <script type="module" src="{{ "js/single.js" | relURL }}"></script>
+  {{ if eq .Type "products" }}
+    <script type="module" src="{{ "js/single.js" | relURL }}"></script>
+  {{ end }}
 {{ end }}
